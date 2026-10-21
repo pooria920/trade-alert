@@ -1,0 +1,29 @@
+services:
+  bot:
+    image: tse-stock-alert-bot:${STOCK_ALERT_IMAGE_TAG:-local}
+    build: .
+    init: true
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m,mode=1777
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-/app/data/stock-alert.db}
+    volumes:
+      - stock-alert-data:/app/data
+    stop_grace_period: 25s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+volumes:
+  stock-alert-data:

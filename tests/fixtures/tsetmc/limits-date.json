@@ -1,0 +1,18 @@
+{
+  "staticThreshold": [
+    {
+      "insCode": "0",
+      "dEven": 20261020,
+      "hEven": 1,
+      "psGelStaMax": 713.0,
+      "psGelStaMin": 673.0
+    },
+    {
+      "insCode": "0",
+      "dEven": 20261021,
+      "hEven": 60125,
+      "psGelStaMax": 719.0,
+      "psGelStaMin": 679.0
+    }
+  ]
+}

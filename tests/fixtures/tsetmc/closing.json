@@ -1,0 +1,40 @@
+{
+  "closingPriceInfo": {
+    "instrumentState": {
+      "idn": 0,
+      "dEven": 0,
+      "hEven": 0,
+      "insCode": null,
+      "lVal18AFC": null,
+      "lVal30": null,
+      "cEtaval": "A ",
+      "realHeven": 0,
+      "underSupervision": 0,
+      "cEtavalTitle": "مجاز"
+    },
+    "instrument": null,
+    "lastHEven": 123002,
+    "finalLastDate": 20261021,
+    "nvt": 0.0,
+    "mop": 0,
+    "pRedTran": 0.0,
+    "thirtyDayClosingHistory": null,
+    "priceChange": 0.0,
+    "priceMin": 679.0,
+    "priceMax": 694.0,
+    "priceYesterday": 699.0,
+    "priceFirst": 691.0,
+    "last": false,
+    "id": 0,
+    "insCode": "0",
+    "dEven": 20261021,
+    "hEven": 123002,
+    "pClosing": 679.0,
+    "iClose": false,
+    "yClose": false,
+    "pDrCotVal": 679.0,
+    "zTotTran": 15504.0,
+    "qTotTran5J": 6791943562.0,
+    "qTotCap": 4614501415953.0
+  }
+}

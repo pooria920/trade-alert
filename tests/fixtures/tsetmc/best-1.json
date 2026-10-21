@@ -1,0 +1,59 @@
+{
+  "bestLimits": [
+    {
+      "number": 1,
+      "qTitMeDem": 58605,
+      "zOrdMeDem": 1,
+      "pMeDem": 675.0,
+      "pMeOf": 679.0,
+      "zOrdMeOf": 23,
+      "qTitMeOf": 28925201,
+      "title": null,
+      "insCode": null
+    },
+    {
+      "number": 2,
+      "qTitMeDem": 202860,
+      "zOrdMeDem": 8,
+      "pMeDem": 673.0,
+      "pMeOf": 680.0,
+      "zOrdMeOf": 2,
+      "qTitMeOf": 380815,
+      "title": null,
+      "insCode": null
+    },
+    {
+      "number": 3,
+      "qTitMeDem": 361624,
+      "zOrdMeDem": 9,
+      "pMeDem": 670.0,
+      "pMeOf": 681.0,
+      "zOrdMeOf": 8,
+      "qTitMeOf": 3410041,
+      "title": null,
+      "insCode": null
+    },
+    {
+      "number": 4,
+      "qTitMeDem": 50090,
+      "zOrdMeDem": 3,
+      "pMeDem": 668.0,
+      "pMeOf": 682.0,
+      "zOrdMeOf": 5,
+      "qTitMeOf": 1467400,
+      "title": null,
+      "insCode": null
+    },
+    {
+      "number": 5,
+      "qTitMeDem": 50000,
+      "zOrdMeDem": 1,
+      "pMeDem": 658.0,
+      "pMeOf": 683.0,
+      "zOrdMeOf": 3,
+      "qTitMeOf": 3308000,
+      "title": null,
+      "insCode": null
+    }
+  ]
+}
