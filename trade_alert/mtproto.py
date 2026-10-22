@@ -3,13 +3,24 @@
 import asyncio
 import logging
 import re
+import warnings
 from collections.abc import Sequence
 from typing import Any
 
-from telethon import Button, TelegramClient, errors, events, functions, types, utils
+from telethon import (
+    Button,
+    TelegramClient,
+    connection,
+    errors,
+    events,
+    functions,
+    types,
+    utils,
+)
 from telethon.sessions import MemorySession
 
-from .config import channel_id, user_ids
+from .config import channel_id, mtproxy, user_ids
+from .mtproxy_tls import ConnectionTcpMTProxyFakeTLS
 from .validation import integer, obj, text
 
 UPDATE_WAIT_SECONDS = 30
@@ -34,6 +45,7 @@ class TelegramAPI:
         *,
         client: Any = None,
         admin_users: Sequence[str] = (),
+        proxy_url: str = "",
     ) -> None:
         if not re.fullmatch(r"[0-9]+:[A-Za-z0-9_-]{30,}", token):
             raise ValueError("Invalid bot token")
@@ -58,23 +70,44 @@ class TelegramAPI:
         quiet.setLevel(100)
         quiet.propagate = False
         quiet.addHandler(logging.NullHandler())
-        self.client = (
-            client
-            if client is not None
-            else TelegramClient(
-                MemorySession(),
-                api_id,
-                api_hash,
-                request_retries=0,
-                connection_retries=3,
-                retry_delay=1,
-                timeout=10,
-                flood_sleep_threshold=0,
-                raise_last_call_error=True,
-                sequential_updates=True,
-                base_logger=quiet,
+        proxy = mtproxy(proxy_url)
+        transport: dict[str, Any] = {}
+        if proxy:
+            host, port, secret = proxy
+            # Prefix once so Telethon does not strip bytes from a raw key starting dd/ee.
+            transport = dict(
+                connection=ConnectionTcpMTProxyFakeTLS
+                if len(secret) > 34
+                else connection.ConnectionTcpMTProxyRandomizedIntermediate,
+                proxy=(host, port, secret if len(secret) > 34 else "dd" + secret[-32:]),
             )
-        )
+        with warnings.catch_warnings():
+            if proxy:
+                # Telethon 1.45 checks SOCKS dependencies even for native MTProxy.
+                warnings.filterwarnings(
+                    "ignore",
+                    message="proxy argument will be ignored because python-socks is not installed",
+                    category=UserWarning,
+                    module=r"telethon\.client\.telegrambaseclient",
+                )
+            self.client = (
+                client
+                if client is not None
+                else TelegramClient(
+                    MemorySession(),
+                    api_id,
+                    api_hash,
+                    request_retries=0,
+                    connection_retries=3,
+                    retry_delay=1,
+                    timeout=10,
+                    flood_sleep_threshold=0,
+                    raise_last_call_error=True,
+                    sequential_updates=True,
+                    base_logger=quiet,
+                    **transport,
+                )
+            )
         # No session credential or entity/subscriber database is written to disk.
         # Bots may use zero access hashes for peers absent from their local cache.
         self.client.add_event_handler(self._message, events.NewMessage(incoming=True))

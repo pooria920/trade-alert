@@ -15,6 +15,7 @@ def create_logger(
     stream: TextIO | None = None,
     *,
     api_hash: str = "",
+    proxy_secret: str = "",
 ) -> logging.Logger:
     class SafeJSON(logging.Formatter):
         def format(self, record: logging.LogRecord) -> str:
@@ -23,6 +24,14 @@ def create_logger(
                 message = message.replace(token, "[REDACTED]")
             if api_hash:
                 message = message.replace(api_hash, "[REDACTED]")
+            if proxy_secret:
+                for secret in (
+                    proxy_secret,
+                    proxy_secret[2:34] if len(proxy_secret) > 32 else proxy_secret,
+                ):
+                    message = re.sub(
+                        re.escape(secret), "[REDACTED]", message, flags=re.I
+                    )
             message = re.sub(r"\d+:[A-Za-z0-9_-]{30,}", "[REDACTED]", message)
             value = dict(time=now_ms(), level=record.levelname.lower(), message=message)
             for key in (

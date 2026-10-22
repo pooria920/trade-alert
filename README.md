@@ -11,10 +11,10 @@ verify the engine and delivery. See [TSETMC observations](docs/TSETMC.md).
 
 ## Deploy
 
-Follow the [Persian VPS guide](DEPLOYMENT.fa.md) for a fresh install or the first
-Node-to-Python cutover, backup, updates and new-path restore. Docker builds from
+Follow the [Persian VPS guide](DEPLOYMENT.fa.md) for a fresh install with an
+MTProto proxy, group setup, backup and new-path restore. Docker builds from
 the root Dockerfile. The server needs Docker/Compose and Git, not host Python/Node.
-Keep the existing Compose project name and volume; run one bot instance only.
+Keep the Compose project name stable after installation; run one bot instance only.
 
 ## Develop and verify
 
@@ -47,6 +47,12 @@ user IDs. Admins must be authorized and privately registered. `NODE_ENV` retains
 its original name for compatibility. Empty sessions (`[]`) mean closed.
 For direct local execution use an absolute local `DATABASE_URL`.
 
+Optional `TELEGRAM_MTPROXY_URL` accepts the complete `tg://proxy?...` or
+`https://t.me/proxy?...` link, including plain, dd or ee/Fake-TLS hex secrets.
+Fake-TLS SNI is limited to 220 bytes. Only Telegram uses this proxy; failures
+never fall back to a direct connection. Leave blank for direct access. Keep the
+link secret. Protocol tests use synthetic replies without opening sockets.
+
 Commands: `/start`, `/help`, `/add`, `/list`, `/queue`, `/remove`, `/status`,
 `/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin`.
 Private preferences and ownership remain separate from channel rules.
@@ -77,5 +83,5 @@ once and can duplicate accepted messages after a crash before success recording.
 
 The local-only `python -m trade_alert.operations` helper supports backup, deploy,
 restore and health. Deploy requires explicit confirmation and an existing Python
-image, so it is not the first Node cutover tool.
+image; follow the VPS guide for the first installation.
 See [migration history](MIGRATION.fa.md) and [behavior coverage](ACCEPTANCE.fa.md).

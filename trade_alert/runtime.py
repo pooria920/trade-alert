@@ -13,7 +13,7 @@ from .alerts import AlertService
 from .bot import TelegramBot
 from .channels import ChannelService
 from .cleanup import SnapshotCleanup
-from .config import parse_env
+from .config import mtproxy, parse_env
 from .database import open_database
 from .delivery import DeliveryOptions, NotificationDispatcher
 from .engine import AlertEngine
@@ -41,8 +41,12 @@ async def run_application(
     logger: logging.Logger | None = None,
 ) -> None:
     env = parse_env(source)
+    proxy = mtproxy(env["TELEGRAM_MTPROXY_URL"])
     logger = logger or create_logger(
-        env["LOG_LEVEL"], env["TELEGRAM_BOT_TOKEN"], api_hash=env["TELEGRAM_API_HASH"]
+        env["LOG_LEVEL"],
+        env["TELEGRAM_BOT_TOKEN"],
+        api_hash=env["TELEGRAM_API_HASH"],
+        proxy_secret=proxy[2] if proxy else "",
     )
     # open_database acquires the separate OS lock before migrations or app access.
     with open_database(env["DATABASE_URL"]) as db:
@@ -55,6 +59,7 @@ async def run_application(
                 env["TELEGRAM_CHANNEL_ID"],
                 client=telegram_client,
                 admin_users=env["TELEGRAM_ADMIN_USER_IDS"],
+                proxy_url=env["TELEGRAM_MTPROXY_URL"],
             )
             resources.push_async_callback(api.close)
             client = TsetmcClient(

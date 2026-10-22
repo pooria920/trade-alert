@@ -2,9 +2,10 @@
 
 import re
 from collections.abc import Mapping
+from ipaddress import ip_address
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .evaluators import MAX_SAFE_INTEGER
 from .schedule import calendar_date, parse_sessions
@@ -27,6 +28,58 @@ NUMBERS = {
     "NOTIFICATION_RETRY_BASE_MS": (2000, 1, 300_000),
     "NOTIFICATION_MAX_AGE_MINUTES": (15, 1, 1440),
 }
+
+
+def mtproxy(value: str) -> tuple[str, int, str] | None:
+    """Parse a Telegram MTProxy link locally; never resolve or connect here."""
+    if not value:
+        return None
+    try:
+        if len(value) > 2048 or re.search(r"\s", value):
+            raise ValueError
+        link = urlsplit(value)
+        if link.fragment or not (
+            (link.scheme == "tg" and link.netloc == "proxy" and not link.path)
+            or (
+                link.scheme == "https"
+                and link.netloc == "t.me"
+                and link.path == "/proxy"
+            )
+        ):
+            raise ValueError
+        query = parse_qs(
+            link.query, keep_blank_values=True, strict_parsing=True, max_num_fields=3
+        )
+        if set(query) != {"server", "port", "secret"} or any(
+            len(v) != 1 for v in query.values()
+        ):
+            raise ValueError
+        host, port, secret = (query[k][0] for k in ("server", "port", "secret"))
+        try:
+            ip_address(host)
+        except ValueError:
+            host = host.encode("idna").decode("ascii")
+            if len(host) > 253 or not all(
+                re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
+                for label in host.removesuffix(".").split(".")
+            ):
+                raise ValueError
+        if not re.fullmatch(r"[1-9][0-9]{0,4}", port):
+            raise ValueError
+        if re.fullmatch(r"[eE]{2}[a-fA-F0-9]{34,538}", secret):
+            decoded = bytes.fromhex(secret)
+            domain = decoded[17:].decode("ascii")
+            # Fixed 517-byte browser ClientHello leaves 220 bytes for SNI.
+            if len(domain) > 220 or not all(
+                re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
+                for label in domain.split(".")
+            ):
+                raise ValueError
+        elif not re.fullmatch(r"(?:[dD]{2})?[a-fA-F0-9]{32}", secret):
+            raise ValueError
+        return host, integer(int(port), 1, 65535), secret.lower()
+    except ValueError, TypeError, UnicodeError:
+        raise ValueError("Invalid or unsupported TELEGRAM_MTPROXY_URL") from None
 
 
 def channel_id(value: object) -> str:
@@ -88,6 +141,9 @@ def parse_env(source: Mapping[str, str]) -> dict[str, Any]:
         if not re.fullmatch(r"[a-fA-F0-9]{32}", api_hash):
             raise ValueError("Invalid Telegram API hash")
         values[field] = api_hash
+        field = "TELEGRAM_MTPROXY_URL"
+        values[field] = source.get(field, "").strip()
+        mtproxy(values[field])
         field = "TELEGRAM_ALLOWED_USER_IDS"
         values[field] = user_ids(source[field])
         field = "TELEGRAM_ADMIN_USER_IDS"

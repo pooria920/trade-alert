@@ -130,6 +130,7 @@ class ConfigTests(unittest.TestCase):
                     # Python-only MTProto credentials have no TypeScript counterpart.
                     actual["values"].pop("TELEGRAM_API_ID")
                     actual["values"].pop("TELEGRAM_API_HASH")
+                    actual["values"].pop("TELEGRAM_MTPROXY_URL")
                 except ValueError:
                     actual = dict(valid=False)
                 self.assertEqual(actual, expected)
