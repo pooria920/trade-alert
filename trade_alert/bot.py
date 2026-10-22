@@ -11,9 +11,14 @@ from typing import Any
 from .admin import AdminCommands
 from .alerts import AlertService
 from .bot_text import (
+    GROUP_HELP,
+    HELP,
     LABELS,
     LIVE_NOTICE,
+    PERCENT_PROMPT,
     PRIVATE_TYPES,
+    TYPE_PROMPT,
+    WINDOW_PROMPT,
     fa,
     history_text,
     minimum_prompt,
@@ -32,7 +37,6 @@ from .tsetmc import normalize_persian
 from .users import UserService, now_ms
 from .validation import integer, obj, text
 
-HELP = "دستورهای ربات:\n/start شروع و تنظیم اعلان‌ها\n/help راهنما\n/add خودرو جست‌وجو و افزودن نماد\n/list فهرست شخصی\n/queue خودرو بررسی صف\n/alert ساخت هشدار کاهش یا از بین رفتن صف خرید و فروش\n/alerts مدیریت هشدارها\n/history ده هشدار اخیر\n/remove خودرو حذف نماد و هشدارهای خصوصی آن\n/remove rule شناسه حذف هشدار\n/status وضعیت پایش مشترک\n/cancel لغو فرایند\nپایش طبق نشست تنظیم‌شده است. هشدار فقط با دادهٔ تازه و قابل تأیید صادر می‌شود."
 EXPIRED = "این انتخاب منقضی یا تغییر کرده است. از آخرین پیام یا /alert استفاده کنید."
 
 
@@ -341,12 +345,13 @@ class TelegramBot:
     async def _command(self, ctx: Context, command: str, argument: str) -> None:
         if command in ("start", "help"):
             help_text = (
-                "نمادها و هشدارهای خصوصی خود را مدیریت کنید.\n" + LIVE_NOTICE
+                "به بات پایش صف بورس خوش آمدید.\nبرای شروع، «افزودن نماد» را بزنید یا این نمونه را بفرستید:\n/add خودرو\n«خودرو» نام یک نماد نمونه است؛ نماد دلخواهتان را جای آن بنویسید. سپس از نتیجهٔ جست‌وجو نماد را انتخاب و هشدار بسازید.\n"
+                + LIVE_NOTICE
                 if command == "start"
                 else HELP + "\n" + LIVE_NOTICE
             )
             if self.channels and self.channels.is_admin(ctx.actor):
-                help_text += "\n/admin مدیریت هشدارهای مقصد مشترک"
+                help_text += "\n\nمدیریت هشدارهای گروه یا کانال تنظیم‌شده:\n/admin"
             actions = [
                 ("افزودن نماد", "nav:add"),
                 ("ساخت هشدار", "nav:alert"),
@@ -381,7 +386,7 @@ class TelegramBot:
                     self.now() + 300_000, awaiting_input=True
                 )
                 await ctx.reply(
-                    "نام نماد را بنویسید؛ مثلاً خودرو. می‌توانید /add خودرو هم بفرستید."
+                    "نام نماد بورسی را بنویسید؛ مثلاً «خودرو» یا نام نماد دلخواهتان.\nنمونهٔ دستور کامل:\n/add خودرو\nسپس نتیجهٔ درست را از دکمه‌ها انتخاب کنید."
                 )
                 return
             search = Search(self.now() + 300_000)
@@ -430,7 +435,10 @@ class TelegramBot:
             for event in events:
                 await ctx.reply(history_text(event))
             if not events:
-                await ctx.reply("هنوز هشداری ثبت نشده است.")
+                await ctx.reply(
+                    "هنوز رخداد هشداری در سابقهٔ خصوصی شما ثبت نشده است. تنظیمات هشدارها را با /alerts ببینید.\n"
+                    + LIVE_NOTICE
+                )
         else:
             await ctx.reply(
                 "دستور شناخته نشد. از /help یا منوی شروع استفاده کنید.",
@@ -441,11 +449,7 @@ class TelegramBot:
         assert self.channels is not None and self.admin is not None
         self.channels.authorize(ctx.actor)
         if command in ("start", "help"):
-            await ctx.reply(
-                "دستورهای گروه:\n/admin مدیریت هشدارهای گروه\n/alert ساخت هشدار گروه\n/alerts فهرست هشدارهای گروه\n/status وضعیت کلی پایش\n/cancel لغو فرایند\nبرای ورود متن مراحل، به پیام همان مرحله پاسخ بدهید. دستورهای شخصی را در خصوصی اجرا کنید."
-                + "\n"
-                + LIVE_NOTICE
-            )
+            await ctx.reply(GROUP_HELP + "\n" + LIVE_NOTICE)
         elif command == "admin":
             await self.admin.menu(ctx)
         elif command == "alert":
@@ -481,7 +485,9 @@ class TelegramBot:
     ) -> None:
         items = self.users.list_symbols(ctx.actor)
         if not items:
-            await ctx.reply("فهرست شما خالی است. با /add نماد اضافه کنید.")
+            await ctx.reply(
+                "فهرست نمادهای شخصی شما خالی است. ابتدا نمادی جست‌وجو و از نتیجه‌ها انتخاب کنید.\nمثال:\n/add خودرو"
+            )
             return
         page = max(0, min(page, (len(items) - 1) // 10))
         buttons = [
@@ -525,7 +531,7 @@ class TelegramBot:
                 return
             if not detection.valid or detection.snapshot is None:
                 await ctx.reply(
-                    f"نماد: {item['symbol']}\nاطلاعات صف قابل تأیید نیست؛ حجم صف اعلام نمی‌شود."
+                    f"نماد: {item['symbol']}\nاطلاعات صف قابل تأیید نیست؛ حجم صف اعلام نمی‌شود. این پیام به معنی نبودن صف نیست.\n{LIVE_NOTICE}"
                 )
             else:
                 value = detection.snapshot
@@ -744,15 +750,15 @@ class TelegramBot:
             if (page + 1) * 10 < len(watched):
                 actions.append(("بعدی", f"page{page + 1}"))
         elif flow.step == "type":
-            prompt = "نوع هشدار را انتخاب کنید:"
+            prompt = TYPE_PROMPT
             actions = [(LABELS[t], f"type{i}") for i, t in enumerate(PRIVATE_TYPES)]
         elif flow.step == "window":
             prompt, actions = (
-                "بازهٔ مقایسه را انتخاب کنید:",
+                WINDOW_PROMPT,
                 [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
             )
         elif flow.step == "threshold":
-            prompt = "درصد کاهش را بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰، حداکثر شش رقم اعشار."
+            prompt = PERCENT_PROMPT
         elif flow.step == "minimum":
             prompt = minimum_prompt(flow.kind)
         elif flow.step == "confirm":

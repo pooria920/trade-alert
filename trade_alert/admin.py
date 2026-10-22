@@ -9,6 +9,9 @@ from typing import Any
 from .bot_text import (
     LABELS,
     LIVE_NOTICE,
+    PERCENT_PROMPT,
+    TYPE_PROMPT,
+    WINDOW_PROMPT,
     fa,
     minimum_prompt,
     numeric,
@@ -91,20 +94,23 @@ class AdminCommands:
             prompt = f"هشدار جدید {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nپیش‌نویس تا ۱۰ دقیقه معتبر است.\n{LIVE_NOTICE}"
             actions = [(f"انتخاب این {destination}", "channel")]
         elif draft.step == "search":
-            prompt = "نام نماد را برای جست‌وجو بنویسید؛ حداکثر ۸۰ نویسه."
+            prompt = "نام نماد بورسی را برای جست‌وجو بنویسید؛ مثلاً «خودرو» یا نماد دلخواهتان. حداکثر ۸۰ نویسه."
         elif draft.step == "results":
             prompt = "نماد را انتخاب کنید:"
             actions = [
                 (item.symbol, f"symbol{i}") for i, item in enumerate(draft.results)
             ]
         elif draft.step == "type":
-            prompt = "شرط را انتخاب کنید:"
+            prompt = (
+                TYPE_PROMPT
+                + "\n«حداقل حجم صف» یعنی حجم سفارش‌های صف به تعداد سهم تعیین‌شده برسد؛ نه حجم معاملات."
+            )
             actions = [(LABELS[t], f"type{i}") for i, t in enumerate(LABELS)]
         elif draft.step == "percent":
-            prompt = "درصد کاهش را بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰، حداکثر شش رقم اعشار."
+            prompt = PERCENT_PROMPT
         elif draft.step == "window":
             prompt, actions = (
-                "بازهٔ مقایسه را انتخاب کنید:",
+                WINDOW_PROMPT,
                 [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
             )
         elif draft.step == "minimum":

@@ -55,6 +55,33 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def test_help_examples_are_separate_and_work_in_the_private_wizard(self):
+        await self.send("/help")
+        help_text = self.texts()[-1]
+        self.assertIn("«خودرو» در مثال‌ها نام یک نماد بورسی است", help_text)
+        for command in (
+            "/add خودرو",
+            "/queue خودرو",
+            "/remove خودرو",
+            "/remove rule RULE_ID",
+        ):
+            self.assertIn(command, help_text.splitlines())
+        self.assertLess(len(help_text), 1750)  # No split through a command/example.
+        await self.watch()
+        await self.press("ساخت هشدار برای این نماد")
+        self.assertIn("وضعیت «بدون صف»", self.texts()[-1])
+        await self.press("کاهش صف خرید")
+        self.assertIn("فاصلهٔ ارسال پیام‌ها نیست", self.texts()[-1])
+        await self.press("۵ دقیقه")
+        self.assertIn("۱۰۰٬۰۰۰ به ۷۰٬۰۰۰", self.texts()[-1])
+        await self.send("۳۰")
+        self.assertIn("۱۰۰۰۰۰", self.texts()[-1])
+        await self.send("۱۰۰۰۰۰")
+        await self.press("تأیید و ذخیره")
+        rule = self.alerts.list("1")[0]
+        self.assertEqual(rule["definition"]["config"]["thresholdPercent"], 30)
+        self.assertEqual(rule["definition"]["config"]["minimumBaselineVolume"], 100000)
+
     async def group_send(self, content, actor=1, *, reply=True, chat=CHANNEL):
         self.sequence += 1
         update = message(
