@@ -127,7 +127,7 @@ class NotificationDispatcher:
                 return None
             due = rows(
                 self.db,
-                "SELECT o.*, e.rule_id, e.payload, e.rule_revision, r.channel_id FROM notification_outbox o JOIN alert_events e ON e.id=o.event_id JOIN alert_rules r ON r.id=e.rule_id WHERE (o.status='PENDING' AND o.next_attempt_at<=?) OR (o.status='SENDING' AND (o.lease_until IS NULL OR o.lease_until<=?)) ORDER BY o.next_attempt_at, o.event_id LIMIT 1",
+                "SELECT o.*, e.rule_id, e.payload, e.rule_revision, r.channel_id, r.ins_code FROM notification_outbox o JOIN alert_events e ON e.id=o.event_id JOIN alert_rules r ON r.id=e.rule_id WHERE (o.status='PENDING' AND o.next_attempt_at<=?) OR (o.status='SENDING' AND (o.lease_until IS NULL OR o.lease_until<=?)) ORDER BY o.next_attempt_at, o.event_id LIMIT 1",
                 (now, now),
             )
             if not due:
@@ -283,12 +283,30 @@ class NotificationDispatcher:
                 )
                 if not owned:
                     return
-                await self.send(
-                    target,
-                    format_notification(
-                        payload, self.now(), self.options.market_max_age_ms
-                    ),
+                message = format_notification(
+                    payload, self.now(), self.options.market_max_age_ms
                 )
+                if item["channel_id"] is not None and self.channels:
+                    note = self.channels.symbol_note(item["ins_code"])
+                    if note:
+                        prefix = "\n\nیادداشت نماد:\n"
+                        available = (
+                            4096 - len((message + prefix).encode("utf-16-le")) // 2
+                        )
+                        if available > 1:
+                            encoded = note.encode("utf-16-le")
+                            if len(encoded) // 2 > available:
+                                note = (
+                                    encoded[: (available - 1) * 2].decode(
+                                        "utf-16-le", errors="ignore"
+                                    )
+                                    + "…"
+                                )
+                            message += prefix + note
+                if len(message.encode("utf-16-le")) // 2 > 4096:
+                    self._finish(item, "FAILED", "MESSAGE_TOO_LONG")
+                    return
+                await self.send(target, message)
                 self._check_cancelled()
                 if deadline.expired():
                     raise TimeoutError

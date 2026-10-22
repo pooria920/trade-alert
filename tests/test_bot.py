@@ -55,6 +55,131 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def test_admin_message_requires_preview_confirmation_and_rechecks_rights(
+        self,
+    ):
+        await self.send("/admin")
+        await self.press("ارسال پیام به گروه یا کانال")
+        await self.send("متن پیام آزمایشی <بدون قالب‌بندی>")
+        confirm = self.button("تأیید ارسال به مقصد")
+
+        def sent():
+            return [
+                p
+                for m, p in self.calls
+                if m == "sendMessage" and str(p["chat_id"]) == CHANNEL
+            ]
+
+        self.assertFalse(sent())
+        await self.click(confirm, actor=3)
+        self.assertFalse(sent())
+        await self.click(confirm)
+        await self.click(confirm)
+        self.assertEqual(
+            [p["text"] for p in sent()], ["متن پیام آزمایشی <بدون قالب‌بندی>"]
+        )
+        self.assertNotIn("1", self.bot.admin.messages)
+        for reason in ("permission", "revoked", "expired", "cancelled", "reconfigured"):
+            await self.send("/admin")
+            await self.press("ارسال پیام به گروه یا کانال")
+            await self.send("این پیام نباید ارسال شود")
+            confirm = self.button("تأیید ارسال به مقصد")
+            old_admins, old_channel = self.admins[:], self.channels.channel_id
+            if reason == "permission":
+                self.can_post = False
+            elif reason == "revoked":
+                self.admins.remove("1")
+            elif reason == "expired":
+                self.clock += 600001
+            elif reason == "cancelled":
+                await self.send("/cancel")
+            else:
+                self.channels.channel_id = "-100999999"
+            await self.click(confirm)
+            self.assertEqual(len(sent()), 1)
+            self.admins[:] = old_admins
+            self.channels.channel_id = old_channel
+            self.can_post = True
+        await self.send("/admin")
+        await self.press("ارسال پیام به گروه یا کانال")
+        await self.send("عدم ارسال پس از لغو دسترسی در بررسی مجوز")
+
+        async def revoke_during_verification(destination):
+            self.admins.remove("1")
+            return dict(channelId=destination, title="Group", canPost=True)
+
+        self.channels.verify = revoke_during_verification
+        await self.press("تأیید ارسال به مقصد")
+        self.assertEqual(len(sent()), 1)
+
+    async def test_manual_send_failure_is_not_retried_by_duplicate_confirmation(self):
+        await self.send("/admin")
+        await self.press("ارسال پیام به گروه یا کانال")
+        await self.send("پیام آزمایشی")
+        confirm = self.button("تأیید ارسال به مقصد")
+
+        async def fail_send(method, payload):
+            if method == "sendMessage" and str(payload["chat_id"]) == CHANNEL:
+                return httpx.Response(503, json=dict(ok=False, error_code=503))
+
+        self.hook = fail_send
+        await self.click(confirm)
+        self.assertIn("ممکن است پیام رسیده باشد", self.texts()[-1])
+        await self.click(confirm)
+        outbound = [
+            p
+            for m, p in self.calls
+            if m == "sendMessage" and str(p["chat_id"]) == CHANNEL
+        ]
+        self.assertEqual(len(outbound), 1)
+
+    async def test_symbol_note_optional_shared_edit_delete_and_rule_draft_resume(self):
+        await self.watch()
+        await self.press("افزودن یا ویرایش یادداشت گروه")
+        await self.send("یادداشت مشترک نماد")
+        confirm = self.button("تأیید و ذخیره")
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
+        await self.click(confirm, actor=3)
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
+        await self.click(confirm)
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "یادداشت مشترک نماد")
+        await self.send("/admin", actor=2)
+        await self.press("ساخت هشدار جدید", actor=2)
+        await self.press("انتخاب این مقصد مشترک", actor=2)
+        await self.send("خودرو", actor=2)
+        await self.press(ITEM.symbol, actor=2)
+        self.assertIn("یادداشت مشترک نماد", self.texts()[-1])
+        await self.press("ویرایش یادداشت نماد", actor=2)
+        await self.send("x" * 501, actor=2)
+        self.assertIn("طولانی", self.texts()[-1])
+        await self.send("یادداشت ویرایش‌شده", actor=2)
+        await self.press("تأیید و ذخیره", actor=2)
+        self.assertEqual(self.bot.admin.drafts["2"].step, "type")
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "یادداشت ویرایش‌شده")
+        await self.press("ویرایش یادداشت نماد", actor=2)
+        await self.press("حذف یادداشت", actor=2)
+        await self.press("تأیید و ذخیره", actor=2)
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
+
+    async def test_group_note_requires_reply_and_cannot_post_manual_messages(self):
+        await self.watch()
+        self.enable_group_replies()
+        await self.group_send("/alert")
+        await self.group_press("انتخاب این گروه")
+        await self.group_send("خودرو")
+        await self.group_press(ITEM.symbol)
+        await self.group_press("ویرایش یادداشت نماد")
+        await self.group_send("نادیده", reply=False)
+        self.assertFalse(self.bot.admin.messages[f"{CHANNEL}:1"].preview)
+        await self.group_send("یادداشت گروه")
+        confirm = self.button("تأیید و ذخیره")
+        await self.group_click(confirm, actor=2)
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
+        await self.group_click(confirm)
+        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "یادداشت گروه")
+        await self.group_click("ad:post")
+        self.assertNotIn(f"{CHANNEL}:1", self.bot.admin.messages)
+
     async def test_help_examples_are_separate_and_work_in_the_private_wizard(self):
         await self.send("/help")
         help_text = self.texts()[-1]

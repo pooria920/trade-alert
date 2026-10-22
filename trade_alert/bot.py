@@ -171,13 +171,20 @@ class TelegramBot:
                         not ctx.group_id
                         and self.channels
                         and self.channels.is_admin(ctx.actor)
-                        and (ctx.data == "ad:new" or ctx.data.startswith("ad:edit:"))
+                        and (
+                            ctx.data in ("ad:new", "ad:post")
+                            or ctx.data.startswith(("ad:edit:", "ad:note:"))
+                        )
                         and self.flows.pop(ctx.actor, None) is not None
                     ):
                         self.searches.pop(ctx.actor, None)
                         await ctx.reply(
                             "پیش‌نویس خصوصی قبلی کنار گذاشته شد؛ مدیریت مقصد مشترک شروع می‌شود."
                         )
+                    if not ctx.group_id and (
+                        ctx.data == "ad:post" or ctx.data.startswith("ad:note:")
+                    ):
+                        self.searches.pop(ctx.actor, None)
                     await self.admin.callback(ctx)
                     return
                 if ctx.group_id:
@@ -202,7 +209,7 @@ class TelegramBot:
                         self.flows.pop(ctx.actor, None)
                         self.searches.pop(ctx.actor, None)
                     if self.admin:
-                        self.admin.drafts.pop(ctx.scope, None)
+                        self.admin.discard(ctx.scope)
                     if replaced and command[1].lower() != "cancel":
                         await ctx.reply(
                             "پیش‌نویس قبلی کنار گذاشته شد؛ فرایند جدید شروع می‌شود."
@@ -223,7 +230,9 @@ class TelegramBot:
                     await ctx.reply("جست‌وجو منقضی شد. با /add دوباره شروع کنید.")
                 else:
                     await self._command(ctx, "add", ctx.message_text.strip())
-            elif self.admin and ctx.scope in self.admin.drafts:
+            elif self.admin and (
+                ctx.scope in self.admin.drafts or ctx.scope in self.admin.messages
+            ):
                 await self.admin.message(ctx)
             elif not ctx.group_id:
                 await self._flow_message(ctx)
@@ -332,6 +341,7 @@ class TelegramBot:
             self.searches.clear()
             if self.admin:
                 self.admin.drafts.clear()
+                self.admin.messages.clear()
 
     async def stop(self) -> None:
         if self._task is not None:
@@ -341,6 +351,7 @@ class TelegramBot:
         self.searches.clear()
         if self.admin:
             self.admin.drafts.clear()
+            self.admin.messages.clear()
 
     async def _command(self, ctx: Context, command: str, argument: str) -> None:
         if command in ("start", "help"):
@@ -351,7 +362,7 @@ class TelegramBot:
                 else HELP + "\n" + LIVE_NOTICE
             )
             if self.channels and self.channels.is_admin(ctx.actor):
-                help_text += "\n\nمدیریت هشدارهای گروه یا کانال تنظیم‌شده:\n/admin"
+                help_text += "\n\nمدیریت هشدارها، ارسال پیام دستی و یادداشت نماد برای گروه یا کانال تنظیم‌شده:\n/admin\nپس از افزودن نماد، دکمهٔ یادداشت مشترک هم در دسترس است."
             actions = [
                 ("افزودن نماد", "nav:add"),
                 ("ساخت هشدار", "nav:alert"),
@@ -360,7 +371,8 @@ class TelegramBot:
                 ("تنظیم اعلان‌ها", "preferences"),
             ]
             if ctx.actor in self.flows or (
-                self.admin and ctx.scope in self.admin.drafts
+                self.admin
+                and (ctx.scope in self.admin.drafts or ctx.scope in self.admin.messages)
             ):
                 help_text += "\nپیش‌نویس شما حفظ شده است؛ برای ادامه دکمهٔ زیر را بزنید."
                 actions.insert(0, ("ادامهٔ پیش‌نویس", "nav:resume"))
@@ -372,7 +384,13 @@ class TelegramBot:
                 monitoring_text(self.get_status(), self.now()),
                 [("ادامهٔ پیش‌نویس", "nav:resume")]
                 if ctx.actor in self.flows
-                or (self.admin and ctx.scope in self.admin.drafts)
+                or (
+                    self.admin
+                    and (
+                        ctx.scope in self.admin.drafts
+                        or ctx.scope in self.admin.messages
+                    )
+                )
                 else None,
             )
         elif command == "admin" and self.admin:
@@ -569,7 +587,9 @@ class TelegramBot:
         data = ctx.data
         if data == "nav:resume":
             self.searches.pop(ctx.actor, None)
-            if self.admin and ctx.scope in self.admin.drafts:
+            if self.admin and ctx.scope in self.admin.messages:
+                await self.admin._show_message(ctx)
+            elif self.admin and ctx.scope in self.admin.drafts:
                 draft = self.admin.drafts[ctx.scope]
                 if self.admin._live(ctx.scope, draft):
                     await self.admin.show(ctx, draft)
@@ -591,9 +611,7 @@ class TelegramBot:
                 self.searches.pop(ctx.actor, None)
                 replaced = self.flows.pop(ctx.actor, None) is not None
                 if self.admin:
-                    replaced = (
-                        self.admin.drafts.pop(ctx.scope, None) is not None or replaced
-                    )
+                    replaced = self.admin.discard(ctx.scope) or replaced
                 if replaced:
                     await ctx.reply(
                         "پیش‌نویس قبلی کنار گذاشته شد؛ فرایند جدید شروع می‌شود."
@@ -626,6 +644,11 @@ class TelegramBot:
                     ("ساخت هشدار برای این نماد", f"newalert:{item.ins_code}"),
                     ("نمادهای من", "nav:list"),
                 ]
+                + (
+                    [("افزودن یا ویرایش یادداشت گروه", f"ad:note:{item.ins_code}")]
+                    if self.channels and self.channels.is_admin(ctx.actor)
+                    else []
+                )
                 if item
                 else None,
             )
@@ -636,9 +659,7 @@ class TelegramBot:
             replaced = self.flows.pop(ctx.actor, None) is not None
             self.searches.pop(ctx.actor, None)
             if self.admin:
-                replaced = (
-                    self.admin.drafts.pop(ctx.scope, None) is not None or replaced
-                )
+                replaced = self.admin.discard(ctx.scope) or replaced
             new_flow = PrivateDraft(
                 self.now() + 600_000, step="type", ins_code=match[1]
             )
@@ -692,7 +713,7 @@ class TelegramBot:
             )
         elif action == "edit":
             self.searches.pop(ctx.actor, None)
-            if self.admin and self.admin.drafts.pop(ctx.scope, None) is not None:
+            if self.admin and self.admin.discard(ctx.scope):
                 await ctx.reply(
                     "پیش‌نویس مقصد مشترک کنار گذاشته شد؛ ویرایش هشدار خصوصی شروع می‌شود."
                 )
