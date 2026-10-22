@@ -1,0 +1,6 @@
+**
+!requirements.txt
+!trade_alert/
+!trade_alert/*.py
+!migrations/
+!migrations/**

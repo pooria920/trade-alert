@@ -1,0 +1,101 @@
+[
+  {
+    "input": {
+      "instrument": {
+        "insCode": "123",
+        "symbol": "TEST",
+        "name": "Test instrument"
+      },
+      "definition": {
+        "type": "BUY_QUEUE_DROP_PERCENT",
+        "config": {
+          "thresholdPercent": 25,
+          "windowMinutes": 1,
+          "minimumBaselineVolume": 0
+        }
+      },
+      "group": {
+        "type": "GROUP",
+        "operator": "AND",
+        "conditions": [
+          {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          },
+          {
+            "type": "BUY_QUEUE_VOLUME_ABOVE",
+            "config": {
+              "minimumVolume": 500
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "shared": [
+        {
+          "insCode": "123",
+          "symbol": "TEST",
+          "name": "TEST"
+        }
+      ],
+      "privateHidden": true,
+      "channelHidden": true,
+      "privateChannelHidden": true,
+      "targets": [
+        "1",
+        null,
+        null
+      ],
+      "muted": null,
+      "updated": true,
+      "privateRevision": [
+        2,
+        false,
+        42
+      ],
+      "adopted": true,
+      "channelRevision": [
+        "2",
+        2,
+        true
+      ],
+      "staleEdit": false,
+      "removed": true,
+      "remaining": [
+        0,
+        1,
+        1
+      ],
+      "channelSymbols": [
+        {
+          "insCode": "123",
+          "symbol": "TEST",
+          "name": "TEST"
+        }
+      ],
+      "stored": [
+        {
+          "owner_id": "2",
+          "channel_id": null,
+          "revision": 1,
+          "enabled": 1,
+          "type": "BUY_QUEUE_DISAPPEARED",
+          "cooldown_seconds": 300
+        },
+        {
+          "owner_id": "2",
+          "channel_id": "-100123",
+          "revision": 2,
+          "enabled": 1,
+          "type": "BUY_QUEUE_DISAPPEARED",
+          "cooldown_seconds": 300
+        }
+      ]
+    }
+  }
+]

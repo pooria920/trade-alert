@@ -1,0 +1,4323 @@
+[
+  {
+    "input": [
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 780
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 800
+        },
+        {
+          "op": "update",
+          "now": 361,
+          "volume": 800
+        },
+        {
+          "op": "update",
+          "now": 421,
+          "volume": 600
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DISAPPEARED",
+            "config": {
+              "minimumPreviousVolume": 0
+            }
+          },
+          "cooldown": 0
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 10,
+          "volume": 1000,
+          "side": "none"
+        },
+        {
+          "op": "update",
+          "now": 20,
+          "volume": 1000,
+          "side": "none"
+        },
+        {
+          "op": "update",
+          "now": 30,
+          "volume": 1
+        },
+        {
+          "op": "update",
+          "now": 40,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 50,
+          "volume": 1000,
+          "session": "B"
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 500,
+          "session": "B"
+        },
+        {
+          "op": "update",
+          "now": 110,
+          "volume": 500,
+          "session": "B"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "restart",
+          "now": 70
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 750,
+          "source": 60
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 790
+        },
+        {
+          "op": "update",
+          "now": 361,
+          "volume": 800
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 30,
+          "volume": 100
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 50
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 500,
+          "source": 50
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 750,
+          "source": 60
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 1,
+          "persist": false
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 1,
+          "source": 121,
+          "persist": false
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 25,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "edit",
+          "now": 65,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DISAPPEARED",
+            "config": {
+              "minimumPreviousVolume": 0
+            }
+          }
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 1000,
+          "side": "none"
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 90,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 3,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          },
+          "cooldown": 0
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 970,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 999,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 1000,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 90,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "BUY_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 3,
+              "windowMinutes": 5,
+              "minimumBaselineVolume": 0
+            }
+          },
+          "cooldown": 0
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 300,
+          "volume": 970,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 310,
+          "volume": 999,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 320,
+          "volume": 1000,
+          "side": "buy"
+        },
+        {
+          "op": "update",
+          "now": 330,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "SELL_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 3,
+              "windowMinutes": 1,
+              "minimumBaselineVolume": 0
+            }
+          },
+          "cooldown": 0
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 970,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 999,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 90,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "SELL_QUEUE_DROP_PERCENT",
+            "config": {
+              "thresholdPercent": 3,
+              "windowMinutes": 5,
+              "minimumBaselineVolume": 0
+            }
+          },
+          "cooldown": 0
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 300,
+          "volume": 970,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 310,
+          "volume": 999,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 320,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 330,
+          "volume": 1000,
+          "side": "none"
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "GROUP",
+            "operator": "AND",
+            "conditions": [
+              {
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "config": {
+                  "thresholdPercent": 25,
+                  "windowMinutes": 1,
+                  "minimumBaselineVolume": 0
+                }
+              },
+              {
+                "type": "BUY_QUEUE_VOLUME_ABOVE",
+                "config": {
+                  "minimumVolume": 500
+                }
+              }
+            ]
+          },
+          "channel": true
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 790
+        },
+        {
+          "op": "update",
+          "now": 90,
+          "volume": 800
+        },
+        {
+          "op": "update",
+          "now": 100,
+          "volume": 600
+        },
+        {
+          "op": "update",
+          "now": 110,
+          "volume": 474
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 180,
+          "volume": 600
+        }
+      ],
+      [
+        {
+          "op": "create",
+          "now": 0,
+          "id": "rule",
+          "definition": {
+            "type": "GROUP",
+            "operator": "OR",
+            "conditions": [
+              {
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "config": {
+                  "thresholdPercent": 25,
+                  "windowMinutes": 1,
+                  "minimumBaselineVolume": 0
+                }
+              },
+              {
+                "type": "BUY_QUEUE_VOLUME_ABOVE",
+                "config": {
+                  "minimumVolume": 500
+                }
+              }
+            ]
+          },
+          "channel": true
+        },
+        {
+          "op": "update",
+          "now": 0,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 60,
+          "volume": 750
+        },
+        {
+          "op": "update",
+          "now": 70,
+          "volume": 1000,
+          "side": "sell"
+        },
+        {
+          "op": "update",
+          "now": 80,
+          "volume": 790
+        },
+        {
+          "op": "update",
+          "now": 90,
+          "volume": 800
+        },
+        {
+          "op": "update",
+          "now": 100,
+          "volume": 600
+        },
+        {
+          "op": "update",
+          "now": 110,
+          "volume": 474
+        },
+        {
+          "op": "update",
+          "now": 120,
+          "volume": 1000
+        },
+        {
+          "op": "update",
+          "now": 180,
+          "volume": 600
+        }
+      ]
+    ],
+    "output": [
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000361000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000421000,
+              "last_triggered_at": 1800000421000,
+              "baseline_volume": 800,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000421000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000421000,
+                "previousVolume": 800,
+                "currentVolume": 600,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000421000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000421000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000010000,
+              "last_triggered_at": 1800000010000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000010000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000010000,
+                "previousVolume": 1000,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000010000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000010000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000020000,
+              "last_triggered_at": 1800000010000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000010000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000010000,
+                "previousVolume": 1000,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000010000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000010000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000030000,
+              "last_triggered_at": 1800000010000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000010000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000010000,
+                "previousVolume": 1000,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000010000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000010000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000040000,
+              "last_triggered_at": 1800000040000,
+              "baseline_volume": 1,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000010000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000010000,
+                "previousVolume": 1000,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000010000
+            },
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000040000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000040000,
+                "previousVolume": 1,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000040000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000010000
+            },
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000040000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "B",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000050000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "B",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "B",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000110000,
+              "last_triggered_at": 1800000110000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:B:1800000110000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000110000,
+                "previousVolume": 1000,
+                "currentVolume": 500,
+                "actualPercent": 50,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000110000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000110000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": false,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000361000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000030000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000120000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": false,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": false,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": false,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": false,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 2,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "CANCELLED",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 2,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "CANCELLED",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 2,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000090000,
+              "last_triggered_at": 1800000090000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:2:A:1800000090000",
+              "rule_revision": 2,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DISAPPEARED",
+                "operator": null,
+                "timestamp": 1800000090000,
+                "previousVolume": 1000,
+                "currentVolume": 0,
+                "actualPercent": 100,
+                "windowMinutes": null
+              },
+              "message": "",
+              "created_at": 1800000090000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "CANCELLED",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000090000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000090000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000300000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000310000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000320000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000330000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "BUY_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000090000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000300000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000310000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": 1000,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000320000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000330000,
+              "last_triggered_at": 1800000300000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000300000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "SELL_QUEUE_DROP_PERCENT",
+                "operator": null,
+                "timestamp": 1800000300000,
+                "previousVolume": 1000,
+                "currentVolume": 970,
+                "actualPercent": 3,
+                "windowMinutes": 5
+              },
+              "message": "",
+              "created_at": 1800000300000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000300000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000090000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000100000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000110000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000120000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000180000,
+              "last_triggered_at": 1800000180000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 600,
+                  "actualPercent": 40,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 600,
+                  "currentVolume": 600,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000180000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "AND",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 600,
+                    "actualPercent": 40,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 600,
+                    "currentVolume": 600,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000180000,
+                "previousVolume": 1000,
+                "currentVolume": 600,
+                "actualPercent": 40,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000180000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            },
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000180000
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "ARMED",
+              "last_evaluated_at": 1800000000000,
+              "last_triggered_at": null,
+              "baseline_volume": null,
+              "recovery_data": null
+            }
+          ],
+          "events": [],
+          "outbox": []
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "TRIGGERED",
+              "last_evaluated_at": 1800000060000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000070000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000080000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000090000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000100000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000110000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000120000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        },
+        {
+          "inserted": true,
+          "states": [
+            {
+              "rule_id": "rule",
+              "revision": 1,
+              "session_id": "A",
+              "status": "WAITING_FOR_RECOVERY",
+              "last_evaluated_at": 1800000180000,
+              "last_triggered_at": 1800000060000,
+              "baseline_volume": 1000,
+              "recovery_data": [
+                {
+                  "path": "0.0",
+                  "condition": {
+                    "type": "BUY_QUEUE_DROP_PERCENT",
+                    "config": {
+                      "thresholdPercent": 25,
+                      "windowMinutes": 1,
+                      "minimumBaselineVolume": 0
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 1000,
+                  "currentVolume": 750,
+                  "actualPercent": 25,
+                  "windowMinutes": 1
+                },
+                {
+                  "path": "0.1",
+                  "condition": {
+                    "type": "BUY_QUEUE_VOLUME_ABOVE",
+                    "config": {
+                      "minimumVolume": 500
+                    }
+                  },
+                  "status": "TRIGGER",
+                  "previousVolume": 750,
+                  "currentVolume": 750,
+                  "actualPercent": 0,
+                  "windowMinutes": null
+                }
+              ]
+            }
+          ],
+          "events": [
+            {
+              "rule_id": "rule",
+              "occurrence_key": "rule:1:A:1800000060000",
+              "rule_revision": 1,
+              "payload": {
+                "symbol": "TEST",
+                "type": "COMPOSITE",
+                "operator": "OR",
+                "matches": [
+                  {
+                    "path": "0.0",
+                    "condition": {
+                      "type": "BUY_QUEUE_DROP_PERCENT",
+                      "config": {
+                        "thresholdPercent": 25,
+                        "windowMinutes": 1,
+                        "minimumBaselineVolume": 0
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 1000,
+                    "currentVolume": 750,
+                    "actualPercent": 25,
+                    "windowMinutes": 1
+                  },
+                  {
+                    "path": "0.1",
+                    "condition": {
+                      "type": "BUY_QUEUE_VOLUME_ABOVE",
+                      "config": {
+                        "minimumVolume": 500
+                      }
+                    },
+                    "status": "TRIGGER",
+                    "previousVolume": 750,
+                    "currentVolume": 750,
+                    "actualPercent": 0,
+                    "windowMinutes": null
+                  }
+                ],
+                "timestamp": 1800000060000,
+                "previousVolume": 1000,
+                "currentVolume": 750,
+                "actualPercent": 25,
+                "windowMinutes": 1
+              },
+              "message": "",
+              "created_at": 1800000060000
+            }
+          ],
+          "outbox": [
+            {
+              "rule_id": "rule",
+              "status": "PENDING",
+              "attempts": 0,
+              "next_attempt_at": 1800000060000
+            }
+          ]
+        }
+      ]
+    ]
+  }
+]

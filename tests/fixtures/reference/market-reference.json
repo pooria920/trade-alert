@@ -1,0 +1,3041 @@
+[
+  {
+    "input": {
+      "now": 1792564200000,
+      "instrument": {
+        "insCode": "65883838195688438",
+        "symbol": "خودرو",
+        "name": "ایران خودرو"
+      },
+      "clients": [
+        {
+          "op": "search",
+          "query": "  كي  ",
+          "responses": [
+            {
+              "body": {
+                "instrumentSearch": [
+                  {
+                    "insCode2": "34610263803983222",
+                    "insCode3": "49572254150311426",
+                    "insCode4": "5395621754041380",
+                    "insCode": "65883838195688438",
+                    "lVal30": "ايران‌ خودرو",
+                    "lVal18AFC": "خودرو",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "12242170625551754",
+                    "insCode3": "61721613753287033",
+                    "insCode4": "55801418799998796",
+                    "insCode": "63915926161403347",
+                    "lVal30": "الكتريك‌ خودرو شرق‌",
+                    "lVal18AFC": "خشرق",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "28713754839546841",
+                    "insCode3": "35018634146751013",
+                    "insCode4": "44625651305543068",
+                    "insCode": "36675444072965904",
+                    "lVal30": "ح . الكتريك‌ خودرو شرق‌",
+                    "lVal18AFC": "خشرقح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "10023675231084129",
+                    "insCode3": "48670335799816465",
+                    "insCode4": "1201264064739975",
+                    "insCode": "48990026850202503",
+                    "lVal30": "گسترش‌سرمايه‌گذاري‌ايران‌خودرو",
+                    "lVal18AFC": "خگستر",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": ""
+                  },
+                  {
+                    "insCode2": "41845360747887710",
+                    "insCode3": "59716205744067071",
+                    "insCode4": "70810323863716334",
+                    "insCode": "17237314339763699",
+                    "lVal30": "ح . سرمايه‌گذاري‌ايران‌خودرو",
+                    "lVal18AFC": "خگسترح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": ""
+                  },
+                  {
+                    "insCode2": "30542445387139748",
+                    "insCode3": "21186143049530489",
+                    "insCode4": "19859922530162570",
+                    "insCode": "7457232989848872",
+                    "lVal30": "توليدمحورخودرو",
+                    "lVal18AFC": "خمحور",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "53422977864279281",
+                    "insCode3": "44301757742408269",
+                    "insCode4": "12328102697286643",
+                    "insCode": "71186910349639777",
+                    "lVal30": "ح . توليدمحورخودرو",
+                    "lVal18AFC": "خمحورح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "1628989453842536",
+                    "insCode3": "19907694022139336",
+                    "insCode4": "19819467091022532",
+                    "insCode": "12088545433107773",
+                    "lVal30": "ح . ايران‌ خودرو",
+                    "lVal18AFC": "خودروح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "14037719776192841",
+                    "insCode3": "66513744818078129",
+                    "insCode4": "70201257433978879",
+                    "insCode": "31879190587976736",
+                    "lVal30": "محورسازان‌ايران‌خودرو",
+                    "lVal18AFC": "خوساز",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "61278030454534653",
+                    "insCode3": "51950215868347266",
+                    "insCode4": "42398700094032437",
+                    "insCode": "23552683239901730",
+                    "lVal30": "ح . محورسازان‌ايران‌خودرو",
+                    "lVal18AFC": "خوسازح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "13927921045829992",
+                    "insCode3": "30730646841830311",
+                    "insCode4": "28828906568757485",
+                    "insCode": "23086515493897579",
+                    "lVal30": "ليزينگ‌خودروغدير",
+                    "lVal18AFC": "ولغدر",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "50838454341009504",
+                    "insCode3": "43746441475767837",
+                    "insCode4": "35831504290471852",
+                    "insCode": "59430351461797798",
+                    "lVal30": "ح . ليزينگ‌خودروغدير",
+                    "lVal18AFC": "ولغدرح",
+                    "flow": 1,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "N2",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار بورس",
+                    "cgrValCotTitle": "بازار دوم بورس"
+                  },
+                  {
+                    "insCode2": "3112274761557065",
+                    "insCode3": "13435377687930043",
+                    "insCode4": "14309260091178367",
+                    "insCode": "13435377687930043",
+                    "lVal30": "مرابحه صنايع خودروايليا051219",
+                    "lVal18AFC": "ايليا05",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "17",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "31389905501011090",
+                    "insCode3": "54305777806438753",
+                    "insCode4": "29274264477655027",
+                    "insCode": "25165979440656620",
+                    "lVal30": "مرابحه خ.ت بم خودروسرآمد080325",
+                    "lVal18AFC": "بم خودرو081",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "17",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "10574474233047949",
+                    "insCode3": "29498459039780366",
+                    "insCode4": "26580343747603242",
+                    "insCode": "33183654527551177",
+                    "lVal30": "مرابحه خ.ت بم خودرو نوين080325",
+                    "lVal18AFC": "بم خودرو082",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "17",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "47033517679959924",
+                    "insCode3": "11197678175341597",
+                    "insCode4": "10510724107291563",
+                    "insCode": "11197678175341597",
+                    "lVal30": "مرابحه پرشيا خودرو060807",
+                    "lVal18AFC": "پرشيا06",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "17",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "39048620377947824",
+                    "insCode3": "33400731879150699",
+                    "insCode4": "55693297299732970",
+                    "insCode": "49270349234092953",
+                    "lVal30": "ايران خودرو ديزل",
+                    "lVal18AFC": "خاور",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "Z1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": ""
+                  },
+                  {
+                    "insCode2": "60645400202672103",
+                    "insCode3": "8210186059588931",
+                    "insCode4": "887261478638732",
+                    "insCode": "40705964341422836",
+                    "lVal30": "فرمان خودرو سپاهان",
+                    "lVal18AFC": "خفرمان",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "Z1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": ""
+                  },
+                  {
+                    "insCode2": "65599733844043094",
+                    "insCode3": "58695040447675899",
+                    "insCode4": "25928000322876671",
+                    "insCode": "22645269567765904",
+                    "lVal30": "ايمن خودرو شرق",
+                    "lVal18AFC": "خيمن",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "Z1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": ""
+                  },
+                  {
+                    "insCode2": "17771491624723883",
+                    "insCode3": "38046508102310144",
+                    "insCode4": "61890290656802023",
+                    "insCode": "38046508102310144",
+                    "lVal30": "مرابحه ماموت خودرو050722",
+                    "lVal18AFC": "ماموت05",
+                    "flow": 2,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "17",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 2,
+                    "flowTitle": "بازار فرابورس",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "9976615054684055",
+                    "insCode3": "9976615054684055",
+                    "insCode4": "9976615054684055",
+                    "insCode": "9976615054684055",
+                    "lVal30": "آتي خودرو-1405/09/04",
+                    "lVal18AFC": "جخود0509",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "F1",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "بازار عادی آتی"
+                  },
+                  {
+                    "insCode2": "22765113980913232",
+                    "insCode3": "22765113980913232",
+                    "insCode4": "22765113980913232",
+                    "insCode": "22765113980913232",
+                    "lVal30": "اختيارخ خودرو-400-1405/10/09",
+                    "lVal18AFC": "ضخود1314",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "13827277908791664",
+                    "insCode3": "13827277908791664",
+                    "insCode4": "13827277908791664",
+                    "insCode": "13827277908791664",
+                    "lVal30": "اختيارخ خودرو-500-1405/10/09",
+                    "lVal18AFC": "ضخود1316",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "8819583151943787",
+                    "insCode3": "8819583151943787",
+                    "insCode4": "8819583151943787",
+                    "insCode": "8819583151943787",
+                    "lVal30": "اختيارخ خودرو-750-1405/10/09",
+                    "lVal18AFC": "ضخود1321",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "16898801408277874",
+                    "insCode3": "16898801408277874",
+                    "insCode4": "16898801408277874",
+                    "insCode": "16898801408277874",
+                    "lVal30": "اختيارخ خودرو-900-1405/10/09",
+                    "lVal18AFC": "ضخود1323",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "7645610994185878",
+                    "insCode3": "7645610994185878",
+                    "insCode4": "7645610994185878",
+                    "insCode": "7645610994185878",
+                    "lVal30": "اختيارخ خودرو-400-1405/08/06",
+                    "lVal18AFC": "ضخود8055",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "14030949574228240",
+                    "insCode3": "14030949574228240",
+                    "insCode4": "14030949574228240",
+                    "insCode": "14030949574228240",
+                    "lVal30": "اختيارخ خودرو-450-1405/08/06",
+                    "lVal18AFC": "ضخود8056",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "14892991166285061",
+                    "insCode3": "14892991166285061",
+                    "insCode4": "14892991166285061",
+                    "insCode": "14892991166285061",
+                    "lVal30": "اختيارخ خودرو-700-1405/09/04",
+                    "lVal18AFC": "ضخود9054",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "20651561102278685",
+                    "insCode3": "20651561102278685",
+                    "insCode4": "20651561102278685",
+                    "insCode": "20651561102278685",
+                    "lVal30": "اختيارخ خودرو-750-1405/09/04",
+                    "lVal18AFC": "ضخود9055",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "17769396355901756",
+                    "insCode3": "17769396355901756",
+                    "insCode4": "17769396355901756",
+                    "insCode": "17769396355901756",
+                    "lVal30": "اختيارخ خودرو-1100-1405/09/04",
+                    "lVal18AFC": "ضخود9059",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "10989241954680779",
+                    "insCode3": "10989241954680779",
+                    "insCode4": "10989241954680779",
+                    "insCode": "10989241954680779",
+                    "lVal30": "اختيارف خودرو-1000-1405/10/09",
+                    "lVal18AFC": "طخود1324",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "14763682947838230",
+                    "insCode3": "14763682947838230",
+                    "insCode4": "14763682947838230",
+                    "insCode": "14763682947838230",
+                    "lVal30": "اختيارف خودرو-400-1405/08/06",
+                    "lVal18AFC": "طخود8055",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "14866502846174636",
+                    "insCode3": "14866502846174636",
+                    "insCode4": "14866502846174636",
+                    "insCode": "14866502846174636",
+                    "lVal30": "اختيارف خودرو-450-1405/08/06",
+                    "lVal18AFC": "طخود8056",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "20385295120329267",
+                    "insCode3": "20385295120329267",
+                    "insCode4": "20385295120329267",
+                    "insCode": "20385295120329267",
+                    "lVal30": "اختيارف خودرو-650-1405/08/06",
+                    "lVal18AFC": "طخود8060",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "18887124139841079",
+                    "insCode3": "18887124139841079",
+                    "insCode4": "18887124139841079",
+                    "insCode": "18887124139841079",
+                    "lVal30": "اختيارف خودرو-750-1405/08/06",
+                    "lVal18AFC": "طخود8062",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "13854596721269492",
+                    "insCode3": "13854596721269492",
+                    "insCode4": "13854596721269492",
+                    "insCode": "13854596721269492",
+                    "lVal30": "اختيارف خودرو-450-1405/09/04",
+                    "lVal18AFC": "طخود9049",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "17795406358601315",
+                    "insCode3": "17795406358601315",
+                    "insCode4": "17795406358601315",
+                    "insCode": "17795406358601315",
+                    "lVal30": "اختيارف خودرو-700-1405/09/04",
+                    "lVal18AFC": "طخود9054",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "8159393776190600",
+                    "insCode3": "8159393776190600",
+                    "insCode4": "8159393776190600",
+                    "insCode": "8159393776190600",
+                    "lVal30": "اختيارف خودرو-750-1405/09/04",
+                    "lVal18AFC": "طخود9055",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "17120296166614947",
+                    "insCode3": "17120296166614947",
+                    "insCode4": "17120296166614947",
+                    "insCode": "17120296166614947",
+                    "lVal30": "اختيارف خودرو-1100-1405/09/04",
+                    "lVal18AFC": "طخود9059",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "9754579697131941",
+                    "insCode3": "9754579697131941",
+                    "insCode4": "9754579697131941",
+                    "insCode": "9754579697131941",
+                    "lVal30": "اختيارف خودرو-1200-1405/09/04",
+                    "lVal18AFC": "طخود9060",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "31",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  },
+                  {
+                    "insCode2": "20182829304961449",
+                    "insCode3": "20182829304961449",
+                    "insCode4": "20182829304961449",
+                    "insCode": "20182829304961449",
+                    "lVal30": "اختيارف ت خودرو-535-05/08/09",
+                    "lVal18AFC": "هخود508",
+                    "flow": 3,
+                    "cIsin": null,
+                    "zTitad": 0.0,
+                    "baseVol": 0,
+                    "instrumentID": null,
+                    "cgrValCot": "1S",
+                    "cComVal": null,
+                    "lastDate": 1,
+                    "sourceID": 1,
+                    "flowTitle": "بازار مشتقه",
+                    "cgrValCotTitle": "-'"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "responses": [
+            {
+              "body": {
+                "bestLimits": [
+                  {
+                    "number": 1,
+                    "qTitMeDem": 58605,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 675.0,
+                    "pMeOf": 679.0,
+                    "zOrdMeOf": 23,
+                    "qTitMeOf": 28925201,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 2,
+                    "qTitMeDem": 202860,
+                    "zOrdMeDem": 8,
+                    "pMeDem": 673.0,
+                    "pMeOf": 680.0,
+                    "zOrdMeOf": 2,
+                    "qTitMeOf": 380815,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 3,
+                    "qTitMeDem": 361624,
+                    "zOrdMeDem": 9,
+                    "pMeDem": 670.0,
+                    "pMeOf": 681.0,
+                    "zOrdMeOf": 8,
+                    "qTitMeOf": 3410041,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 4,
+                    "qTitMeDem": 50090,
+                    "zOrdMeDem": 3,
+                    "pMeDem": 668.0,
+                    "pMeOf": 682.0,
+                    "zOrdMeOf": 5,
+                    "qTitMeOf": 1467400,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 5,
+                    "qTitMeDem": 50000,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 658.0,
+                    "pMeOf": 683.0,
+                    "zOrdMeOf": 3,
+                    "qTitMeOf": 3308000,
+                    "title": null,
+                    "insCode": null
+                  }
+                ]
+              }
+            },
+            {
+              "body": {
+                "closingPriceInfo": {
+                  "instrumentState": {
+                    "idn": 0,
+                    "dEven": 0,
+                    "hEven": 0,
+                    "insCode": null,
+                    "lVal18AFC": null,
+                    "lVal30": null,
+                    "cEtaval": "A ",
+                    "realHeven": 0,
+                    "underSupervision": 0,
+                    "cEtavalTitle": "مجاز"
+                  },
+                  "instrument": null,
+                  "lastHEven": 123002,
+                  "finalLastDate": 20261021,
+                  "nvt": 0.0,
+                  "mop": 0,
+                  "pRedTran": 0.0,
+                  "thirtyDayClosingHistory": null,
+                  "priceChange": 0.0,
+                  "priceMin": 679.0,
+                  "priceMax": 694.0,
+                  "priceYesterday": 699.0,
+                  "priceFirst": 691.0,
+                  "last": false,
+                  "id": 0,
+                  "insCode": "0",
+                  "dEven": 20261021,
+                  "hEven": 123002,
+                  "pClosing": 679.0,
+                  "iClose": false,
+                  "yClose": false,
+                  "pDrCotVal": 679.0,
+                  "zTotTran": 15504.0,
+                  "qTotTran5J": 6791943562.0,
+                  "qTotCap": 4614501415953.0
+                }
+              }
+            },
+            {
+              "body": {
+                "staticThreshold": [
+                  {
+                    "insCode": "0",
+                    "dEven": 20261020,
+                    "hEven": 1,
+                    "psGelStaMax": 713.0,
+                    "psGelStaMin": 673.0
+                  },
+                  {
+                    "insCode": "0",
+                    "dEven": 20261021,
+                    "hEven": 60125,
+                    "psGelStaMax": 719.0,
+                    "psGelStaMin": 679.0
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "responses": [
+            {
+              "body": {
+                "bestLimits": [
+                  {
+                    "number": 1,
+                    "qTitMeDem": 58605,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 675.0,
+                    "pMeOf": 679.0,
+                    "zOrdMeOf": 23,
+                    "qTitMeOf": 28925201,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 2,
+                    "qTitMeDem": 202860,
+                    "zOrdMeDem": 8,
+                    "pMeDem": 673.0,
+                    "pMeOf": 680.0,
+                    "zOrdMeOf": 2,
+                    "qTitMeOf": 380815,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 3,
+                    "qTitMeDem": 361624,
+                    "zOrdMeDem": 9,
+                    "pMeDem": 670.0,
+                    "pMeOf": 681.0,
+                    "zOrdMeOf": 8,
+                    "qTitMeOf": 3410041,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 4,
+                    "qTitMeDem": 50090,
+                    "zOrdMeDem": 3,
+                    "pMeDem": 668.0,
+                    "pMeOf": 682.0,
+                    "zOrdMeOf": 5,
+                    "qTitMeOf": 1467400,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 5,
+                    "qTitMeDem": 50000,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 658.0,
+                    "pMeOf": 683.0,
+                    "zOrdMeOf": 3,
+                    "qTitMeOf": 3308000,
+                    "title": null,
+                    "insCode": null
+                  }
+                ]
+              }
+            },
+            {
+              "body": {
+                "closingPriceInfo": {
+                  "instrumentState": {
+                    "idn": 0,
+                    "dEven": 0,
+                    "hEven": 0,
+                    "insCode": null,
+                    "lVal18AFC": null,
+                    "lVal30": null,
+                    "cEtaval": "A ",
+                    "realHeven": 0,
+                    "underSupervision": 0,
+                    "cEtavalTitle": "مجاز"
+                  },
+                  "instrument": null,
+                  "lastHEven": 123002,
+                  "finalLastDate": 20261021,
+                  "nvt": 0.0,
+                  "mop": 0,
+                  "pRedTran": 0.0,
+                  "thirtyDayClosingHistory": null,
+                  "priceChange": 0.0,
+                  "priceMin": 679.0,
+                  "priceMax": 694.0,
+                  "priceYesterday": 699.0,
+                  "priceFirst": 691.0,
+                  "last": false,
+                  "id": 0,
+                  "insCode": "0",
+                  "dEven": 20261021,
+                  "hEven": 123002,
+                  "pClosing": 679.0,
+                  "iClose": false,
+                  "yClose": false,
+                  "pDrCotVal": 679.0,
+                  "zTotTran": 15504.0,
+                  "qTotTran5J": 6791943562.0,
+                  "qTotCap": 4614501415953.0
+                }
+              }
+            },
+            {
+              "body": {
+                "staticThreshold": []
+              }
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "body": {
+                "instrumentSearch": []
+              }
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "body": {
+                "instrumentSearch": [
+                  {
+                    "insCode": 123,
+                    "lVal18AFC": "TEST",
+                    "lVal30": "Test"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "body": {
+                "instrumentSearch": [
+                  {
+                    "insCode": "123",
+                    "lVal18AFC": "ي",
+                    "lVal30": "ك"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "body": {
+                "unexpected": []
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "responses": [
+            {
+              "body": {
+                "bestLimits": [
+                  {
+                    "number": 0,
+                    "qTitMeDem": 58605,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 675.0,
+                    "pMeOf": 679.0,
+                    "zOrdMeOf": 23,
+                    "qTitMeOf": 28925201,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 2,
+                    "qTitMeDem": 202860,
+                    "zOrdMeDem": 8,
+                    "pMeDem": 673.0,
+                    "pMeOf": 680.0,
+                    "zOrdMeOf": 2,
+                    "qTitMeOf": 380815,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 3,
+                    "qTitMeDem": 361624,
+                    "zOrdMeDem": 9,
+                    "pMeDem": 670.0,
+                    "pMeOf": 681.0,
+                    "zOrdMeOf": 8,
+                    "qTitMeOf": 3410041,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 4,
+                    "qTitMeDem": 50090,
+                    "zOrdMeDem": 3,
+                    "pMeDem": 668.0,
+                    "pMeOf": 682.0,
+                    "zOrdMeOf": 5,
+                    "qTitMeOf": 1467400,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 5,
+                    "qTitMeDem": 50000,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 658.0,
+                    "pMeOf": 683.0,
+                    "zOrdMeOf": 3,
+                    "qTitMeOf": 3308000,
+                    "title": null,
+                    "insCode": null
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "responses": [
+            {
+              "body": {
+                "bestLimits": [
+                  {
+                    "number": 1,
+                    "qTitMeDem": -1,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 675.0,
+                    "pMeOf": 679.0,
+                    "zOrdMeOf": 23,
+                    "qTitMeOf": 28925201,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 2,
+                    "qTitMeDem": 202860,
+                    "zOrdMeDem": 8,
+                    "pMeDem": 673.0,
+                    "pMeOf": 680.0,
+                    "zOrdMeOf": 2,
+                    "qTitMeOf": 380815,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 3,
+                    "qTitMeDem": 361624,
+                    "zOrdMeDem": 9,
+                    "pMeDem": 670.0,
+                    "pMeOf": 681.0,
+                    "zOrdMeOf": 8,
+                    "qTitMeOf": 3410041,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 4,
+                    "qTitMeDem": 50090,
+                    "zOrdMeDem": 3,
+                    "pMeDem": 668.0,
+                    "pMeOf": 682.0,
+                    "zOrdMeOf": 5,
+                    "qTitMeOf": 1467400,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 5,
+                    "qTitMeDem": 50000,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 658.0,
+                    "pMeOf": 683.0,
+                    "zOrdMeOf": 3,
+                    "qTitMeOf": 3308000,
+                    "title": null,
+                    "insCode": null
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "responses": [
+            {
+              "body": {
+                "bestLimits": [
+                  {
+                    "number": 1,
+                    "qTitMeDem": 58605,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 675.0,
+                    "pMeOf": "10",
+                    "zOrdMeOf": 23,
+                    "qTitMeOf": 28925201,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 2,
+                    "qTitMeDem": 202860,
+                    "zOrdMeDem": 8,
+                    "pMeDem": 673.0,
+                    "pMeOf": 680.0,
+                    "zOrdMeOf": 2,
+                    "qTitMeOf": 380815,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 3,
+                    "qTitMeDem": 361624,
+                    "zOrdMeDem": 9,
+                    "pMeDem": 670.0,
+                    "pMeOf": 681.0,
+                    "zOrdMeOf": 8,
+                    "qTitMeOf": 3410041,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 4,
+                    "qTitMeDem": 50090,
+                    "zOrdMeDem": 3,
+                    "pMeDem": 668.0,
+                    "pMeOf": 682.0,
+                    "zOrdMeOf": 5,
+                    "qTitMeOf": 1467400,
+                    "title": null,
+                    "insCode": null
+                  },
+                  {
+                    "number": 5,
+                    "qTitMeDem": 50000,
+                    "zOrdMeDem": 1,
+                    "pMeDem": 658.0,
+                    "pMeOf": 683.0,
+                    "zOrdMeOf": 3,
+                    "qTitMeOf": 3308000,
+                    "title": null,
+                    "insCode": null
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "status": 302,
+              "body": {}
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "status": 404,
+              "body": {}
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "status": 429,
+              "body": {}
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "status": 503,
+              "body": {}
+            }
+          ]
+        },
+        {
+          "op": "search",
+          "query": "TEST",
+          "responses": [
+            {
+              "raw": "{broken"
+            }
+          ]
+        }
+      ],
+      "monitors": [
+        [
+          {
+            "at": 0,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564200000,
+                "receivedAt": 1792564200000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": [
+                  {
+                    "rank": 1,
+                    "bid": {
+                      "price": 110,
+                      "volume": 1000,
+                      "orderCount": 1
+                    },
+                    "ask": {
+                      "price": 0,
+                      "volume": 0,
+                      "orderCount": 0
+                    }
+                  }
+                ]
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 0,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564200000,
+                "receivedAt": 1792564200000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": [
+                  {
+                    "rank": 1,
+                    "bid": {
+                      "price": 110,
+                      "volume": 1000,
+                      "orderCount": 1
+                    },
+                    "ask": {
+                      "price": 0,
+                      "volume": 0,
+                      "orderCount": 0
+                    }
+                  }
+                ]
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 10000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564210000,
+                "receivedAt": 1792564210000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 20000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564220000,
+                "receivedAt": 1792564220000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": [
+                  {
+                    "rank": 1,
+                    "bid": {
+                      "price": 0,
+                      "volume": 0,
+                      "orderCount": 0
+                    },
+                    "ask": {
+                      "price": 90,
+                      "volume": 1000,
+                      "orderCount": 1
+                    }
+                  }
+                ]
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 30000,
+            "instruments": [],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564230000,
+                "receivedAt": 1792564230000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          }
+        ],
+        [
+          {
+            "at": 0,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": null,
+                "receivedAt": 1792564200000,
+                "verified": false,
+                "completeness": "unknown",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 500,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564200500,
+                "receivedAt": 1792564200500,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 1000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564140000,
+                "receivedAt": 1792564201000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 3000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564203000,
+                "receivedAt": 1792564203000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          }
+        ],
+        [
+          {
+            "at": 0,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564200000,
+                "receivedAt": 1792564200000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {
+              "65883838195688438": {
+                "status": 429,
+                "retryAfter": 60000
+              }
+            }
+          },
+          {
+            "at": 1000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564201000,
+                "receivedAt": 1792564201000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 60000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564260000,
+                "receivedAt": 1792564260000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          }
+        ],
+        [
+          {
+            "at": 0,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              },
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564200000,
+                "receivedAt": 1792564200000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 1000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564201000,
+                "receivedAt": 1792564201000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          },
+          {
+            "at": 1000,
+            "instruments": [
+              {
+                "insCode": "65883838195688438",
+                "symbol": "خودرو",
+                "name": "ایران خودرو"
+              }
+            ],
+            "books": {
+              "65883838195688438": {
+                "instrument": {
+                  "insCode": "65883838195688438",
+                  "symbol": "خودرو",
+                  "name": "ایران خودرو"
+                },
+                "timestamp": 1792564201000,
+                "receivedAt": 1792564201000,
+                "verified": true,
+                "completeness": "complete",
+                "tradingStatus": "open",
+                "limits": {
+                  "insCode": "65883838195688438",
+                  "date": "20261021",
+                  "upper": 110,
+                  "lower": 90
+                },
+                "levels": []
+              }
+            },
+            "errors": {}
+          }
+        ]
+      ]
+    },
+    "output": {
+      "clients": [
+        {
+          "ok": true,
+          "value": [
+            {
+              "insCode": "65883838195688438",
+              "symbol": "خودرو",
+              "name": "ایران‌ خودرو"
+            },
+            {
+              "insCode": "63915926161403347",
+              "symbol": "خشرق",
+              "name": "الکتریک‌ خودرو شرق‌"
+            },
+            {
+              "insCode": "36675444072965904",
+              "symbol": "خشرقح",
+              "name": "ح . الکتریک‌ خودرو شرق‌"
+            },
+            {
+              "insCode": "48990026850202503",
+              "symbol": "خگستر",
+              "name": "گسترش‌سرمایه‌گذاری‌ایران‌خودرو"
+            },
+            {
+              "insCode": "17237314339763699",
+              "symbol": "خگسترح",
+              "name": "ح . سرمایه‌گذاری‌ایران‌خودرو"
+            },
+            {
+              "insCode": "7457232989848872",
+              "symbol": "خمحور",
+              "name": "تولیدمحورخودرو"
+            },
+            {
+              "insCode": "71186910349639777",
+              "symbol": "خمحورح",
+              "name": "ح . تولیدمحورخودرو"
+            },
+            {
+              "insCode": "12088545433107773",
+              "symbol": "خودروح",
+              "name": "ح . ایران‌ خودرو"
+            },
+            {
+              "insCode": "31879190587976736",
+              "symbol": "خوساز",
+              "name": "محورسازان‌ایران‌خودرو"
+            },
+            {
+              "insCode": "23552683239901730",
+              "symbol": "خوسازح",
+              "name": "ح . محورسازان‌ایران‌خودرو"
+            },
+            {
+              "insCode": "23086515493897579",
+              "symbol": "ولغدر",
+              "name": "لیزینگ‌خودروغدیر"
+            },
+            {
+              "insCode": "59430351461797798",
+              "symbol": "ولغدرح",
+              "name": "ح . لیزینگ‌خودروغدیر"
+            },
+            {
+              "insCode": "13435377687930043",
+              "symbol": "ایلیا05",
+              "name": "مرابحه صنایع خودروایلیا051219"
+            },
+            {
+              "insCode": "25165979440656620",
+              "symbol": "بم خودرو081",
+              "name": "مرابحه خ.ت بم خودروسرآمد080325"
+            },
+            {
+              "insCode": "33183654527551177",
+              "symbol": "بم خودرو082",
+              "name": "مرابحه خ.ت بم خودرو نوین080325"
+            },
+            {
+              "insCode": "11197678175341597",
+              "symbol": "پرشیا06",
+              "name": "مرابحه پرشیا خودرو060807"
+            },
+            {
+              "insCode": "49270349234092953",
+              "symbol": "خاور",
+              "name": "ایران خودرو دیزل"
+            },
+            {
+              "insCode": "40705964341422836",
+              "symbol": "خفرمان",
+              "name": "فرمان خودرو سپاهان"
+            },
+            {
+              "insCode": "22645269567765904",
+              "symbol": "خیمن",
+              "name": "ایمن خودرو شرق"
+            },
+            {
+              "insCode": "38046508102310144",
+              "symbol": "ماموت05",
+              "name": "مرابحه ماموت خودرو050722"
+            },
+            {
+              "insCode": "9976615054684055",
+              "symbol": "جخود0509",
+              "name": "آتی خودرو-1405/09/04"
+            },
+            {
+              "insCode": "22765113980913232",
+              "symbol": "ضخود1314",
+              "name": "اختیارخ خودرو-400-1405/10/09"
+            },
+            {
+              "insCode": "13827277908791664",
+              "symbol": "ضخود1316",
+              "name": "اختیارخ خودرو-500-1405/10/09"
+            },
+            {
+              "insCode": "8819583151943787",
+              "symbol": "ضخود1321",
+              "name": "اختیارخ خودرو-750-1405/10/09"
+            },
+            {
+              "insCode": "16898801408277874",
+              "symbol": "ضخود1323",
+              "name": "اختیارخ خودرو-900-1405/10/09"
+            },
+            {
+              "insCode": "7645610994185878",
+              "symbol": "ضخود8055",
+              "name": "اختیارخ خودرو-400-1405/08/06"
+            },
+            {
+              "insCode": "14030949574228240",
+              "symbol": "ضخود8056",
+              "name": "اختیارخ خودرو-450-1405/08/06"
+            },
+            {
+              "insCode": "14892991166285061",
+              "symbol": "ضخود9054",
+              "name": "اختیارخ خودرو-700-1405/09/04"
+            },
+            {
+              "insCode": "20651561102278685",
+              "symbol": "ضخود9055",
+              "name": "اختیارخ خودرو-750-1405/09/04"
+            },
+            {
+              "insCode": "17769396355901756",
+              "symbol": "ضخود9059",
+              "name": "اختیارخ خودرو-1100-1405/09/04"
+            },
+            {
+              "insCode": "10989241954680779",
+              "symbol": "طخود1324",
+              "name": "اختیارف خودرو-1000-1405/10/09"
+            },
+            {
+              "insCode": "14763682947838230",
+              "symbol": "طخود8055",
+              "name": "اختیارف خودرو-400-1405/08/06"
+            },
+            {
+              "insCode": "14866502846174636",
+              "symbol": "طخود8056",
+              "name": "اختیارف خودرو-450-1405/08/06"
+            },
+            {
+              "insCode": "20385295120329267",
+              "symbol": "طخود8060",
+              "name": "اختیارف خودرو-650-1405/08/06"
+            },
+            {
+              "insCode": "18887124139841079",
+              "symbol": "طخود8062",
+              "name": "اختیارف خودرو-750-1405/08/06"
+            },
+            {
+              "insCode": "13854596721269492",
+              "symbol": "طخود9049",
+              "name": "اختیارف خودرو-450-1405/09/04"
+            },
+            {
+              "insCode": "17795406358601315",
+              "symbol": "طخود9054",
+              "name": "اختیارف خودرو-700-1405/09/04"
+            },
+            {
+              "insCode": "8159393776190600",
+              "symbol": "طخود9055",
+              "name": "اختیارف خودرو-750-1405/09/04"
+            },
+            {
+              "insCode": "17120296166614947",
+              "symbol": "طخود9059",
+              "name": "اختیارف خودرو-1100-1405/09/04"
+            },
+            {
+              "insCode": "9754579697131941",
+              "symbol": "طخود9060",
+              "name": "اختیارف خودرو-1200-1405/09/04"
+            },
+            {
+              "insCode": "20182829304961449",
+              "symbol": "هخود508",
+              "name": "اختیارف ت خودرو-535-05/08/09"
+            }
+          ],
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/%DA%A9%DB%8C"
+          ]
+        },
+        {
+          "ok": true,
+          "value": {
+            "instrument": {
+              "insCode": "65883838195688438",
+              "symbol": "خودرو",
+              "name": "ایران خودرو"
+            },
+            "timestamp": null,
+            "receivedAt": 1792564200000,
+            "completeness": "unknown",
+            "verified": false,
+            "tradingStatus": "open",
+            "limits": {
+              "insCode": "65883838195688438",
+              "date": "20261021",
+              "upper": 719,
+              "lower": 679
+            },
+            "levels": [
+              {
+                "rank": 1,
+                "bid": {
+                  "price": 675,
+                  "volume": 58605,
+                  "orderCount": 1
+                },
+                "ask": {
+                  "price": 679,
+                  "volume": 28925201,
+                  "orderCount": 23
+                }
+              },
+              {
+                "rank": 2,
+                "bid": {
+                  "price": 673,
+                  "volume": 202860,
+                  "orderCount": 8
+                },
+                "ask": {
+                  "price": 680,
+                  "volume": 380815,
+                  "orderCount": 2
+                }
+              },
+              {
+                "rank": 3,
+                "bid": {
+                  "price": 670,
+                  "volume": 361624,
+                  "orderCount": 9
+                },
+                "ask": {
+                  "price": 681,
+                  "volume": 3410041,
+                  "orderCount": 8
+                }
+              },
+              {
+                "rank": 4,
+                "bid": {
+                  "price": 668,
+                  "volume": 50090,
+                  "orderCount": 3
+                },
+                "ask": {
+                  "price": 682,
+                  "volume": 1467400,
+                  "orderCount": 5
+                }
+              },
+              {
+                "rank": 5,
+                "bid": {
+                  "price": 658,
+                  "volume": 50000,
+                  "orderCount": 1
+                },
+                "ask": {
+                  "price": 683,
+                  "volume": 3308000,
+                  "orderCount": 3
+                }
+              }
+            ]
+          },
+          "requests": [
+            "https://tsetmc.invalid/api/BestLimits/65883838195688438",
+            "https://tsetmc.invalid/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+            "https://tsetmc.invalid/api/MarketData/GetStaticThreshold/65883838195688438/20261021"
+          ]
+        },
+        {
+          "ok": true,
+          "value": {
+            "instrument": {
+              "insCode": "65883838195688438",
+              "symbol": "خودرو",
+              "name": "ایران خودرو"
+            },
+            "timestamp": null,
+            "receivedAt": 1792564200000,
+            "completeness": "unknown",
+            "verified": false,
+            "tradingStatus": "open",
+            "limits": null,
+            "levels": [
+              {
+                "rank": 1,
+                "bid": {
+                  "price": 675,
+                  "volume": 58605,
+                  "orderCount": 1
+                },
+                "ask": {
+                  "price": 679,
+                  "volume": 28925201,
+                  "orderCount": 23
+                }
+              },
+              {
+                "rank": 2,
+                "bid": {
+                  "price": 673,
+                  "volume": 202860,
+                  "orderCount": 8
+                },
+                "ask": {
+                  "price": 680,
+                  "volume": 380815,
+                  "orderCount": 2
+                }
+              },
+              {
+                "rank": 3,
+                "bid": {
+                  "price": 670,
+                  "volume": 361624,
+                  "orderCount": 9
+                },
+                "ask": {
+                  "price": 681,
+                  "volume": 3410041,
+                  "orderCount": 8
+                }
+              },
+              {
+                "rank": 4,
+                "bid": {
+                  "price": 668,
+                  "volume": 50090,
+                  "orderCount": 3
+                },
+                "ask": {
+                  "price": 682,
+                  "volume": 1467400,
+                  "orderCount": 5
+                }
+              },
+              {
+                "rank": 5,
+                "bid": {
+                  "price": 658,
+                  "volume": 50000,
+                  "orderCount": 1
+                },
+                "ask": {
+                  "price": 683,
+                  "volume": 3308000,
+                  "orderCount": 3
+                }
+              }
+            ]
+          },
+          "requests": [
+            "https://tsetmc.invalid/api/BestLimits/65883838195688438",
+            "https://tsetmc.invalid/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+            "https://tsetmc.invalid/api/MarketData/GetStaticThreshold/65883838195688438/20261021"
+          ]
+        },
+        {
+          "ok": true,
+          "value": [],
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": true,
+          "value": [
+            {
+              "insCode": "123",
+              "symbol": "ی",
+              "name": "ک"
+            }
+          ],
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/BestLimits/65883838195688438"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/BestLimits/65883838195688438"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/BestLimits/65883838195688438"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        },
+        {
+          "ok": false,
+          "requests": [
+            "https://tsetmc.invalid/api/Instrument/GetInstrumentSearch/TEST"
+          ]
+        }
+      ],
+      "monitors": [
+        [
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": 1792564200000,
+              "last_verified_snapshot": 1792564200000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 1,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564200000,
+                  "last_verified_snapshot": 1792564200000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 1,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "buy",
+                "volume": 1000,
+                "price": 110,
+                "order_count": 1,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": 1792564200000,
+              "last_verified_snapshot": 1792564200000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 1,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564200000,
+                  "last_verified_snapshot": 1792564200000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 2,
+            "evaluations": 1,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "buy",
+                "volume": 1000,
+                "price": 110,
+                "order_count": 1,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564210000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564210000,
+              "last_successful_fetch": 1792564210000,
+              "last_verified_snapshot": 1792564210000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 2,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564210000,
+                  "last_verified_snapshot": 1792564210000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 3,
+            "evaluations": 2,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "buy",
+                "volume": 1000,
+                "price": 110,
+                "order_count": 1,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564210000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564210000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564220000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564220000,
+              "last_successful_fetch": 1792564220000,
+              "last_verified_snapshot": 1792564220000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 3,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564220000,
+                  "last_verified_snapshot": 1792564220000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 4,
+            "evaluations": 3,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "buy",
+                "volume": 1000,
+                "price": 110,
+                "order_count": 1,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564210000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564210000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564220000,
+                "queue_type": "sell",
+                "volume": 1000,
+                "price": 90,
+                "order_count": 1,
+                "collected_at": 1792564220000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564230000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 0,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564230000,
+              "last_successful_fetch": 1792564220000,
+              "last_verified_snapshot": 1792564220000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 3,
+              "fresh_symbols": 0,
+              "symbols": []
+            },
+            "fetches": 4,
+            "evaluations": 3,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "buy",
+                "volume": 1000,
+                "price": 110,
+                "order_count": 1,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564210000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564210000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564220000,
+                "queue_type": "sell",
+                "volume": 1000,
+                "price": 90,
+                "order_count": 1,
+                "collected_at": 1792564220000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": 1792564200000,
+              "last_verified_snapshot": null,
+              "consecutive_errors": 1,
+              "rate_limited_until": 0,
+              "stored_snapshots": 0,
+              "fresh_symbols": 0,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 1,
+                  "last_successful_fetch": 1792564200000,
+                  "last_verified_snapshot": null,
+                  "last_result": "invalid-data",
+                  "retry_at": 1792564201000
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 0,
+            "snapshots": []
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200500,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200500,
+              "last_successful_fetch": 1792564200000,
+              "last_verified_snapshot": null,
+              "consecutive_errors": 1,
+              "rate_limited_until": 0,
+              "stored_snapshots": 0,
+              "fresh_symbols": 0,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 1,
+                  "last_successful_fetch": 1792564200000,
+                  "last_verified_snapshot": null,
+                  "last_result": "invalid-data",
+                  "retry_at": 1792564201000
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 0,
+            "snapshots": []
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564201000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564201000,
+              "last_successful_fetch": 1792564201000,
+              "last_verified_snapshot": null,
+              "consecutive_errors": 2,
+              "rate_limited_until": 0,
+              "stored_snapshots": 0,
+              "fresh_symbols": 0,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 2,
+                  "last_successful_fetch": 1792564201000,
+                  "last_verified_snapshot": null,
+                  "last_result": "stale-data",
+                  "retry_at": 1792564203000
+                }
+              ]
+            },
+            "fetches": 2,
+            "evaluations": 0,
+            "snapshots": []
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564203000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564203000,
+              "last_successful_fetch": 1792564203000,
+              "last_verified_snapshot": 1792564203000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 1,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564203000,
+                  "last_verified_snapshot": 1792564203000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 3,
+            "evaluations": 1,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564203000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564203000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": null,
+              "last_verified_snapshot": null,
+              "consecutive_errors": 1,
+              "rate_limited_until": 1792564260000,
+              "stored_snapshots": 0,
+              "fresh_symbols": 0,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 1,
+                  "last_successful_fetch": null,
+                  "last_verified_snapshot": null,
+                  "last_result": "transport-error",
+                  "retry_at": 1792564260000
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 0,
+            "snapshots": []
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564201000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": null,
+              "last_verified_snapshot": null,
+              "consecutive_errors": 1,
+              "rate_limited_until": 1792564260000,
+              "stored_snapshots": 0,
+              "fresh_symbols": 0,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 1,
+                  "last_successful_fetch": null,
+                  "last_verified_snapshot": null,
+                  "last_result": "transport-error",
+                  "retry_at": 1792564260000
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 0,
+            "snapshots": []
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564260000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564260000,
+              "last_successful_fetch": 1792564260000,
+              "last_verified_snapshot": 1792564260000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 1792564260000,
+              "stored_snapshots": 1,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564260000,
+                  "last_verified_snapshot": 1792564260000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 2,
+            "evaluations": 1,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564260000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564260000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564200000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564200000,
+              "last_successful_fetch": 1792564200000,
+              "last_verified_snapshot": 1792564200000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 1,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564200000,
+                  "last_verified_snapshot": 1792564200000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 1,
+            "evaluations": 1,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564201000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564201000,
+              "last_successful_fetch": 1792564201000,
+              "last_verified_snapshot": 1792564201000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 2,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564201000,
+                  "last_verified_snapshot": 1792564201000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 2,
+            "evaluations": 2,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564201000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564201000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          },
+          {
+            "status": {
+              "is_running": false,
+              "last_progress_at": 1792564201000,
+              "is_market_open": true,
+              "schedule_configured": true,
+              "force_active": false,
+              "monitored_symbols": 1,
+              "poll_interval_ms": 1000,
+              "max_age_ms": 30000,
+              "last_polling_cycle": 1792564201000,
+              "last_successful_fetch": 1792564201000,
+              "last_verified_snapshot": 1792564201000,
+              "consecutive_errors": 0,
+              "rate_limited_until": 0,
+              "stored_snapshots": 2,
+              "fresh_symbols": 1,
+              "symbols": [
+                {
+                  "ins_code": "65883838195688438",
+                  "consecutive_errors": 0,
+                  "last_successful_fetch": 1792564201000,
+                  "last_verified_snapshot": 1792564201000,
+                  "last_result": "fresh-data",
+                  "retry_at": 0
+                }
+              ]
+            },
+            "fetches": 3,
+            "evaluations": 2,
+            "snapshots": [
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564200000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564200000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              },
+              {
+                "ins_code": "65883838195688438",
+                "symbol": "خودرو",
+                "timestamp": 1792564201000,
+                "queue_type": "none",
+                "volume": 0,
+                "price": null,
+                "order_count": 0,
+                "collected_at": 1792564201000,
+                "session_id": "equities:2026-10-21:00:00:23:59"
+              }
+            ]
+          }
+        ]
+      ]
+    }
+  }
+]

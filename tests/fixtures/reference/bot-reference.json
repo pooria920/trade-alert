@@ -1,0 +1,941 @@
+[
+  {
+    "input": {
+      "now": 1792564200000,
+      "channel": "-1001234567890",
+      "instrument": {
+        "insCode": "65883838195688438",
+        "symbol": "خودرو",
+        "name": "ایران خودرو"
+      },
+      "steps": [
+        {
+          "text": "/start"
+        },
+        {
+          "text": "/add خودرو"
+        },
+        {
+          "data": "add:65883838195688438"
+        },
+        {
+          "actor": 2,
+          "data": "add:65883838195688438"
+        },
+        {
+          "actor": 2,
+          "data": "notifications:off"
+        },
+        {
+          "text": "/alert"
+        },
+        {
+          "press": "خودرو"
+        },
+        {
+          "press": "کاهش صف خرید"
+        },
+        {
+          "press": "۵ دقیقه"
+        },
+        {
+          "text": "۳۰"
+        },
+        {
+          "text": "۱٬۰۰۰٬۰۰۰"
+        },
+        {
+          "press": "تأیید و ذخیره"
+        },
+        {
+          "text": "/admin"
+        },
+        {
+          "press": "ساخت هشدار جدید"
+        },
+        {
+          "press": "انتخاب این کانال"
+        },
+        {
+          "text": "خودرو"
+        },
+        {
+          "press": "خودرو"
+        },
+        {
+          "press": "ناپدید شدن صف خرید"
+        },
+        {
+          "text": "۰"
+        },
+        {
+          "press": "افزودن شرط"
+        },
+        {
+          "press": "حداقل حجم صف خرید"
+        },
+        {
+          "text": "۵۰۰"
+        },
+        {
+          "press": "تغییر به: حداقل یکی از شرط‌ها"
+        },
+        {
+          "press": "تأیید و ذخیره"
+        },
+        {
+          "text": "/remove خودرو"
+        },
+        {
+          "actor": 3,
+          "text": "/admin"
+        }
+      ]
+    },
+    "output": [
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          }
+        ],
+        "watchlists": [],
+        "rules": [],
+        "searches": 0
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          }
+        ],
+        "watchlists": [],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 1
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 1
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [
+          {
+            "user_id": "1",
+            "ins_code": "65883838195688438"
+          }
+        ],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": null,
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "BUY_QUEUE_DROP_PERCENT",
+              "config": {
+                "thresholdPercent": 30,
+                "windowMinutes": 5,
+                "minimumBaselineVolume": 1000000
+              }
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          },
+          {
+            "owner_id": "1",
+            "channel_id": "-1001234567890",
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "GROUP",
+              "operator": "OR",
+              "conditions": [
+                {
+                  "type": "BUY_QUEUE_DISAPPEARED",
+                  "config": {
+                    "minimumPreviousVolume": 0
+                  }
+                },
+                {
+                  "type": "BUY_QUEUE_VOLUME_ABOVE",
+                  "config": {
+                    "minimumVolume": 500
+                  }
+                }
+              ]
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          }
+        ],
+        "watchlists": [],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": "-1001234567890",
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "GROUP",
+              "operator": "OR",
+              "conditions": [
+                {
+                  "type": "BUY_QUEUE_DISAPPEARED",
+                  "config": {
+                    "minimumPreviousVolume": 0
+                  }
+                },
+                {
+                  "type": "BUY_QUEUE_VOLUME_ABOVE",
+                  "config": {
+                    "minimumVolume": 500
+                  }
+                }
+              ]
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      },
+      {
+        "users": [
+          {
+            "telegram_user_id": "1",
+            "private_chat_id": "1",
+            "notifications_enabled": 1
+          },
+          {
+            "telegram_user_id": "2",
+            "private_chat_id": "2",
+            "notifications_enabled": 0
+          },
+          {
+            "telegram_user_id": "3",
+            "private_chat_id": "3",
+            "notifications_enabled": 1
+          }
+        ],
+        "watchlists": [],
+        "rules": [
+          {
+            "owner_id": "1",
+            "channel_id": "-1001234567890",
+            "ins_code": "65883838195688438",
+            "definition": {
+              "type": "GROUP",
+              "operator": "OR",
+              "conditions": [
+                {
+                  "type": "BUY_QUEUE_DISAPPEARED",
+                  "config": {
+                    "minimumPreviousVolume": 0
+                  }
+                },
+                {
+                  "type": "BUY_QUEUE_VOLUME_ABOVE",
+                  "config": {
+                    "minimumVolume": 500
+                  }
+                }
+              ]
+            },
+            "revision": 1,
+            "enabled": 1,
+            "cooldown_seconds": 300
+          }
+        ],
+        "searches": 2
+      }
+    ]
+  }
+]
