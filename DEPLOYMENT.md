@@ -1,13 +1,15 @@
 # Production deployment preparation
 
-Phase 6A prepares this repository only. No VPS access, production migration, deployment or live Telegram post has been performed. Run the commands below **on the intended server only after reviewing configuration and the release**. Helpers execute against the local Docker daemon; they contain no SSH commands.
+Phase 6A prepares this repository only. No VPS access, production migration, deployment or live Bale post has been performed. Run the commands below **on the intended server only after reviewing configuration and the release**. Helpers execute against the local Docker daemon; they contain no SSH commands.
 
-See the [verification record and complete file inventory](docs/PRODUCTION-READINESS.md). Developers can repeat the isolated, network-disabled production-image check after building with `node scripts/smoke-production.mjs`; it uses synthetic data and UUID-named disposable local Docker resources, never the deployment project or its .env.
+Start with an empty database for Bale. Do not reuse Telegram IDs, a Telegram outbox or a Telegram database. Replace `TELEGRAM_*` settings with `BALE_*` settings from `.env.example`. Existing SQL names are historical and do not select a messaging platform. Never delete a volume to switch platforms.
+
+The [verification record and complete file inventory](docs/PRODUCTION-READINESS.md) describes the original Phase 6A verification, not a live Bale acceptance test. Developers can repeat the isolated, network-disabled production-image check after building with `node scripts/smoke-production.mjs`; it uses synthetic data and UUID-named disposable local Docker resources, never the deployment project or its .env.
 
 ## Prerequisites and limits
 
 - Ubuntu with Git, Bash/coreutils, Docker Engine and the Docker Compose plugin. Follow [Docker's Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/). The operator needs Docker access and permission to manage `/opt/stock-alert-bot` and backups.
-- One instance per bot token and one stable Compose project. Defaults below use `stock-alert-bot`. Never scale above one. A separate SQLite OS lock beside the database rejects another app or migration process using the same data path and releases automatically on process death. It cannot protect against an unrelated host using the same token or a different database: Telegram 409 is a fatal conflict; stop the other poller.
+- One instance per bot token and one stable Compose project. Defaults below use `stock-alert-bot`. Never scale above one. A separate SQLite OS lock beside the database rejects another app or migration process using the same data path and releases automatically on process death. It cannot protect against an unrelated host using the same token or a different database: Bale 409 is a fatal conflict; stop the other poller.
 - Node 24 LTS is inside the image; host Node/pnpm are unnecessary. Build and runtime share the pinned Debian image/digest so native SQLite binaries use the same ABI/platform. Linux amd64 is tested locally; rebuild and verify on the target architecture rather than copying a mismatched image. Review and refresh the pinned digest for security updates.
 - Default limits: 512 MiB RAM, one CPU, 128 processes, read-only root, 32 MiB `/tmp`, no extra capabilities, no new privileges, no public ports, ordinary Compose networking. Only `/app/data`, explicit backup mounts and `/tmp` are writable. Tune resources against real watchlist/load measurements before increasing polling.
 - Logs rotate at 10 MiB × three files. SQLite uses a named volume, WAL, foreign keys and a five-second busy timeout. Do not store it on a shared/network filesystem. Maintain disk space for snapshots, events, outbox and backups.
@@ -28,7 +30,7 @@ chmod 600 .env
 ${EDITOR:-nano} .env
 ```
 
-Set `NODE_ENV=production`, a real BotFather token, and authorized IDs. Every admin ID **must also appear in** `TELEGRAM_ALLOWED_USER_IDS`. Leave both admin/channel settings blank for private-only operation, or configure the numeric `-100…` channel ID and grant the bot administrator/posting rights. Each authorized private user/admin must initiate a private conversation. Subscribers do not need to start the bot.
+Set `NODE_ENV=production`, a token from @botfather in Bale, and authorized Bale IDs. Every admin ID **must also appear in** `BALE_ALLOWED_USER_IDS`. Leave both admin/channel settings blank for private-only operation, or configure the exact nonzero numeric Bale channel ID (no `-100` prefix requirement) and grant the bot administrator/posting rights. Each authorized private user/admin must initiate a private conversation. Subscribers do not need to start the bot.
 
 Set `DATABASE_URL=/app/data/stock-alert.db`. Container paths outside `/app/data` are rejected by the image's `STOCK_ALERT_CONTAINER=true` guard, including disposable `/tmp` paths. `./data/stock-alert.db` resolves to the same persistent directory because the image workdir is `/app`. Do not override the container guard.
 
@@ -50,17 +52,17 @@ dc logs --tail=100 bot
 bash scripts/healthcheck.sh
 ```
 
-Build must precede migrations on a first install because the migration command uses compiled code from the image. The named volume is created automatically with the image's UID/GID 1000 ownership. There is one service and no dependency containers. The diagnostics command before startup reports valid configuration with unavailable runtime health; it never contacts Telegram/TSETMC, prints IDs/tokens or migrates data. `dc config --quiet` validates without dumping expanded secrets; do not publish full Compose config or environment/inspect output.
+Build must precede migrations on a first install because the migration command uses compiled code from the image. The named volume is created automatically with the image's UID/GID 1000 ownership. There is one service and no dependency containers. The diagnostics command before startup reports valid configuration with unavailable runtime health; it never contacts Bale/TSETMC, prints IDs/tokens or migrates data. `dc config --quiet` validates without dumping expanded secrets; do not publish full Compose config or environment/inspect output.
 
-Startup acquires the database instance lock, applies reviewed migrations, starts the shared collector, initializes Telegram, verifies the configured channel and begins long polling/outbox delivery. The healthcheck has a 60-second start period. Invalid channel permissions affect channel delivery, not private access. No automatic permission-test post is sent.
+Startup acquires the database instance lock, applies reviewed migrations, starts the shared collector, initializes Bale, verifies the configured channel and begins long polling/outbox delivery. The healthcheck has a 60-second start period. Invalid channel permissions affect channel delivery, not private access. No automatic permission-test post is sent.
 
-Before enabling real use, an operator must confirm Telegram access/channel permissions and target-VPS TSETMC connectivity. A non-publishing transport check can use:
+Before enabling real use, an operator must confirm Bale access/channel permissions and target-VPS TSETMC connectivity. A non-publishing transport check can use:
 
 ```bash
 dc run --rm --no-deps -T bot node --input-type=module -e 'const r = await fetch(new URL("/api/Instrument/GetInstrumentSearch/%D8%AE%D9%88%D8%AF%D8%B1%D9%88", process.env.TSETMC_BASE_URL), {signal: AbortSignal.timeout(10000)}); console.log({httpStatus:r.status}); if (!r.ok) process.exitCode=1;'
 ```
 
-This sends one read-only TSETMC request and is **not** verification of book semantics. It has not been executed on your VPS in this phase. There is no equivalent automatic Telegram test message.
+This sends one read-only TSETMC request and is **not** verification of book semantics. It has not been executed on your VPS in this phase. There is no equivalent automatic Bale test message.
 
 ## Backup and retention
 
@@ -110,7 +112,7 @@ dc run --rm --no-deps -T bot node dist/database/migrate.js
 dc up -d --no-deps --scale bot=1 bot
 ```
 
-Migrations remain append-only. Startup migration replay is safe, but maintenance deliberately requires the app stopped: the same instance lock rejects migration while it is running. The migration CLI does not need Telegram credentials when invoked natively; Compose still loads its configured env file. No new database schema migration is needed for Phase 6A. See [migration history](docs/MIGRATION.md).
+Migrations remain append-only. Startup migration replay is safe, but maintenance deliberately requires the app stopped: the same instance lock rejects migration while it is running. The migration CLI does not need Bale credentials when invoked natively; Compose still loads its configured env file. No new database schema migration is needed for Phase 6A. See [migration history](docs/MIGRATION.md).
 
 ## Health and diagnostics
 
@@ -121,15 +123,15 @@ dc logs --tail=100 bot
 dc ps bot
 ```
 
-Health snapshots are atomic, private files in `/tmp`, updated every fifteen seconds from the actual collector progress, Telegram polling results and an SQLite read/write probe. A fresh timer alone is insufficient. Progress advances on monitor ticks and completed symbol requests; the stall allowance is poll interval + whole-symbol timeout + thirty seconds. Closed-session and empty-watchlist ticks still advance it. Heartbeats older than ninety seconds, dead processes, stopped/stalled monitor, database probe failure, and no successful Telegram polling/initialization for two minutes produce nonzero health status. Startup remains unhealthy until initialization finishes. Temporary Telegram failures are reported separately and can recover without a restart.
+Health snapshots are atomic, private files in `/tmp`, updated every fifteen seconds from the actual collector progress, Bale polling results and an SQLite read/write probe. A fresh timer alone is insufficient. Progress advances on monitor ticks and completed symbol requests; the stall allowance is poll interval + whole-symbol timeout + thirty seconds. Closed-session and empty-watchlist ticks still advance it. Heartbeats older than ninety seconds, dead processes, stopped/stalled monitor, database probe failure, and no successful Bale polling/initialization for two minutes produce nonzero health status. Startup remains unhealthy until initialization finishes. Temporary Bale failures are reported separately and can recover without a restart.
 
-Market diagnostics distinguish closed, no monitored symbols, fresh data, unverified/stale data, temporary transport failure and persistent transport failure (at least five failed attempts on a symbol). TSETMC outages and unverified data are degraded upstream/data states, not reasons to restart an otherwise live worker: health can remain zero while alerts are unavailable. This is deliberate; use diagnostics/logs and `/status`, not container health alone, to assess data readiness. `liveBookContractVerified: false` remains explicit. Telegram diagnostics cover polling connectivity; per-message/channel failures remain in outbox/admin status, and may coexist with healthy polling.
+Market diagnostics distinguish closed, no monitored symbols, fresh data, unverified/stale data, temporary transport failure and persistent transport failure (at least five failed attempts on a symbol). TSETMC outages and unverified data are degraded upstream/data states, not reasons to restart an otherwise live worker: health can remain zero while alerts are unavailable. This is deliberate; use diagnostics/logs and `/status`, not container health alone, to assess data readiness. `liveBookContractVerified: false` remains explicit. Bale diagnostics cover polling connectivity; per-message/channel failures remain in outbox/admin status, and may coexist with healthy polling.
 
 Compose restarts exited containers, not merely unhealthy ones. No automatic kill/restart loop is installed. Investigate a stalled worker/database failure before restarting. SIGTERM cancels initialization, market work and delivery, joins tasks and closes SQLite/releases the lock within a fifteen-second application deadline; Compose allows twenty-five seconds. The online backup does not need to hold that application lock.
 
 ## Recovery and rollback
 
-Restart only this service with `dc restart bot`. For Telegram failures, inspect safe logs/config diagnostics, token validity, outbound HTTPS/DNS and 409 conflicts from another poller. Never print/paste the token, raw request logging or expanded environment. For channel failures, use private `/admin` → channel status, fix administrator/posting rights and inspect failed outbox status. Temporary errors retry automatically; permanently failed occurrences are not silently republished.
+Restart only this service with `dc restart bot`. For Bale failures, inspect safe logs/config diagnostics, token validity, outbound HTTPS/DNS and 409 conflicts from another poller. Never print/paste the token, raw request logging or expanded environment. For channel failures, use private `/admin` → channel status, fix administrator/posting rights and inspect failed outbox status. Temporary errors retry automatically; permanently failed occurrences are not silently republished.
 
 For TSETMC failures, inspect `/status`, transport/backoff diagnostics and a controlled target-host connectivity check. Changing retry settings or force-opening a schedule cannot supply missing timestamp/completeness evidence. For database failures, inspect host free space, volume permissions and logs; do not delete WAL/SHM files or force-remove lock files. The OS lock is released on process death. If another process owns it, stop that process cleanly.
 
@@ -147,6 +149,6 @@ dc up -d --no-deps --scale bot=1 bot
 bash scripts/healthcheck.sh
 ```
 
-Choose another unused target filename for a later restore. Integrity/foreign-key checks run before success is reported. Restoring an older backup loses newer changes and can replay recent pending notifications; obsolete ones still expire and at-least-once delivery can duplicate an already accepted Telegram message. Review recovery impact before resuming. Do not automatically clean up original files.
+Choose another unused target filename for a later restore. Integrity/foreign-key checks run before success is reported. Restoring an older backup loses newer changes and can replay recent pending notifications; obsolete ones still expire and at-least-once delivery can duplicate an already accepted Bale message. Review recovery impact before resuming. Do not automatically clean up original files.
 
 Rollback an image only if the current schema is confirmed backward-compatible. Otherwise restore the pre-update backup to a new path and pair it with the matching image/release. Set `STOCK_ALERT_IMAGE_TAG=rollback-<the saved timestamp>` in `.env`, then use `dc up -d --no-deps --no-build --scale bot=1 bot` after stopping the current bot. Do not build over a saved rollback tag. Reset the desired build tag deliberately before a later update. Keep the previous image and backup until the new release is accepted; this project performs no automatic destructive rollback.

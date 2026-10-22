@@ -1,5 +1,9 @@
 # Phase 6A verification record — 2026-10-21
 
+## Bale adaptation — 2026-10-22
+
+The Node.js runtime now targets Bale through grammY at `https://tapi.bale.ai`, with `BALE_*` settings and a fresh database. Existing SQL migrations are unchanged. Typecheck, lint, tests, formatting and build passed under Node.js 24.22.0. Windows passed 197 tests with one Linux-only test skipped; the Docker build passed all 198 tests. The local network-disabled production smoke test passed startup, private/channel outbox delivery, health, backup/restore, instance exclusion and SIGTERM shutdown. All messaging responses were mocked; no live Bale request, notification or VPS deployment was performed. The original verification record follows.
+
 Repository preparation only. No VPS connection, production database change, remote deployment or live Telegram message was performed.
 
 ## Audit findings and changes

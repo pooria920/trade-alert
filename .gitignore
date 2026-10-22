@@ -16,3 +16,4 @@ backups/
 *.pem
 *.key
 .ssh/
+python.zip

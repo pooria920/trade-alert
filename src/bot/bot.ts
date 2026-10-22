@@ -24,17 +24,32 @@ export function createBot(
     channels?: ChannelService;
   },
 ) {
-  const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
+  const bot = new Bot(env.BALE_BOT_TOKEN, {
+    client: { apiRoot: 'https://tapi.bale.ai', timeoutSeconds: 45 },
+  });
+  bot.api.config.use((previous, method, payload, signal) => {
+    // Only send parameters documented by Bale, including grammY's final poll.
+    if (method === 'getUpdates' && 'allowed_updates' in payload)
+      delete payload.allowed_updates;
+    if (method === 'deleteWebhook' && 'drop_pending_updates' in payload)
+      delete payload.drop_pending_updates;
+    return previous(method, payload, signal);
+  });
   bot.use(
-    authorize([
-      ...env.TELEGRAM_ALLOWED_USER_IDS,
-      ...env.TELEGRAM_ADMIN_USER_IDS,
-    ]),
+    authorize([...env.BALE_ALLOWED_USER_IDS, ...env.BALE_ADMIN_USER_IDS]),
   );
   bot.use(async (ctx, next) => {
     if (!ctx.from || !ctx.chat) return;
     try {
       services.users.register(String(ctx.from.id), String(ctx.chat.id));
+      // Older Bale clients cannot display callback answers (IDs start with 1).
+      if (ctx.callbackQuery?.id.startsWith('1')) {
+        ctx.answerCallbackQuery = async (options = {}) => {
+          const text = typeof options === 'string' ? options : options.text;
+          if (text) await ctx.reply(text);
+          return true;
+        };
+      }
       await next();
     } catch (err) {
       logger.error({ err, updateId: ctx.update.update_id }, 'Command failed');
@@ -91,7 +106,7 @@ export function createBot(
   bot.catch((error) => {
     logger.error(
       { err: error.error, updateId: error.ctx.update.update_id },
-      'Telegram update failed',
+      'Bale update failed',
     );
   });
   return bot;

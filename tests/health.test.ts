@@ -45,7 +45,7 @@ it('requires a fresh heartbeat from a live process and removes it on shutdown', 
   }
 });
 
-it('distinguishes idle, upstream failures and actual worker/database/Telegram failure', () => {
+it('distinguishes idle, upstream failures and actual worker/database/Bale failure', () => {
   const directory = mkdtempSync(join(tmpdir(), 'tse-diagnostics-'));
   const path = join(directory, 'health.json');
   const heartbeat = (overrides: Parameters<typeof makeStatus>[0] = {}) =>
@@ -94,7 +94,7 @@ it('distinguishes idle, upstream failures and actual worker/database/Telegram fa
     for (const value of [
       { ...heartbeat(), monitorProgressAt: fixedNow - 46_000 },
       { ...heartbeat(), databaseOk: false },
-      { ...heartbeat(), telegram: 'CONNECTION_FAILURE' as const },
+      { ...heartbeat(), bale: 'CONNECTION_FAILURE' as const },
     ]) {
       writeHeartbeat(value, path);
       expect(healthReport(path, fixedNow).healthy).toBe(false);
@@ -116,7 +116,7 @@ it('distinguishes idle, upstream failures and actual worker/database/Telegram fa
         fixedNow - 121_000,
         5000,
         fixedNow,
-      ).telegram,
+      ).bale,
     ).toBe('CONNECTION_FAILURE');
   } finally {
     rmSync(directory, { recursive: true, force: true });

@@ -22,7 +22,7 @@ import {
   NotificationDispatcher,
   type SendNotification,
 } from '../src/notifications/notification-dispatcher.js';
-import { formatNotification } from '../src/notifications/telegram-notifier.js';
+import { formatNotification } from '../src/notifications/notifier.js';
 import { instrument } from './fixtures/normalized.js';
 
 const start = Date.parse('2026-10-21T06:30:00Z');
@@ -569,14 +569,14 @@ describe('notification outbox', () => {
     expect(s.db.select().from(notificationOutbox).get()).toMatchObject({
       status: 'FAILED',
       attempts: 3,
-      errorCode: 'TELEGRAM_503',
+      errorCode: 'BALE_503',
     });
     s.setTime(100);
     await worker.dispatchOnce();
     expect(send).toHaveBeenCalledTimes(3);
   });
   it.each([400, 401, 403])(
-    'does not retry permanent Telegram %s errors',
+    'does not retry permanent Bale %s errors',
     async (code) => {
       const s = setup();
       s.trigger();

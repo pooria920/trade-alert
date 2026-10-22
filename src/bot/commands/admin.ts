@@ -12,7 +12,7 @@ import {
   conditionLabels,
   treeText,
   tehranTime,
-} from '../../notifications/telegram-notifier.js';
+} from '../../notifications/notifier.js';
 
 type Step =
   | 'channel'

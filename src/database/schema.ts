@@ -17,6 +17,7 @@ export const symbols = sqliteTable('symbols', {
   createdAt: integer('created_at').notNull(),
 });
 
+// Historical SQL names are preserved; a fresh Bale database stores only Bale IDs.
 export const users = sqliteTable('users', {
   telegramUserId: text('telegram_user_id').primaryKey(),
   privateChatId: text('private_chat_id').notNull(),

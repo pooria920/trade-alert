@@ -24,7 +24,7 @@ import { channelVerifier } from './notifications/channel-permissions.js';
 
 async function main() {
   const env = parseEnv(process.env);
-  const logger = createLogger(env.LOG_LEVEL, env.TELEGRAM_BOT_TOKEN);
+  const logger = createLogger(env.LOG_LEVEL, env.BALE_BOT_TOKEN);
   const releaseLock = acquireInstanceLock(env.DATABASE_URL);
   let connection: ReturnType<typeof openDatabase>;
   try {
@@ -41,18 +41,15 @@ async function main() {
     maxRetries: env.TSETMC_MAX_RETRIES,
   });
   const authorizedUsers = [
-    ...new Set([
-      ...env.TELEGRAM_ALLOWED_USER_IDS,
-      ...env.TELEGRAM_ADMIN_USER_IDS,
-    ]),
+    ...new Set([...env.BALE_ALLOWED_USER_IDS, ...env.BALE_ADMIN_USER_IDS]),
   ];
   const users = new UserService(db, authorizedUsers);
   // Deferred verification uses this same bot instance after initialization.
   const channels = new ChannelService(
     db,
     users,
-    env.TELEGRAM_ADMIN_USER_IDS,
-    env.TELEGRAM_CHANNEL_ID,
+    env.BALE_ADMIN_USER_IDS,
+    env.BALE_CHANNEL_ID,
     (id, signal) => channelVerifier(bot.api, () => bot.botInfo.id)(id, signal),
     env.ALERT_DEFAULT_COOLDOWN_SECONDS,
   );
@@ -146,19 +143,19 @@ async function main() {
   let dispatcherStop: Promise<void> | undefined;
   const startedAt = Date.now();
   let initialized = false;
-  const telegram = { lastSuccess: null as number | null, errors: 0 };
+  const bale = { lastSuccess: null as number | null, errors: 0 };
   bot.api.config.use(async (previous, method, payload, signal) => {
     try {
       const result = await previous(method, payload, signal);
       if (method === 'getUpdates' || method === 'getMe') {
         if (result.ok) {
-          telegram.lastSuccess = Date.now();
-          telegram.errors = 0;
-        } else telegram.errors++;
+          bale.lastSuccess = Date.now();
+          bale.errors = 0;
+        } else bale.errors++;
       }
       return result;
     } catch (error) {
-      if (method === 'getUpdates' || method === 'getMe') telegram.errors++;
+      if (method === 'getUpdates' || method === 'getMe') bale.errors++;
       throw error;
     }
   });
@@ -183,7 +180,7 @@ async function main() {
         monitor.getStatus(),
         initialized,
         databaseOk,
-        telegram,
+        bale,
         startedAt,
         env.MARKET_REQUEST_TIMEOUT_MS,
       ),
@@ -205,7 +202,7 @@ async function main() {
     marketClient.close();
     if (bot.isRunning()) {
       stopPromise = bot.stop().catch((err: unknown) => {
-        logger.error({ err }, 'Failed to stop Telegram polling');
+        logger.error({ err }, 'Failed to stop Bale polling');
         process.exitCode = 1;
       });
     }
@@ -229,40 +226,8 @@ async function main() {
     }, 15_000);
     await bot.init(startupSignal);
     if (stopping) return;
-    await bot.api.setMyCommands(
-      [
-        { command: 'start', description: 'شروع' },
-        { command: 'help', description: 'راهنما' },
-        { command: 'add', description: 'افزودن نماد' },
-        { command: 'list', description: 'فهرست شخصی نمادها' },
-        { command: 'queue', description: 'بررسی صف نماد' },
-        { command: 'alert', description: 'ساخت هشدار' },
-        { command: 'alerts', description: 'مدیریت هشدارها' },
-        { command: 'history', description: 'سابقهٔ هشدارها' },
-        { command: 'remove', description: 'حذف نماد یا هشدار' },
-        { command: 'status', description: 'وضعیت پایش مشترک' },
-      ],
-      {},
-      startupSignal,
-    );
-    for (const adminId of env.TELEGRAM_ADMIN_USER_IDS) {
-      if (stopping) return;
-      try {
-        await bot.api.setMyCommands(
-          [
-            { command: 'admin', description: 'مدیریت هشدارهای کانال' },
-            { command: 'help', description: 'راهنما' },
-          ],
-          { scope: { type: 'chat', chat_id: Number(adminId) } },
-          startupSignal,
-        );
-      } catch {
-        logger.warn(
-          'Admin command menu unavailable; /admin remains available in private chat',
-        );
-      }
-    }
-    if (env.TELEGRAM_CHANNEL_ID && !stopping) {
+    // Bale does not document setMyCommands; commands remain available via /help.
+    if (env.BALE_CHANNEL_ID && !stopping) {
       try {
         await channels.refresh(
           AbortSignal.any([startupAbort.signal, AbortSignal.timeout(10_000)]),
@@ -288,7 +253,7 @@ async function main() {
     });
   } catch (err) {
     if (!stopping) throw err;
-    logger.debug({ err }, 'Telegram request interrupted during shutdown');
+    logger.debug({ err }, 'Bale request interrupted during shutdown');
   } finally {
     marketClient.close();
     clearInterval(heartbeat);

@@ -20,24 +20,27 @@ const positiveInteger = z.coerce
   .positive()
   .max(Number.MAX_SAFE_INTEGER);
 
-export const telegramUserIdSchema = z
+export const baleUserIdSchema = z
   .string()
   .regex(/^[1-9]\d{0,15}$/)
   .refine(
     (id) => /^[1-9]\d{0,15}$/.test(id) && BigInt(id) <= (1n << 52n) - 1n,
-    'Telegram IDs must fit in 52 bits',
+    'Bale IDs must fit in 52 bits',
   );
 
 const allowedUserIdsSchema = z
   .string()
   .transform((value) => value.split(',').map((id) => id.trim()))
-  .pipe(z.array(telegramUserIdSchema).min(1))
+  .pipe(z.array(baleUserIdSchema).min(1))
   .transform((ids) => [...new Set(ids)]);
 export const channelIdSchema = z
   .string()
-  .regex(/^-100[1-9]\d{0,12}$/)
+  .regex(/^-?[1-9]\d{0,15}$/)
   .refine(
-    (id) => /^-100[1-9]\d{0,12}$/.test(id) && BigInt(id) >= -((1n << 52n) - 1n),
+    (id) =>
+      /^-?[1-9]\d{0,15}$/.test(id) &&
+      BigInt(id) >= -((1n << 52n) - 1n) &&
+      BigInt(id) <= (1n << 52n) - 1n,
   );
 const adminIdsSchema = z
   .string()
@@ -45,7 +48,7 @@ const adminIdsSchema = z
   .transform((value) =>
     value.trim() ? value.split(',').map((id) => id.trim()) : [],
   )
-  .pipe(z.array(telegramUserIdSchema))
+  .pipe(z.array(baleUserIdSchema))
   .transform((ids) => [...new Set(ids)]);
 
 export const databasePathSchema = z
@@ -62,13 +65,13 @@ const envSchema = z
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
-    TELEGRAM_BOT_TOKEN: z
+    BALE_BOT_TOKEN: z
       .string()
       .trim()
       .regex(/^\d+:[A-Za-z0-9_-]{30,}$/, 'Invalid bot token format'),
-    TELEGRAM_ALLOWED_USER_IDS: allowedUserIdsSchema,
-    TELEGRAM_ADMIN_USER_IDS: adminIdsSchema,
-    TELEGRAM_CHANNEL_ID: z
+    BALE_ALLOWED_USER_IDS: allowedUserIdsSchema,
+    BALE_ADMIN_USER_IDS: adminIdsSchema,
+    BALE_CHANNEL_ID: z
       .string()
       .default('')
       .pipe(z.union([z.literal(''), channelIdSchema])),
@@ -117,10 +120,9 @@ const envSchema = z
   })
   .refine(
     (env) =>
-      Boolean(env.TELEGRAM_CHANNEL_ID) ===
-      Boolean(env.TELEGRAM_ADMIN_USER_IDS.length),
+      Boolean(env.BALE_CHANNEL_ID) === Boolean(env.BALE_ADMIN_USER_IDS.length),
     {
-      path: ['TELEGRAM_CHANNEL_ID'],
+      path: ['BALE_CHANNEL_ID'],
       message: 'Configure channel and admins together',
     },
   );
@@ -128,10 +130,16 @@ const envSchema = z
 export type Env = z.infer<typeof envSchema>;
 
 export function parseEnv(input: NodeJS.ProcessEnv): Env {
-  if (input.TELEGRAM_ALLOWED_USER_ID !== undefined) {
+  if (
+    Object.keys(input).some(
+      (key) => key.startsWith('TELEGRAM_') && input[key] !== undefined,
+    )
+  )
     throw new Error(
-      'Replace TELEGRAM_ALLOWED_USER_ID with TELEGRAM_ALLOWED_USER_IDS',
+      'Replace TELEGRAM_* settings with BALE_* settings; Telegram identities cannot be reused',
     );
+  if (input.BALE_ALLOWED_USER_ID !== undefined) {
+    throw new Error('Replace BALE_ALLOWED_USER_ID with BALE_ALLOWED_USER_IDS');
   }
   const result = envSchema.safeParse(input);
   if (!result.success) {
@@ -141,12 +149,12 @@ export function parseEnv(input: NodeJS.ProcessEnv): Env {
     );
   }
   if (
-    result.data.TELEGRAM_ADMIN_USER_IDS.some(
-      (id) => !result.data.TELEGRAM_ALLOWED_USER_IDS.includes(id),
+    result.data.BALE_ADMIN_USER_IDS.some(
+      (id) => !result.data.BALE_ALLOWED_USER_IDS.includes(id),
     )
   )
     throw new Error(
-      'TELEGRAM_ADMIN_USER_IDS must be authorized in TELEGRAM_ALLOWED_USER_IDS',
+      'BALE_ADMIN_USER_IDS must be authorized in BALE_ALLOWED_USER_IDS',
     );
   if (
     result.data.NODE_ENV === 'production' &&

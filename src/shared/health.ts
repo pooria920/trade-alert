@@ -21,7 +21,7 @@ const schema = z.object({
     'FRESH_DATA',
     'DATA_UNVERIFIED_OR_STALE',
   ]),
-  telegram: z.enum([
+  bale: z.enum([
     'STARTING',
     'POLLING',
     'TEMPORARY_FAILURE',
@@ -33,7 +33,7 @@ export function runtimeHealth(
   status: MonitoringStatus,
   initialized: boolean,
   databaseOk: boolean,
-  telegram: { lastSuccess: number | null; errors: number },
+  bale: { lastSuccess: number | null; errors: number },
   startedAt: number,
   requestTimeoutMs: number,
   now = Date.now(),
@@ -60,10 +60,10 @@ export function runtimeHealth(
             : status.freshSymbols
               ? 'FRESH_DATA'
               : 'DATA_UNVERIFIED_OR_STALE',
-    telegram:
-      now - (telegram.lastSuccess ?? startedAt) > 120_000
+    bale:
+      now - (bale.lastSuccess ?? startedAt) > 120_000
         ? 'CONNECTION_FAILURE'
-        : telegram.errors
+        : bale.errors
           ? 'TEMPORARY_FAILURE'
           : initialized
             ? 'POLLING'
@@ -102,13 +102,13 @@ export function healthReport(path = healthFile, now = Date.now()) {
       now - value.monitorProgressAt > value.monitorMaxSilenceMs
     )
       reasons.push('MONITOR_STALLED');
-    if (value.telegram === 'CONNECTION_FAILURE')
-      reasons.push('TELEGRAM_CONNECTION_FAILURE');
+    if (value.bale === 'CONNECTION_FAILURE')
+      reasons.push('BALE_CONNECTION_FAILURE');
     return {
       healthy: reasons.length === 0,
       reasons,
       market: value.market,
-      telegram: value.telegram,
+      bale: value.bale,
       database: value.databaseOk ? 'OK' : 'FAILURE',
     };
   } catch {
@@ -116,7 +116,7 @@ export function healthReport(path = healthFile, now = Date.now()) {
       healthy: false,
       reasons: ['HEALTH_UNAVAILABLE'],
       market: 'UNKNOWN',
-      telegram: 'UNKNOWN',
+      bale: 'UNKNOWN',
       database: 'UNKNOWN',
     };
   }

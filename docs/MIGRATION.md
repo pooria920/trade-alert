@@ -1,5 +1,7 @@
 # Upgrade from Phase 1
 
+This document records the historical Telegram schema upgrades. The Bale version starts with a fresh database and uses `BALE_*` settings; do not copy Telegram identities or pending deliveries. See [Bale setup](../README.md#bale-connection-and-fresh-setup). Applied migrations and historical SQL names remain intact.
+
 Back up the stopped database volume before updating. Keep the volume and initial migration. Startup applies `0001_multi_user.sql`: it creates users/watchlists and adds a nullable owner foreign key/index to alert rules. No data is deleted or assigned to a guessed owner.
 
 Replace `TELEGRAM_ALLOWED_USER_ID` with `TELEGRAM_ALLOWED_USER_IDS=123456789,987654321,456789123` in `.env`. Remove the old variable entirely; startup rejects it. Each user must initiate a private conversation. Their observed chat ID and individual preferences are then registered. Preferences default on, but no notifications are sent in Phase 2.

@@ -57,8 +57,8 @@ describe('explicit Tehran market sessions', () => {
   });
   it('validates new configuration and defaults force-active off', () => {
     const base = {
-      TELEGRAM_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
-      TELEGRAM_ALLOWED_USER_IDS: '123',
+      BALE_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
+      BALE_ALLOWED_USER_IDS: '123',
     };
     expect(parseEnv(base).MARKET_MONITOR_FORCE_ACTIVE).toBe(false);
     expect(parseEnv(base).MARKET_SESSIONS_JSON).toEqual([]);

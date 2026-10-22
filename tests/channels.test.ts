@@ -28,7 +28,7 @@ import {
   NotificationDispatcher,
   type SendNotification,
 } from '../src/notifications/notification-dispatcher.js';
-import { formatNotification } from '../src/notifications/telegram-notifier.js';
+import { formatNotification } from '../src/notifications/notifier.js';
 import { createLogger } from '../src/shared/logger.js';
 import { instrument } from './fixtures/normalized.js';
 import { parseEnv } from '../src/config/env.js';
@@ -423,11 +423,11 @@ describe('channel rules and isolation', () => {
     expect(send).not.toHaveBeenCalled();
     expect(s.db.select().from(notificationOutbox).get()).toMatchObject({
       status: 'FAILED',
-      errorCode: 'TELEGRAM_403',
+      errorCode: 'BALE_403',
     });
     expect(s.channels.status('123')).toMatchObject({
       canPost: false,
-      lastError: { code: 'TELEGRAM_403' },
+      lastError: { code: 'BALE_403' },
     });
     expect(() => s.channels.status('789')).toThrow();
   });
@@ -599,7 +599,7 @@ describe('channel configuration and plain messages', () => {
       expected: false,
     },
   ])(
-    'checks actual Telegram chat kind, administrator status and posting right: %j',
+    'checks actual Bale chat kind, administrator status and posting right: %j',
     async ({ chatType, member, expected }) => {
       const bot = new Bot(`123456:${'x'.repeat(35)}`);
       const methods: string[] = [];
@@ -626,26 +626,26 @@ describe('channel configuration and plain messages', () => {
     },
   );
   const required = {
-    TELEGRAM_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
-    TELEGRAM_ALLOWED_USER_IDS: '123,456,789',
+    BALE_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
+    BALE_ALLOWED_USER_IDS: '123,456,789',
   };
   it('keeps private-only configuration working and validates separate admins/channel together', () => {
     expect(parseEnv(required)).toMatchObject({
-      TELEGRAM_ADMIN_USER_IDS: [],
-      TELEGRAM_CHANNEL_ID: '',
+      BALE_ADMIN_USER_IDS: [],
+      BALE_CHANNEL_ID: '',
     });
     expect(
       parseEnv({
         ...required,
-        TELEGRAM_ADMIN_USER_IDS: '123,456,123',
-        TELEGRAM_CHANNEL_ID: channelId,
-      }).TELEGRAM_ADMIN_USER_IDS,
+        BALE_ADMIN_USER_IDS: '123,456,123',
+        BALE_CHANNEL_ID: channelId,
+      }).BALE_ADMIN_USER_IDS,
     ).toEqual(['123', '456']);
     for (const invalid of [
-      { TELEGRAM_ADMIN_USER_IDS: '123' },
-      { TELEGRAM_CHANNEL_ID: channelId },
-      { TELEGRAM_ADMIN_USER_IDS: '123', TELEGRAM_CHANNEL_ID: '@arbitrary' },
-      { TELEGRAM_ADMIN_USER_IDS: '123,-1', TELEGRAM_CHANNEL_ID: channelId },
+      { BALE_ADMIN_USER_IDS: '123' },
+      { BALE_CHANNEL_ID: channelId },
+      { BALE_ADMIN_USER_IDS: '123', BALE_CHANNEL_ID: '@arbitrary' },
+      { BALE_ADMIN_USER_IDS: '123,-1', BALE_CHANNEL_ID: channelId },
     ])
       expect(() => parseEnv({ ...required, ...invalid })).toThrow(
         'Invalid environment',

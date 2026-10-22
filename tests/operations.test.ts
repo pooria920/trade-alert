@@ -122,11 +122,11 @@ it('blocks concurrent application/maintenance ownership and releases the OS lock
 });
 it('rejects unauthorized admins and production bypasses without echoing the token', () => {
   const required = {
-    TELEGRAM_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
-    TELEGRAM_ALLOWED_USER_IDS: '123',
+    BALE_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
+    BALE_ALLOWED_USER_IDS: '123',
   };
   for (const invalid of [
-    { TELEGRAM_ADMIN_USER_IDS: '456', TELEGRAM_CHANNEL_ID: '-1001234567890' },
+    { BALE_ADMIN_USER_IDS: '456', BALE_CHANNEL_ID: '-1001234567890' },
     { NODE_ENV: 'production', MARKET_MONITOR_FORCE_ACTIVE: 'true' },
     { NODE_ENV: 'production', DATABASE_URL: ':memory:' },
     { NODE_ENV: 'production', DEBUG: '*' },
@@ -143,10 +143,10 @@ it('prints only safe configuration metadata in diagnostics, never IDs or secrets
       env: {
         ...process.env,
         NODE_ENV: 'production',
-        TELEGRAM_BOT_TOKEN: token,
-        TELEGRAM_ALLOWED_USER_IDS: '123456789',
-        TELEGRAM_ADMIN_USER_IDS: '123456789',
-        TELEGRAM_CHANNEL_ID: '-1001234567890',
+        BALE_BOT_TOKEN: token,
+        BALE_ALLOWED_USER_IDS: '123456789',
+        BALE_ADMIN_USER_IDS: '123456789',
+        BALE_CHANNEL_ID: '-1001234567890',
         MARKET_MONITOR_FORCE_ACTIVE: 'false',
         DATABASE_URL: './data/stock-alert.db',
         DEBUG: '',

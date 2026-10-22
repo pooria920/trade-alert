@@ -50,13 +50,13 @@ const hardened = [
 ];
 const environment = [
   '-e',
-  'TELEGRAM_BOT_TOKEN=123456:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  'BALE_BOT_TOKEN=123456:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   '-e',
-  'TELEGRAM_ALLOWED_USER_IDS=123,456',
+  'BALE_ALLOWED_USER_IDS=123,456',
   '-e',
-  'TELEGRAM_ADMIN_USER_IDS=123',
+  'BALE_ADMIN_USER_IDS=123',
   '-e',
-  'TELEGRAM_CHANNEL_ID=-1001234567890',
+  'BALE_CHANNEL_ID=-1001234567890',
   '-e',
   'MARKET_SESSIONS_JSON=[]',
   '-e',
@@ -75,8 +75,9 @@ writeFileSync(
   `
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 globalThis.fetch=async(url,options={})=>{
- if(!String(url).startsWith('https://api.telegram.org/bot'))throw new Error('Unexpected offline network call');
+ if(!String(url).startsWith('https://tapi.bale.ai/bot'))throw new Error('Unexpected offline network call');
  const method=String(url).split('/').at(-1); let result=true;
+ const payload=JSON.parse(options.body||'{}');if('allowed_updates' in payload||'drop_pending_updates' in payload)throw new Error('Unexpected Telegram-only parameter');
  if(method==='getMe')result={id:123456,is_bot:true,first_name:'Offline test',username:'offline_test_bot'};
  else if(method==='getChat')result={id:-1001234567890,type:'channel',title:'Synthetic channel'};
  else if(method==='getChatMember')result={status:'administrator',can_post_messages:true};
@@ -84,7 +85,7 @@ globalThis.fetch=async(url,options={})=>{
   await new Promise((done,reject)=>{const stop=()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));};const timer=setTimeout(()=>{options.signal?.removeEventListener('abort',stop);done();},300);options.signal?.addEventListener('abort',stop,{once:true});if(options.signal?.aborted)stop();});result=[];
  }else if(method==='sendMessage'){
   const payload=JSON.parse(options.body);const file='/app/data/mock-sends.json';const sends=existsSync(file)?JSON.parse(readFileSync(file,'utf8')):[];sends.push(String(payload.chat_id));writeFileSync(file,JSON.stringify(sends));result={message_id:sends.length};
- }else if(!['setMyCommands','deleteWebhook'].includes(method))throw new Error('Unexpected mock method');
+ }else if(method!=='deleteWebhook')throw new Error('Unexpected mock method');
  return new Response(JSON.stringify({ok:true,result}),{status:200,headers:{'content-type':'application/json'}});
 };
 // grammY's Node adapter uses node-fetch v2, not the global Fetch API.

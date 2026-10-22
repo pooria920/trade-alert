@@ -11,17 +11,15 @@ it('redacts bot tokens from error messages and stacks', () => {
   };
   createLogger('info', token, destination).error(
     {
-      err: new Error(
-        `Request failed: https://api.telegram.org/bot${token}/getMe`,
-      ),
+      err: new Error(`Request failed: https://tapi.bale.ai/bot${token}/getMe`),
     },
-    'Telegram failure',
+    'Bale failure',
   );
   expect(output).not.toContain(token);
   expect(output).toContain('[REDACTED]');
   // The bootstrap logger must also redact without having parsed configuration.
   createLogger('info', '', destination).error(
-    { err: new Error(`https://api.telegram.org/bot${token}/getMe`) },
+    { err: new Error(`https://tapi.bale.ai/bot${token}/getMe`) },
     'Startup failure',
   );
   expect(output).not.toContain(token);

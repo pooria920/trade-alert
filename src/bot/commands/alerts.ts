@@ -9,7 +9,7 @@ import {
 import {
   alertLabels,
   formatNotification,
-} from '../../notifications/telegram-notifier.js';
+} from '../../notifications/notifier.js';
 import type { UserService } from '../../users/user-service.js';
 
 type Flow = {
@@ -318,7 +318,7 @@ export function registerAlertCommands(
         return event.message || 'هشدار قدیمی';
       }
     });
-    // Separate messages avoid Telegram's length limit without truncating triggering values.
+    // Separate messages avoid Bale's length limit without truncating triggering values.
     for (const text of texts) await ctx.reply(text);
   });
   bot.on('message:text', async (ctx, next) => {

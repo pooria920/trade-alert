@@ -1,4 +1,5 @@
 import type { Update, UserFromGetMe } from 'grammy/types';
+import { createRequire } from 'node:module';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBot } from '../src/bot/bot.js';
 import { parseEnv } from '../src/config/env.js';
@@ -32,10 +33,11 @@ const botInfo: UserFromGetMe = {
 
 const connections: ReturnType<typeof openDatabase>[] = [];
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const connection of connections.splice(0)) connection.sqlite.close();
 });
 
-function setup(channelMode = false) {
+function setup(channelMode = false, interceptApi = true) {
   const connection = openDatabase(':memory:');
   connections.push(connection);
   const users = new UserService(connection.db, [
@@ -58,10 +60,10 @@ function setup(channelMode = false) {
   );
   const bot = createBot(
     parseEnv({
-      TELEGRAM_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
-      TELEGRAM_ALLOWED_USER_IDS: `${allowedUserId},987654321,456789123`,
-      TELEGRAM_ADMIN_USER_IDS: channelMode ? `${allowedUserId},987654321` : '',
-      TELEGRAM_CHANNEL_ID: channelMode ? channelId : '',
+      BALE_BOT_TOKEN: `123456:${'x'.repeat(35)}`,
+      BALE_ALLOWED_USER_IDS: `${allowedUserId},987654321,456789123`,
+      BALE_ADMIN_USER_IDS: channelMode ? `${allowedUserId},987654321` : '',
+      BALE_CHANNEL_ID: channelMode ? channelId : '',
     }),
     createLogger('silent'),
     {
@@ -76,18 +78,19 @@ function setup(channelMode = false) {
   const calls: { method: string; payload: unknown }[] = [];
   let canPost = true;
   // Intercept grammY at its API boundary: no network calls are made.
-  bot.api.config.use((previous, method, payload) => {
-    calls.push({ method, payload });
-    const result =
-      method === 'getChat'
-        ? { id: Number(channelId), type: 'channel', title: 'کانال آزمایشی' }
-        : method === 'getChatMember'
-          ? { status: 'administrator', can_post_messages: canPost }
-          : true;
-    return Promise.resolve({ ok: true, result } as Awaited<
-      ReturnType<typeof previous>
-    >);
-  });
+  if (interceptApi)
+    bot.api.config.use((previous, method, payload) => {
+      calls.push({ method, payload });
+      const result =
+        method === 'getChat'
+          ? { id: Number(channelId), type: 'channel', title: 'کانال آزمایشی' }
+          : method === 'getChatMember'
+            ? { status: 'administrator', can_post_messages: canPost }
+            : true;
+      return Promise.resolve({ ok: true, result } as Awaited<
+        ReturnType<typeof previous>
+      >);
+    });
   return {
     bot,
     calls,
@@ -141,7 +144,82 @@ function callback(userId: number, data = 'help', chatId = userId): Update {
   };
 }
 
-describe('Telegram authorization and commands', () => {
+describe('Bale authorization and commands', () => {
+  it('uses Bale HTTPS and strips Telegram-only polling parameters at the HTTP boundary', async () => {
+    const require = createRequire(import.meta.url);
+    const grammyRequire = createRequire(require.resolve('grammy'));
+    const transport = grammyRequire('node-fetch') as { default: typeof fetch };
+    const requests: { url: string; payload: unknown }[] = [];
+    vi.spyOn(transport, 'default').mockImplementation((input, options) => {
+      const url =
+        input instanceof URL
+          ? input.href
+          : typeof input === 'string'
+            ? input
+            : input.url;
+      const method = url.split('/').at(-1);
+      if (typeof options?.body !== 'string')
+        throw new Error('Expected JSON body');
+      requests.push({
+        url,
+        payload: JSON.parse(options.body) as unknown,
+      });
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            ok: true,
+            result: method === 'getUpdates' ? [] : true,
+          }),
+        ),
+      );
+    });
+    const { bot } = setup(false, false);
+    await bot.api.getUpdates({
+      offset: 42,
+      timeout: 30,
+      allowed_updates: ['message', 'callback_query'],
+    });
+    await bot.api.deleteWebhook({ drop_pending_updates: false });
+    await bot.api.sendMessage(allowedUserId, 'پیام آزمایشی');
+    expect(requests.map((request) => request.url)).toEqual(
+      ['getUpdates', 'deleteWebhook', 'sendMessage'].map(
+        (method) =>
+          `https://tapi.bale.ai/bot123456:${'x'.repeat(35)}/${method}`,
+      ),
+    );
+    expect(requests[0]?.payload).toEqual({ offset: 42, timeout: 30 });
+    expect(requests[1]?.payload).toEqual({});
+    expect(requests[2]?.payload).toEqual({
+      chat_id: allowedUserId,
+      text: 'پیام آزمایشی',
+    });
+  });
+
+  it('handles old-client callbacks without calling unsupported callback answers', async () => {
+    const { bot, calls } = setup();
+    const update = callback(allowedUserId);
+    update.callback_query!.id = '1-old-client';
+    await bot.handleUpdate(update);
+    expect(calls.map((call) => call.method)).toEqual(['sendMessage']);
+    expect(JSON.stringify(calls)).toContain('/help');
+  });
+
+  it('falls back to a private message for old-client callback notices', async () => {
+    const { bot, calls } = setup();
+    bot.callbackQuery('legacy-notice', (ctx) =>
+      ctx.answerCallbackQuery({ text: 'اعلان آزمایشی' }),
+    );
+    const update = callback(allowedUserId, 'legacy-notice');
+    update.callback_query!.id = '1-old-client';
+    await bot.handleUpdate(update);
+    expect(calls).toEqual([
+      {
+        method: 'sendMessage',
+        payload: { chat_id: allowedUserId, text: 'اعلان آزمایشی' },
+      },
+    ]);
+  });
+
   it('serves accurate global monitoring status only after authorization', async () => {
     const { bot, calls } = setup();
     await bot.handleUpdate(command(allowedUserId, '/status'));
@@ -287,7 +365,7 @@ function wizardToken(calls: { payload: unknown }[]) {
   if (!token) throw new Error('Wizard keyboard missing');
   return token;
 }
-describe('Telegram alert management', () => {
+describe('Bale alert management', () => {
   it('guides creation, validates Persian inputs, confirms once and isolates callbacks', async () => {
     const { bot, calls, users, alerts, provider } = setup();
     users.register(String(allowedUserId), String(allowedUserId));
@@ -455,7 +533,7 @@ function adminButton(calls: { payload: unknown }[], label: string) {
   if (!button) throw new Error(`Missing admin button: ${label}`);
   return button;
 }
-describe('private Telegram channel administration', () => {
+describe('private Bale channel administration', () => {
   it('blocks public/group/non-admin commands and every forged management callback', async () => {
     const { bot, calls, channels } = setup(true);
     await bot.handleUpdate(command(allowedUserId, '/admin', true));

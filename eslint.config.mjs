@@ -2,7 +2,16 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'coverage/**', 'src/database/migrations/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'coverage/**',
+      'src/database/migrations/**',
+      'python/.venv/**',
+      'python/.mypy_cache/**',
+      'python/.ruff_cache/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

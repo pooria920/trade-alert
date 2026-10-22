@@ -14,7 +14,7 @@ import { eventPayloadSchema } from '../alerts/alert.types.js';
 import { compositeEventPayloadSchema } from '../alerts/composite.js';
 import type { ChannelService } from '../alerts/channel-service.js';
 import { z } from 'zod';
-import { formatNotification } from './telegram-notifier.js';
+import { formatNotification } from './notifier.js';
 
 export interface DeliveryOptions {
   maxRetries: number;
@@ -107,7 +107,7 @@ export class NotificationDispatcher {
         const cooldown = tx
           .select()
           .from(applicationState)
-          .where(eq(applicationState.key, 'telegram_retry_until'))
+          .where(eq(applicationState.key, 'bale_retry_until'))
           .get();
         if (cooldown && Number(cooldown.value) > now) return null;
         const row = tx
@@ -295,7 +295,7 @@ export class NotificationDispatcher {
       const failure = deliveryError(err);
       if (item.rule.channelId !== null)
         this.channels?.recordError(
-          failure.code === null ? 'TRANSPORT' : `TELEGRAM_${failure.code}`,
+          failure.code === null ? 'TRANSPORT' : `BALE_${failure.code}`,
           this.now(),
         );
       const backoff = Math.max(
@@ -310,7 +310,7 @@ export class NotificationDispatcher {
         this.db
           .insert(applicationState)
           .values({
-            key: 'telegram_retry_until',
+            key: 'bale_retry_until',
             value: String(retryAt),
             updatedAt: this.now(),
           })
@@ -326,7 +326,7 @@ export class NotificationDispatcher {
         failure.permanent || item.attempts > this.options.maxRetries
           ? 'FAILED'
           : 'PENDING',
-        failure.code === null ? 'TRANSPORT' : `TELEGRAM_${failure.code}`,
+        failure.code === null ? 'TRANSPORT' : `BALE_${failure.code}`,
         retryAt,
       );
       this.logger.warn(

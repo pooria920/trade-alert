@@ -49,11 +49,11 @@ let sigterm = () => {};
 beforeEach(() => {
   vi.resetModules();
   vi.resetAllMocks();
-  vi.stubEnv('TELEGRAM_BOT_TOKEN', `123456:${'x'.repeat(35)}`);
-  vi.stubEnv('TELEGRAM_ALLOWED_USER_IDS', '123456789,987654321');
-  vi.stubEnv('TELEGRAM_ALLOWED_USER_ID', undefined);
-  vi.stubEnv('TELEGRAM_ADMIN_USER_IDS', '');
-  vi.stubEnv('TELEGRAM_CHANNEL_ID', '');
+  vi.stubEnv('BALE_BOT_TOKEN', `123456:${'x'.repeat(35)}`);
+  vi.stubEnv('BALE_ALLOWED_USER_IDS', '123456789,987654321');
+  vi.stubEnv('BALE_ALLOWED_USER_ID', undefined);
+  vi.stubEnv('BALE_ADMIN_USER_IDS', '');
+  vi.stubEnv('BALE_CHANNEL_ID', '');
   vi.stubEnv('LOG_LEVEL', 'silent');
   vi.stubEnv('MARKET_SESSIONS_JSON', '[]');
   vi.stubEnv('MARKET_MONITOR_FORCE_ACTIVE', 'false');
@@ -75,7 +75,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('awaits Telegram stop completion before closing SQLite on SIGTERM', async () => {
+it('awaits Bale stop completion before closing SQLite on SIGTERM', async () => {
   let stopCompleted = false;
   let closedAfterStop = false;
   runtime.stop.mockImplementation(
@@ -101,6 +101,7 @@ it('awaits Telegram stop completion before closing SQLite on SIGTERM', async () 
   expect(runtime.close).toHaveBeenCalledOnce();
   expect(runtime.writeHeartbeat).toHaveBeenCalledTimes(2);
   expect(runtime.removeHeartbeat).toHaveBeenCalledTimes(2);
+  expect(runtime.setMyCommands).not.toHaveBeenCalled();
 });
 
 it('cancels initialization and closes SQLite if SIGTERM arrives before polling', async () => {

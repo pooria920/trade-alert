@@ -1,8 +1,10 @@
-# TSE Stock Queue Alert Bot
+# TSE Stock Queue Alert Bot for Bale
 
-Implemented through **Phase 6A** (production preparation): private alerts plus admin-managed Telegram channel alerts, bounded composite queue conditions, shared collection, persistent recovery/cooldown, Persian management/history and the existing SQLite notification outbox.
+[راهنمای فارسی اجرای پروژه روی VPS در کنار Caddy](VPS_DEPLOYMENT.fa.md)
 
-**Live limitation:** endpoints responded during investigation, but BestLimits has no source timestamp or verified complete/incremental semantics. Captured bids conflict with same-day limits. `/queue` therefore refuses definitive queue volumes for this data, and the current live adapter cannot generate alert events or notifications. The engine/delivery path is verified offline with synthetic normalized snapshots and mocked Telegram. See [observations and captured payloads](docs/TSETMC.md). There is no verification bypass.
+Implemented through **Phase 6A** (production preparation): private alerts plus admin-managed Bale channel alerts, bounded composite queue conditions, shared collection, persistent recovery/cooldown, Persian management/history and the existing SQLite notification outbox.
+
+**Live limitation:** endpoints responded during investigation, but BestLimits has no source timestamp or verified complete/incremental semantics. Captured bids conflict with same-day limits. `/queue` therefore refuses definitive queue volumes for this data, and the current live adapter cannot generate alert events or notifications. The engine/delivery path is verified offline with synthetic normalized snapshots and mocked Bale. See [observations and captured payloads](docs/TSETMC.md). There is no verification bypass.
 
 ## Setup
 
@@ -13,18 +15,30 @@ corepack enable
 corepack prepare pnpm@11.10.0 --activate
 pnpm install --frozen-lockfile
 cp .env.example .env
-# Set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USER_IDS. For local development use NODE_ENV=development.
+# Set BALE_BOT_TOKEN and BALE_ALLOWED_USER_IDS. For local development use NODE_ENV=development.
 pnpm dev
 # Or compile and run:
 pnpm build
 pnpm start
 ```
 
-Example: `TELEGRAM_ALLOWED_USER_IDS=123456789,987654321,456789123`. Whitespace is trimmed and duplicates removed; empty/malformed entries are rejected. IDs must fit Telegram's [documented 52-bit range](https://core.telegram.org/bots/api#user). There is no user-count limit. The singular variable is rejected; follow the [ownership migration guide](docs/MIGRATION.md).
+Example: `BALE_ALLOWED_USER_IDS=123456789,987654321,456789123`. Whitespace is trimmed and duplicates removed; empty/malformed entries are rejected. IDs must fit Bale's [documented 52-bit range](https://docs.bale.ai/#user). There is no user-count limit. Use Bale IDs, not Telegram IDs. Legacy `TELEGRAM_*` settings and the singular allowlist setting are rejected.
 
 Each user must initiate a private conversation. Authorization runs before registration, database access and handlers; unauthorized users/groups are ignored. Registration records the observed private chat ID and preserves existing preferences. Run only one process per bot token.
 
 Node loads `.env` natively. Zod validates startup configuration. Pino emits JSON logs and redacts bot tokens from serialized errors. No secrets are bundled.
+
+## Bale connection and fresh setup
+
+This Node.js version targets the ordinary Bale Bot API at `https://tapi.bale.ai`, using grammY long polling. No web server or exposed port is needed. See the [official API documentation](https://docs.bale.ai/). There is no Telegram fallback or business/messaging API integration.
+
+Create a bot through [@botfather in Bale](https://ble.ir/botfather), then fill `BALE_BOT_TOKEN` and `BALE_ALLOWED_USER_IDS` in your local `.env`. Optional channel mode also needs `BALE_ADMIN_USER_IDS` and `BALE_CHANNEL_ID`. Start with a new, empty SQLite path (inside `/app/data` in Docker); no old database is deleted or imported automatically. Users register by sending an authorized private message to this bot in Bale.
+
+Applied SQL migrations and their historical names (`telegram_user_id`, `telegram_channels`) remain unchanged. In this fresh database those fields contain Bale identities only. Do not reuse a Telegram database or outbox. The Python implementation is separate and is not changed by this migration.
+
+Bale does not document `setMyCommands`, so startup does not call it. Commands are listed in `/help`. Telegram-only polling parameters are removed before HTTP requests. Older Bale clients have callback IDs starting with `1`; their callback notices fall back to a private text reply, while buttons still run the authorized handler. API requests have a 45-second transport timeout; outbox sends and channel permission checks retain the shared 10-second deadline.
+
+All automated checks intercept external API calls. Live Bale compatibility, token validity, channel permissions and account-specific sending limits are not verified by these offline tests. The current TSETMC evidence restriction still prevents real alert events; changing messengers does not verify market data.
 
 ## Commands
 
@@ -51,8 +65,8 @@ Queue/removal commands also accept an instrument code from your own watchlist. S
 | Variable                    | Default                      | Meaning                                            |
 | --------------------------- | ---------------------------- | -------------------------------------------------- |
 | `NODE_ENV`                  | `development`                | development/test/production                        |
-| `TELEGRAM_BOT_TOKEN`        | required                     | BotFather token                                    |
-| `TELEGRAM_ALLOWED_USER_IDS` | required                     | Comma-separated user IDs                           |
+| `BALE_BOT_TOKEN`            | required                     | Token from @botfather in Bale                      |
+| `BALE_ALLOWED_USER_IDS`     | required                     | Comma-separated user IDs                           |
 | `TSETMC_BASE_URL`           | `https://cdn.tsetmc.com/api` | HTTPS API base                                     |
 | `TSETMC_REQUEST_TIMEOUT_MS` | `5000`                       | 1–120000 ms per request                            |
 | `TSETMC_MAX_RETRIES`        | `2`                          | 0–3 retries after initial attempt                  |
@@ -66,7 +80,7 @@ The native Fetch client validates responses with Zod and retries network/timeout
 
 ## Collector and Tehran schedule
 
-The collector starts with the application, including while Telegram initializes. One async loop reads current authorized watchlists each cycle, fetches each unique instrument once, and waits the configured interval after completion. Cycles cannot overlap. Changes to watchlists apply without restarting. Revoked users' memberships are excluded. The concurrency limit is for symbol collections, each of which may make several sequential HTTP requests; “one fetch per symbol” does not mean one HTTP endpoint call.
+The collector starts with the application, including while Bale initializes. One async loop reads current authorized watchlists each cycle, fetches each unique instrument once, and waits the configured interval after completion. Cycles cannot overlap. Changes to watchlists apply without restarting. Revoked users' memberships are excluded. The concurrency limit is for symbol collections, each of which may make several sequential HTTP requests; “one fetch per symbol” does not mean one HTTP endpoint call.
 
 Additional settings:
 
@@ -126,11 +140,11 @@ Only newly inserted, fresh, detector-accepted snapshots reach the engine. There 
 
 New rules, edits, re-enabling and session changes prime an `ARMED` state without immediately firing. Restarts retain the last source update and recovery state, while rejecting source updates before process startup. Older/duplicate updates never roll state backwards. While armed, percentage rules use the rolling window. A trigger freezes that comparison volume, enters `TRIGGERED`, then `WAITING_FOR_RECOVERY`. Recovery requires the original side to reach `baseline × (1 − max(0, threshold − 5) / 100)` **and** cooldown expiry. For example, a 30% trigger requires recovery to at least 75% of the frozen baseline. Thresholds at or below 5% require full recovery. Disappearance re-arms only when the original-side queue returns at or above its minimum (and positive), after cooldown. Recovery itself never triggers a new event. This prevents a rolling lower baseline or small fluctuations from rearming an active occurrence.
 
-State, event payload and outbox insertion commit in one SQLite transaction; a unique key combines rule ID, revision, session and source timestamp. The independent worker claims one due item using an immediate transaction and a unique 60-second lease. Telegram requests have a 10-second deadline. Other workers cannot claim a live lease; expired claims can resume after a crash. The application still runs one process per bot token for Telegram long polling.
+State, event payload and outbox insertion commit in one SQLite transaction; a unique key combines rule ID, revision, session and source timestamp. The independent worker claims one due item using an immediate transaction and a unique 60-second lease. Bale requests have a 10-second deadline. Other workers cannot claim a live lease; expired claims can resume after a crash. The application still runs one process per bot token for Bale long polling.
 
-Transient transport/server failures retry with bounded exponential backoff. Telegram 429 `retry_after` establishes a persisted global delivery cooldown measured from the failure response. Permanent 4xx failures are marked `FAILED`. Obsolete messages become `EXPIRED`; revoked authorization, disabled/edited rules and muted preferences become `CANCELLED`. Delivery uses plain Persian text, reports source time in Tehran, and labels attempts later than the market freshness allowance as delayed. `/history` shows recorded occurrences even if delivery failed or was cancelled. Rule deletion (also when removing its watched symbol) deletes that rule's state, history and outbox through foreign keys; shared snapshots and other users' events remain.
+Transient transport/server failures retry with bounded exponential backoff. Bale 429 `retry_after` establishes a persisted global delivery cooldown measured from the failure response. Permanent 4xx failures are marked `FAILED`. Obsolete messages become `EXPIRED`; revoked authorization, disabled/edited rules and muted preferences become `CANCELLED`. Delivery sends Persian text without a parse-mode parameter (Bale applies its own Markdown rendering), reports source time in Tehran, and labels attempts later than the market freshness allowance as delayed. `/history` shows recorded occurrences even if delivery failed or was cancelled. Rule deletion (also when removing its watched symbol) deletes that rule's state, history and outbox through foreign keys; shared snapshots and other users' events remain.
 
-Delivery is **at least once with best-effort deduplication**, not exactly once. A crash, timeout or suspension after Telegram accepted a message but before success was recorded can cause a duplicate on retry. Pending retries survive restarts; unfinished interactive drafts do not. Events/outbox have no automatic retention in this phase; monitor SQLite disk usage and back it up. Snapshot cleanup cannot remove the frozen recovery baseline or event payload. Shutdown cancels and joins delivery and collection before closing SQLite.
+Delivery is **at least once with best-effort deduplication**, not exactly once. A crash, timeout or suspension after Bale accepted a message but before success was recorded can cause a duplicate on retry. Pending retries survive restarts; unfinished interactive drafts do not. Events/outbox have no automatic retention in this phase; monitor SQLite disk usage and back it up. Snapshot cleanup cannot remove the frozen recovery baseline or event payload. Shutdown cancels and joins delivery and collection before closing SQLite.
 
 To add a future condition, extend the discriminated schema, typed strategy registry, event presentation schema and creation UI. The generic engine keeps its state/transaction/delivery flow, and definitions require no additional SQL columns. Future price/volume conditions themselves are intentionally absent.
 
@@ -139,14 +153,14 @@ To add a future condition, extend the discriminated schema, typed strategy regis
 Channel mode is optional. Leave both new variables blank to retain private-only behavior. To configure the single initial destination:
 
 ```env
-TELEGRAM_ALLOWED_USER_IDS=123456789
-TELEGRAM_ADMIN_USER_IDS=123456789,987654321
-TELEGRAM_CHANNEL_ID=-1001234567890
+BALE_ALLOWED_USER_IDS=123456789,987654321
+BALE_ADMIN_USER_IDS=123456789,987654321
+BALE_CHANNEL_ID=-1001234567890
 ```
 
-These are syntax examples, not real deployment credentials or a verified channel. Both channel/admin settings must be supplied together. IDs remain strings in SQLite; the channel must be a numeric negative `-100…` identifier within Telegram's supported integer range. Username destinations and arbitrary callback-supplied destinations are rejected. Every configured admin must also be in the private allowlist; only configured admins can use channel management. No subscriber registration, membership list, fan-out or subscription system exists.
+These are syntax examples, not real deployment credentials or a verified channel. Both channel/admin settings must be supplied together. IDs remain strings in SQLite; the channel must be a nonzero numeric identifier within Bale's documented 52-bit range. No Telegram-specific `-100` prefix is required. Username destinations and arbitrary callback-supplied destinations are rejected. Every configured admin must also be in the private allowlist; only configured admins can use channel management. No subscriber registration, membership list, fan-out or subscription system exists.
 
-Add the bot as an administrator of the channel and grant posting permission. Startup, save/enable, channel status and each channel delivery use `getChat` and `getChatMember` to verify the exact channel and the bot's administrator status plus `can_post_messages`, following the [Telegram API permission model](https://core.telegram.org/bots/api#chatmemberadministrator). Verification performs no test post. An inaccessible channel does not disable private alerts. Permission checks and posting share the outbox's ten-second deadline and shutdown cancellation. After asynchronous checks, delivery rechecks rule revision, authorization and source age. Permanent posting failures become `FAILED`; temporary Telegram/transport failures retain the existing retry and rate-limit policy.
+Add the bot as an administrator of the channel and grant posting permission. Startup, save/enable, channel status and each channel delivery use `getChat` and `getChatMember` to verify the exact channel and the bot's administrator status plus `can_post_messages`, following the [Bale API permission model](https://docs.bale.ai/#chatmemberadministrator). Verification performs no test post. An inaccessible channel does not disable private alerts. Permission checks and posting share the outbox's ten-second deadline and shutdown cancellation. After asynchronous checks, delivery rechecks rule revision, authorization and source age. Permanent posting failures become `FAILED`; temporary Bale/transport failures retain the existing retry and rate-limit policy.
 
 Each administrator must first open a private conversation, then use `/admin`. The Persian menu offers creation, paginated lists (ten per page), details, individual condition editing, enable/disable, confirmed deletion and channel status. Menus prefer editing the existing message. Creation selects the configured channel, searches a symbol, selects a supported condition and validates numeric input; a readable summary precedes confirmation. Private watchlists are not required for channel symbols. Back/Cancel controls, refreshed per-step tokens, a ten-minute draft expiry, duplicate-save protection and optimistic revisions make stale interactions safe. A restart discards unfinished drafts without saving partial rules.
 
@@ -160,13 +174,13 @@ Channel status is admin-only and reports title, numeric channel ID, verified pos
 
 The builder supports up to eight conditions, each editable/removable, using «همه شرط‌ها برقرار باشند» (AND) or «حداقل یکی از شرط‌ها برقرار باشد» (OR). It offers the four existing queue drop/disappearance types plus minimum **current queue volume** for buy/sell queues (`BUY_QUEUE_VOLUME_ABOVE`, `SELL_QUEUE_VOLUME_ABOVE`). This uses verified order-book queue volume, not trading volume. Minimum current volume is a positive safe integer and means at least the configured number of shares. Unsupported prices, traded-volume spikes and other indicators remain hidden and unimplemented.
 
-The validated JSON tree uses `{ type: 'GROUP', operator: 'AND' | 'OR', conditions: [...] }` with typed leaves. Internal trees allow up to four group levels and eight total leaves; empty/invalid/excessive trees are rejected. The Telegram builder creates flat groups only. Nested rules can be viewed, enabled, disabled or deleted; editing nested structures through Telegram is intentionally unavailable.
+The validated JSON tree uses `{ type: 'GROUP', operator: 'AND' | 'OR', conditions: [...] }` with typed leaves. Internal trees allow up to four group levels and eight total leaves; empty/invalid/excessive trees are rejected. The Bale builder creates flat groups only. Nested rules can be viewed, enabled, disabled or deleted; editing nested structures through Bale is intentionally unavailable.
 
 All leaves evaluate the same fresh persisted snapshot/session. Historical baselines use the existing bounded tolerance and are shared across rules. Kleene three-valued logic is explicit: AND is FALSE if any child is FALSE; OR is TRUE if any child is TRUE; otherwise UNKNOWN propagates. Thus TRUE OR UNKNOWN is TRUE, FALSE AND UNKNOWN is FALSE, and unresolved overall UNKNOWN never triggers or rearms. Missing history is UNKNOWN; a confirmed `none` is FALSE for a positive current-volume minimum, while an opposite-side queue is UNKNOWN.
 
 Cooldown, deduplication and recovery apply once to the whole expression. A trigger stores frozen evidence for its satisfied leaves in `alert_states.recovery_data`. During recovery, those leaves retain their original drop/disappearance policies; queue-volume minimum leaves stay latched until volume falls strictly below 95% of the configured minimum. Unlatched leaves evaluate normally. The entire expression must become conclusively FALSE and cooldown must expire before it rearms; UNKNOWN cannot rearm it. An AND rule can recover when one leaf clears, while an OR rule requires all branches to clear. New/edited/session states retain the existing priming behavior.
 
-Channel messages use plain Persian text, show symbol, satisfied conditions, relevant volumes/actual drop percentages, comparison windows and Tehran source time, with delayed-delivery indication. They contain no rule IDs or administrator identities. The same durable outbox, unique occurrence keys, leases, retry budget, maximum source age and at-least-once limitations apply to both destinations. No successful live Telegram posting is claimed; all automated delivery checks mock Telegram.
+Channel messages send Persian text without a parse-mode parameter, show symbol, satisfied conditions, relevant volumes/actual drop percentages, comparison windows and Tehran source time, with delayed-delivery indication. They contain no rule IDs or administrator identities. The same durable outbox, unique occurrence keys, leases, retry budget, maximum source age and at-least-once limitations apply to both destinations. No successful live Bale posting is claimed; all automated delivery checks mock Bale.
 
 ## Ownership and market data
 
@@ -191,7 +205,7 @@ pnpm build
 docker build -t tse-stock-alert-bot:local .
 ```
 
-Migration CLI loads `.env` without requiring Telegram credentials; generation uses only the schema. Builds copy migrations beside compiled code. Tests cover isolation, forged callbacks, legacy upgrades, persistence, shared requests/recovery, API validation, queue detection, token redaction, health and shutdown. They mock external APIs; there are no live calls in unit tests.
+Migration CLI loads `.env` without requiring Bale credentials; generation uses only the schema. Builds copy migrations beside compiled code. Tests cover isolation, forged callbacks, legacy upgrades, persistence, shared requests/recovery, API validation, queue detection, token redaction, health and shutdown. They mock external APIs; there are no live calls in unit tests.
 
 ## Production deployment preparation
 
@@ -199,7 +213,7 @@ Phase 6A adds a digest-pinned Node 24 production image, resource-limited/read-on
 
 Follow [DEPLOYMENT.md](DEPLOYMENT.md) for exact first-install, update, migration, backup, restore and rollback commands in `/opt/stock-alert-bot`. Helpers operate only on the local Docker daemon and require explicit paths/confirmation flags; they never connect to a remote host or affect unrelated services.
 
-`node dist/healthcheck.js` reports actual monitoring progress, database write availability and Telegram polling connectivity. Closed markets and empty watchlists are healthy idle states; persistent TSETMC failures or unverified data are separately reported degraded conditions, not proof that alerts work. `node dist/diagnostics.js` validates configuration and prints counts/status only, without IDs/tokens, migrations or API requests.
+`node dist/healthcheck.js` reports actual monitoring progress, database write availability and Bale polling connectivity. Closed markets and empty watchlists are healthy idle states; persistent TSETMC failures or unverified data are separately reported degraded conditions, not proof that alerts work. `node dist/diagnostics.js` validates configuration and prints counts/status only, without IDs/tokens, migrations or API requests.
 
 The production image uses the compiled migration CLI `node dist/database/migrate.js`. Stop the bot before manual migrations; the application and migrator share an OS-backed instance lock beside the database. Online backups use SQLite's backup API while the app runs, then verify a portable artifact without WAL/SHM dependencies. Restore always requires a new database filename and explicit confirmation; it cannot overwrite existing data.
 
