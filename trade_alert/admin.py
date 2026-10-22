@@ -11,6 +11,7 @@ from .bot_text import (
     LABELS,
     LIVE_NOTICE,
     PERCENT_PROMPT,
+    PERMISSION_NOTICES,
     TYPE_PROMPT,
     WINDOW_PROMPT,
     fa,
@@ -356,8 +357,14 @@ class AdminCommands:
             pass
         value = self.channels.status(ctx.actor)
         error = value["last_error"]
+        verification = PERMISSION_NOTICES.get(
+            value["permission_error"],
+            "بررسی مقصد موفق بود."
+            if value["can_post"]
+            else "مجوز فعلی تأیید نشده است؛ «بررسی دوباره» را بزنید.",
+        )
         await ctx.reply(
-            f"وضعیت مقصد مشترک\nعنوان: {value['title']}\nشناسهٔ مقصد: {value['channel_id']}\nاجازهٔ ارسال: {'دارد' if value['can_post'] else 'ندارد یا قابل تأیید نیست'}\nتعداد هشدارها: {fa(value['total'])}\nفعال: {fa(value['active'])}\nآخرین ارسال موفق: {tehran_time(value['last_success'])}\nآخرین خطای ارسال: {error['code'] + ' · ' + tehran_time(error['timestamp']) if error else 'ثبت نشده'}",
+            f"وضعیت مقصد مشترک\nعنوان: {value['title']}\nشناسهٔ مقصد: {value['channel_id']}\nاجازهٔ ارسال: {'دارد' if value['can_post'] else 'ندارد یا قابل تأیید نیست'}\nنتیجهٔ بررسی مقصد: {verification}\nتعداد هشدارها: {fa(value['total'])}\nفعال: {fa(value['active'])}\nآخرین ارسال موفق: {tehran_time(value['last_success'])}\nآخرین خطای ارسال: {error['code'] + ' · ' + tehran_time(error['timestamp']) if error else 'ثبت نشده'}",
             [("بررسی دوباره", "ad:status"), ("بازگشت", "ad:menu")],
             edit=True,
         )

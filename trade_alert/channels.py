@@ -92,10 +92,26 @@ class ChannelService:
                 ),
             )
             return bool(can_post)
-        except Exception:
+        except Exception as error:
+            # Persist only safe adapter categories, never RPC text/credentials.
+            kind = getattr(error, "kind", None)
+            reason = "UNAVAILABLE"
+            if kind in (
+                "DESTINATION_INVALID",
+                "DESTINATION_INACCESSIBLE",
+                "ADMIN_REQUIRED",
+                "NETWORK",
+                "INVALID_RESPONSE",
+                "SESSION_CONFLICT",
+            ):
+                reason = kind
+            elif getattr(error, "code", None) == 429:
+                reason = "RATE_LIMITED"
+            elif isinstance(error, (TimeoutError, OSError)):
+                reason = "NETWORK"
             self.db.execute(
-                "UPDATE telegram_channels SET can_post=0, checked_at=?, permission_error='UNAVAILABLE' WHERE channel_id=?",
-                (self.now(), self.channel_id),
+                "UPDATE telegram_channels SET can_post=0, checked_at=?, permission_error=? WHERE channel_id=?",
+                (self.now(), reason, self.channel_id),
             )
             raise
 

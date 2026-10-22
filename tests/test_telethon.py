@@ -362,6 +362,17 @@ class TelethonTests(unittest.IsolatedAsyncioTestCase):
             (errors.MessageNotModifiedError(None), 400, "NOT_MODIFIED", None),
             (errors.AuthKeyDuplicatedError(None), 409, "SESSION_CONFLICT", None),
             (errors.ChatWriteForbiddenError(None), 403, "API", None),
+            (errors.ChannelInvalidError(None), 400, "DESTINATION_INVALID", None),
+            (errors.ChatIdInvalidError(None), 400, "DESTINATION_INVALID", None),
+            (errors.PeerIdInvalidError(None), 400, "DESTINATION_INVALID", None),
+            (errors.ChannelPrivateError(None), 403, "DESTINATION_INACCESSIBLE", None),
+            (
+                errors.UserNotParticipantError(None),
+                403,
+                "DESTINATION_INACCESSIBLE",
+                None,
+            ),
+            (errors.ChatAdminRequiredError(None), 403, "ADMIN_REQUIRED", None),
             (errors.ServerError(None, TOKEN, 500), 500, "API", None),
         ):
             self.client.send_message = AsyncMock(side_effect=error)
