@@ -1,5 +1,6 @@
 """Current-admin shared-destination UI, with per-chat expiring flat-tree drafts."""
 
+import asyncio
 import re
 import secrets
 from collections.abc import Callable
@@ -9,6 +10,9 @@ from typing import Any
 from .bot_text import (
     LABELS,
     LIVE_NOTICE,
+    PERCENT_PROMPT,
+    TYPE_PROMPT,
+    WINDOW_PROMPT,
     fa,
     minimum_prompt,
     numeric,
@@ -21,7 +25,7 @@ from .definitions import definition_json, parse_tree
 from .market import Instrument
 from .market_service import MarketService
 from .telegram import Buttons, Context
-from .validation import integer
+from .validation import integer, text
 
 
 @dataclass(slots=True)
@@ -52,6 +56,17 @@ class ChannelDraft:
         )
 
 
+@dataclass(slots=True)
+class MessageDraft:
+    expires: int
+    channel_id: str
+    token: str = field(default_factory=lambda: secrets.token_hex(4))
+    instrument: Instrument | None = None
+    body: str = ""
+    preview: bool = False
+    message_id: int | None = None
+
+
 class AdminCommands:
     def __init__(
         self, channels: ChannelService, market: MarketService, now: Callable[[], int]
@@ -59,6 +74,12 @@ class AdminCommands:
         self.channels, self.market, self.now = channels, market, now
         # ponytail: one ten-minute draft per admin/chat (private + one group), lost on restart.
         self.drafts: dict[str, ChannelDraft] = {}
+        self.messages: dict[str, MessageDraft] = {}
+
+    def discard(self, scope: str) -> bool:
+        rule = self.drafts.pop(scope, None)
+        message = self.messages.pop(scope, None)
+        return rule is not None or message is not None
 
     def _live(self, scope: str, draft: ChannelDraft) -> bool:
         return (
@@ -70,6 +91,7 @@ class AdminCommands:
     async def menu(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
         self.drafts.pop(ctx.scope, None)
+        self.messages.pop(ctx.scope, None)
         await ctx.reply(
             ("مدیریت هشدارهای گروه" if ctx.group_id else "مدیریت هشدارهای مقصد مشترک")
             + f"\nمقصد: {self.channels.status(ctx.actor)['title']}\n{LIVE_NOTICE}",
@@ -77,7 +99,8 @@ class AdminCommands:
                 ("ساخت هشدار جدید", "ad:new"),
                 ("مشاهده هشدارها", "ad:list:0"),
                 ("وضعیت گروه" if ctx.group_id else "وضعیت مقصد مشترک", "ad:status"),
-            ],
+            ]
+            + ([] if ctx.group_id else [("ارسال پیام به گروه یا کانال", "ad:post")]),
             edit=True,
         )
 
@@ -91,20 +114,23 @@ class AdminCommands:
             prompt = f"هشدار جدید {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nپیش‌نویس تا ۱۰ دقیقه معتبر است.\n{LIVE_NOTICE}"
             actions = [(f"انتخاب این {destination}", "channel")]
         elif draft.step == "search":
-            prompt = "نام نماد را برای جست‌وجو بنویسید؛ حداکثر ۸۰ نویسه."
+            prompt = "نام نماد بورسی را برای جست‌وجو بنویسید؛ مثلاً «خودرو» یا نماد دلخواهتان. حداکثر ۸۰ نویسه."
         elif draft.step == "results":
             prompt = "نماد را انتخاب کنید:"
             actions = [
                 (item.symbol, f"symbol{i}") for i, item in enumerate(draft.results)
             ]
         elif draft.step == "type":
-            prompt = "شرط را انتخاب کنید:"
+            prompt = (
+                TYPE_PROMPT
+                + "\n«حداقل حجم صف» یعنی حجم سفارش‌های صف به تعداد سهم تعیین‌شده برسد؛ نه حجم معاملات."
+            )
             actions = [(LABELS[t], f"type{i}") for i, t in enumerate(LABELS)]
         elif draft.step == "percent":
-            prompt = "درصد کاهش را بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰، حداکثر شش رقم اعشار."
+            prompt = PERCENT_PROMPT
         elif draft.step == "window":
             prompt, actions = (
-                "بازهٔ مقایسه را انتخاب کنید:",
+                WINDOW_PROMPT,
                 [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
             )
         elif draft.step == "minimum":
@@ -153,6 +179,10 @@ class AdminCommands:
             prompt += f"\nنوع فعلی: {LABELS[draft.selected_type]}"
             actions.append(("نگه‌داشتن نوع فعلی", "keep"))
         actions.extend([("بازگشت", "back"), ("لغو", "cancel")])
+        if draft.instrument:
+            note = self.channels.symbol_note(draft.instrument.ins_code)
+            prompt += "\n\nیادداشت مشترک نماد: " + (note or "ثبت نشده")
+            actions.append(("ویرایش یادداشت نماد", "note"))
         if ctx.group_id:
             prompt += "\nبرای ورود متن، به همین پیام پاسخ بدهید."
         draft.message_id = await ctx.reply(
@@ -185,6 +215,135 @@ class AdminCommands:
             edit=True,
         )
 
+    async def compose_note(self, ctx: Context, item: Instrument) -> None:
+        self.channels.authorize(ctx.actor)
+        if rule := self.drafts.get(ctx.scope):
+            rule.token = secrets.token_hex(4)  # Pause the rule wizard's old buttons.
+        self.messages[ctx.scope] = MessageDraft(
+            self.now() + 600_000, self.channels.channel_id, instrument=item
+        )
+        await self._show_message(ctx)
+
+    async def _show_message(self, ctx: Context, notice: str = "") -> None:
+        self.channels.authorize(ctx.actor)
+        draft = self.messages[ctx.scope]
+        if self.now() > draft.expires or draft.channel_id != self.channels.channel_id:
+            self.messages.pop(ctx.scope, None)
+            await ctx.reply("پیش‌نویس منقضی شد. با /admin دوباره شروع کنید.")
+            return
+        draft.token = secrets.token_hex(4)
+        title = (
+            f"یادداشت مشترک نماد «{draft.instrument.symbol}»"
+            if draft.instrument
+            else "ارسال پیام به گروه یا کانال"
+        )
+        prompt = f"{title}\nمقصد: {self.channels.status(ctx.actor)['title']}\nپیش‌نویس تا ۱۰ دقیقه معتبر است.\n"
+        actions = []
+        if draft.preview:
+            prompt += "پیش‌نمایش؛ هنوز ذخیره یا ارسال نشده است:\n\n" + (
+                draft.body or "حذف یادداشت فعلی"
+            )
+            actions.extend(
+                [
+                    (
+                        "تأیید و ذخیره" if draft.instrument else "تأیید ارسال به مقصد",
+                        "save",
+                    ),
+                    ("ویرایش متن", "edit"),
+                ]
+            )
+        elif draft.instrument:
+            prompt += (
+                "این یادداشت را مدیرها می‌بینند و همراه هشدارهای این نماد در مقصد منتشر می‌شود. حداکثر ۵۰۰ نویسه بنویسید.\nمثال: بررسی دوباره پس از انتشار گزارش ماهانه.\nیادداشت فعلی: "
+                + (self.channels.symbol_note(draft.instrument.ins_code) or "ثبت نشده")
+            )
+            actions.append(("حذف یادداشت", "clear"))
+        else:
+            prompt += "متن پیام را بنویسید؛ حداکثر ۱۵۰۰ نویسه. پس از پیش‌نمایش، فقط با تأیید شما ارسال می‌شود."
+        actions.append(("لغو", "cancel"))
+        if ctx.group_id:
+            prompt += "\nمتن را با Reply به همین پیام بفرستید."
+        draft.message_id = await ctx.reply(
+            (notice + "\n" if notice else "") + prompt,
+            [(label, f"ad:write:{draft.token}:{action}") for label, action in actions],
+            edit=True,
+        )
+
+    async def _message_callback(self, ctx: Context) -> None:
+        await ctx.answer()
+        self.channels.authorize(ctx.actor)
+        match = re.fullmatch(
+            r"ad:write:([a-f0-9]{8}):(save|edit|clear|cancel)", ctx.data
+        )
+        draft = self.messages.get(ctx.scope)
+        if ctx.group_id and draft and ctx.message_id != draft.message_id:
+            return
+        if (
+            not match
+            or not draft
+            or match[1] != draft.token
+            or self.now() > draft.expires
+            or draft.channel_id != self.channels.channel_id
+        ):
+            await ctx.reply(
+                "این پیش‌نویس منقضی یا تغییر کرده است. از /admin دوباره شروع کنید."
+            )
+            return
+        action = match[2]
+        if action == "edit":
+            draft.preview = False
+            await self._show_message(ctx)
+        elif action == "clear" and draft.instrument:
+            draft.body, draft.preview = "", True
+            await self._show_message(ctx)
+        elif action == "cancel":
+            self.messages.pop(ctx.scope, None)
+            await self._resume_message(ctx, "لغو شد؛ تغییری ذخیره یا ارسال نشد.")
+        elif action == "save" and draft.preview:
+            # Consume before awaiting permissions/send: a repeated click cannot send twice.
+            self.messages.pop(ctx.scope, None)
+            if draft.instrument:
+                item = draft.instrument
+                self.channels.set_symbol_note(
+                    ctx.actor,
+                    dict(insCode=item.ins_code, symbol=item.symbol, name=item.name),
+                    draft.body,
+                )
+                await self._resume_message(
+                    ctx,
+                    "یادداشت مشترک نماد ذخیره شد."
+                    if draft.body
+                    else "یادداشت نماد حذف شد.",
+                )
+            elif not ctx.group_id:
+                try:
+                    async with asyncio.timeout(10):
+                        if not await self.channels.refresh():
+                            raise PermissionError("Posting unavailable")
+                        self.channels.authorize(ctx.actor)
+                        if (
+                            draft.channel_id != self.channels.channel_id
+                            or self.now() > draft.expires
+                        ):
+                            raise PermissionError("Destination changed")
+                        await ctx.api.call(
+                            "sendMessage",
+                            dict(chat_id=self.channels.channel_id, text=draft.body),
+                        )
+                except Exception:
+                    await ctx.reply(
+                        "ارسال تأیید نشد. پیش از تلاش دوباره، مقصد را بررسی کنید؛ ممکن است پیام رسیده باشد. ارسال خودکار تکرار نمی‌شود."
+                    )
+                    return
+                await ctx.reply("پیام به مقصد تنظیم‌شده ارسال شد.")
+
+    async def _resume_message(self, ctx: Context, notice: str) -> None:
+        draft = self.drafts.get(ctx.scope)
+        if draft and self._live(ctx.scope, draft):
+            await self.show(ctx, draft, notice)
+        else:
+            await ctx.reply(notice, [("مدیریت گروه یا کانال", "ad:menu")], edit=True)
+
     async def status(self, ctx: Context) -> None:
         if ctx.group_id:
             await ctx.reply(
@@ -208,6 +367,9 @@ class AdminCommands:
             await ctx.answer("دسترسی ندارید.")
             return
         self.channels.authorize(ctx.actor)
+        if ctx.data.startswith("ad:write:"):
+            await self._message_callback(ctx)
+            return
         await ctx.answer()
         self.channels.authorize(ctx.actor)
         if ctx.data.startswith("af:"):
@@ -222,6 +384,18 @@ class AdminCommands:
             await self.status(ctx)
         elif action == "new":
             await self.new(ctx)
+        elif action == "post" and not ctx.group_id:
+            self.drafts.pop(ctx.scope, None)
+            self.messages[ctx.scope] = MessageDraft(
+                self.now() + 600_000, self.channels.channel_id
+            )
+            await self._show_message(ctx)
+        elif match := re.fullmatch(r"note:([1-9][0-9]{0,19})", action):
+            item = self.channels.users.find_symbol(ctx.actor, match[1])
+            if item:
+                await self.compose_note(
+                    ctx, Instrument(item["ins_code"], item["symbol"], item["symbol"])
+                )
         elif re.fullmatch(r"list:[0-9]+", action):
             await self.list(ctx, int(action[5:]))
         elif match := re.fullmatch(
@@ -231,6 +405,7 @@ class AdminCommands:
 
     async def new(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
+        self.messages.pop(ctx.scope, None)
         draft = ChannelDraft(self.now() + 600_000, self.channels.channel_id)
         self.drafts[ctx.scope] = draft
         await self.show(ctx, draft)
@@ -322,6 +497,9 @@ class AdminCommands:
             await self.menu(ctx)
             return
         if draft.saving:
+            return
+        if action == "note" and draft.instrument:
+            await self.compose_note(ctx, draft.instrument)
             return
         if action == "back":
             if draft.step == "channel":
@@ -472,6 +650,34 @@ class AdminCommands:
 
     async def message(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
+        outgoing = self.messages.get(ctx.scope)
+        if outgoing:
+            if (
+                self.now() > outgoing.expires
+                or outgoing.channel_id != self.channels.channel_id
+            ):
+                self.messages.pop(ctx.scope, None)
+                await ctx.reply("پیش‌نویس منقضی شد. با /admin دوباره شروع کنید.")
+                return
+            if ctx.group_id and ctx.reply_to_message_id != outgoing.message_id:
+                return
+            if outgoing.preview:
+                await self._show_message(
+                    ctx, "برای تغییر متن، ابتدا «ویرایش متن» را بزنید."
+                )
+                return
+            try:
+                outgoing.body = text(
+                    ctx.message_text, 500 if outgoing.instrument else 1500
+                )
+            except ValueError:
+                await self._show_message(
+                    ctx, "متن خالی یا بیش از حد طولانی است؛ متن کوتاه‌تری بفرستید."
+                )
+                return
+            outgoing.preview = True
+            await self._show_message(ctx)
+            return
         draft = self.drafts.get(ctx.scope)
         if draft is None:
             return

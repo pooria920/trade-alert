@@ -64,6 +64,15 @@ admins must first `/start` privately; they can then use `/admin`, `/alert`, `/al
 the current bot prompt. Personal commands/data and delivery-error details remain
 private; other group members cannot operate the bot. See [group setup](DEPLOYMENT.fa.md).
 
+In private `/admin`, configured admins can compose a manual text message for the
+shared destination, preview it and confirm sending. Text is limited to 1,500
+characters; sends recheck bot permission and current admin authorization and have
+no automatic retry. Optional shared symbol notes (500 characters) can be edited
+after `/add` or in the shared alert wizard. Notes are stored per destination and
+instrument and appended only to shared alerts at delivery, never private alerts.
+Both editors expire after ten minutes/restart and support preview/cancel.
+The additive `0005_channel_symbol_notes.sql` migration preserves existing data.
+
 Original migrations and journal live unchanged under `migrations/`. Startup and
 manual migration share an OS-backed instance lock. The image runs as `node`
 (UID/GID 1000) for existing-volume compatibility; it contains Python, not Node.

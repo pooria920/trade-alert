@@ -30,6 +30,16 @@ GROUP = dict(
 
 
 class ServiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_shared_notes_authorization_destination_scope_and_validation(self):
+        self.channels.set_symbol_note("1", ITEM, "یادداشت مشترک")
+        self.assertEqual(self.channels.symbol_note("123"), "یادداشت مشترک")
+        with self.assertRaises(PermissionError):
+            self.channels.set_symbol_note("3", ITEM, "unauthorized")
+        with self.assertRaises(ValueError):
+            self.channels.set_symbol_note("1", ITEM, "x" * 501)
+        self.channels.channel_id = "-100999"
+        self.assertEqual(self.channels.symbol_note("123"), "")
+
     async def test_channel_write_rollback_and_invalid_input(self):
         rule = await self.channels.create("1", ITEM, GROUP)
         self.state(rule)

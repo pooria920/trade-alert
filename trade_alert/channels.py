@@ -133,6 +133,35 @@ class ChannelService:
         # Internal service results include owner metadata; UI must not display it.
         return result
 
+    def symbol_note(self, ins_code: str) -> str:
+        """Internal delivery lookup, scoped to the currently configured destination."""
+        result = rows(
+            self.db,
+            "SELECT note FROM channel_symbol_notes WHERE channel_id=? AND ins_code=?",
+            (self.channel_id, ins_code),
+        )
+        return str(result[0]["note"]) if result else ""
+
+    def set_symbol_note(self, actor: str, instrument: object, value: object) -> None:
+        self.authorize(actor)
+        item = parse_instrument(instrument)
+        note = text(value, 500, minimum=0)
+        with transaction(self.db):
+            self.db.execute(
+                "INSERT INTO symbols (ins_code, symbol, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING",
+                (item.ins_code, item.symbol, self.now()),
+            )
+            if note:
+                self.db.execute(
+                    "INSERT INTO channel_symbol_notes (channel_id, ins_code, note, updated_by, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(channel_id, ins_code) DO UPDATE SET note=excluded.note, updated_by=excluded.updated_by, updated_at=excluded.updated_at",
+                    (self.channel_id, item.ins_code, note, actor, self.now()),
+                )
+            else:
+                self.db.execute(
+                    "DELETE FROM channel_symbol_notes WHERE channel_id=? AND ins_code=?",
+                    (self.channel_id, item.ins_code),
+                )
+
     def get(self, actor: str, rule_id: str) -> dict[str, Any] | None:
         return next((rule for rule in self.list(actor) if rule["id"] == rule_id), None)
 

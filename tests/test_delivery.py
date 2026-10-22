@@ -25,6 +25,31 @@ from trade_alert.users import UserService
 
 
 class DeliveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_notes_follow_shared_alerts_at_send_time_and_never_private_alerts(
+        self,
+    ):
+        await self.trigger(channel=True)
+        self.channels.set_symbol_note("1", ITEM, "یادداشت تازهٔ نماد")
+        await self.worker().dispatch_once()
+        self.assertEqual(self.outbox()["status"], "DELIVERED")
+        self.assertIn("یادداشت تازهٔ نماد", self.calls[-1][1])
+        self.db.execute(
+            "UPDATE notification_outbox SET status='PENDING', next_attempt_at=0"
+        )
+        self.channels.set_symbol_note("1", ITEM, "😀" * 500)
+        with patch("trade_alert.delivery.format_notification", return_value="x" * 4000):
+            await self.worker().dispatch_once()
+        self.assertEqual(self.outbox()["status"], "DELIVERED")
+        self.assertTrue(self.calls[-1][1].startswith("x" * 4000))
+        self.assertTrue(self.calls[-1][1].endswith("…"))
+        self.assertLessEqual(len(self.calls[-1][1].encode("utf-16-le")) // 2, 4096)
+        self.db.execute("DELETE FROM alert_rules")
+        self.db.execute("DELETE FROM queue_snapshots")
+        self.clock = START
+        await self.trigger()
+        await self.worker().dispatch_once()
+        self.assertNotIn("یادداشت نماد:", self.calls[-1][1])
+
     async def test_basic_and_supergroup_delivery_rechecks_real_adapter_permissions(
         self,
     ):
