@@ -16,4 +16,13 @@ backups/
 *.pem
 *.key
 .ssh/
-python.zip
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.zip
+# Local remnants of the former layout are never release inputs.
+python/

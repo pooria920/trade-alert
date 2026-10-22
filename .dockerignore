@@ -15,8 +15,8 @@ backups
 .ssh
 *.pem
 *.key
-*.zip
 **/.venv
 **/__pycache__
 **/.mypy_cache
 **/.ruff_cache
+*.zip

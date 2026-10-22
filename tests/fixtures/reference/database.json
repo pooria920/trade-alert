@@ -1,0 +1,107 @@
+{
+  "locked": false,
+  "migrations": [
+    {
+      "hash": "bd18d4fe942fea1782a8775c61a7245cd559cfaf85ca61ea5dc82a1bd0d990b2",
+      "created_at": 1792593022111
+    },
+    {
+      "hash": "711157f33cdccb570324bce2477564d347b9ced4978f7a827344eafa14c423c5",
+      "created_at": 1792594178208
+    },
+    {
+      "hash": "fafdfea894a47875d6f9ac179ae866f9641da53ffe68f7c37688b584e91495eb",
+      "created_at": 1792595815070
+    },
+    {
+      "hash": "15d085d48eb4bbb5fc015fb15b822da2fd083fc64d04f552e3de2877b9a2acf0",
+      "created_at": 1792597104948
+    },
+    {
+      "hash": "eb56ddf1df4bd4999c21fcd8e54ff158f6842aefc2b067830c677a78da057412",
+      "created_at": 1792606241015
+    }
+  ],
+  "schema": [
+    {
+      "name": "__drizzle_migrations",
+      "sql": "CREATE TABLE \"__drizzle_migrations\" ( id SERIAL PRIMARY KEY, hash text NOT NULL, created_at numeric )"
+    },
+    {
+      "name": "alert_events",
+      "sql": "CREATE TABLE `alert_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`rule_id` text NOT NULL,\n\t`message` text NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`sent_at` integer, `occurrence_key` text, `payload` text, `rule_revision` integer,\n\tFOREIGN KEY (`rule_id`) REFERENCES `alert_rules`(`id`) ON UPDATE no action ON DELETE cascade\n)"
+    },
+    {
+      "name": "alert_events_occurrence_idx",
+      "sql": "CREATE UNIQUE INDEX `alert_events_occurrence_idx` ON `alert_events` (`occurrence_key`)"
+    },
+    {
+      "name": "alert_events_rule_time_idx",
+      "sql": "CREATE INDEX `alert_events_rule_time_idx` ON `alert_events` (`rule_id`,`created_at`)"
+    },
+    {
+      "name": "alert_rules",
+      "sql": "CREATE TABLE `alert_rules` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`ins_code` text NOT NULL,\n\t`type` text NOT NULL,\n\t`threshold_percent` real,\n\t`window_minutes` integer DEFAULT 1 NOT NULL,\n\t`minimum_baseline_volume` integer DEFAULT 1 NOT NULL,\n\t`cooldown_seconds` integer DEFAULT 0 NOT NULL,\n\t`enabled` integer DEFAULT true NOT NULL,\n\t`armed` integer DEFAULT true NOT NULL,\n\t`last_triggered_at` integer,\n\t`created_at` integer NOT NULL, `owner_id` text REFERENCES users(telegram_user_id), `definition` text, `revision` integer DEFAULT 1 NOT NULL, `channel_id` text REFERENCES telegram_channels(channel_id),\n\tFOREIGN KEY (`ins_code`) REFERENCES `symbols`(`ins_code`) ON UPDATE no action ON DELETE cascade,\n\tCONSTRAINT \"alert_rule_type\" CHECK(\"alert_rules\".\"type\" IN ('BUY_QUEUE_DROP_PERCENT', 'SELL_QUEUE_DROP_PERCENT', 'BUY_QUEUE_DISAPPEARED', 'SELL_QUEUE_DISAPPEARED')),\n\tCONSTRAINT \"alert_rule_threshold\" CHECK((\"alert_rules\".\"type\" NOT IN ('BUY_QUEUE_DROP_PERCENT', 'SELL_QUEUE_DROP_PERCENT')) OR (\"alert_rules\".\"threshold_percent\" IS NOT NULL AND \"alert_rules\".\"threshold_percent\" > 0 AND \"alert_rules\".\"threshold_percent\" <= 100)),\n\tCONSTRAINT \"alert_rule_window\" CHECK(\"alert_rules\".\"window_minutes\" IN (1, 5)),\n\tCONSTRAINT \"alert_rule_baseline\" CHECK(\"alert_rules\".\"minimum_baseline_volume\" > 0),\n\tCONSTRAINT \"alert_rule_cooldown\" CHECK(\"alert_rules\".\"cooldown_seconds\" >= 0)\n)"
+    },
+    {
+      "name": "alert_rules_channel_idx",
+      "sql": "CREATE INDEX `alert_rules_channel_idx` ON `alert_rules` (`channel_id`,`enabled`)"
+    },
+    {
+      "name": "alert_rules_enabled_symbol_idx",
+      "sql": "CREATE INDEX `alert_rules_enabled_symbol_idx` ON `alert_rules` (`enabled`,`ins_code`)"
+    },
+    {
+      "name": "alert_rules_owner_symbol_idx",
+      "sql": "CREATE INDEX `alert_rules_owner_symbol_idx` ON `alert_rules` (`owner_id`,`ins_code`)"
+    },
+    {
+      "name": "alert_states",
+      "sql": "CREATE TABLE `alert_states` (\n\t`rule_id` text PRIMARY KEY NOT NULL,\n\t`revision` integer NOT NULL,\n\t`session_id` text NOT NULL,\n\t`status` text NOT NULL,\n\t`last_evaluated_at` integer NOT NULL,\n\t`last_triggered_at` integer,\n\t`baseline_volume` integer, `recovery_data` text,\n\tFOREIGN KEY (`rule_id`) REFERENCES `alert_rules`(`id`) ON UPDATE no action ON DELETE cascade\n)"
+    },
+    {
+      "name": "application_state",
+      "sql": "CREATE TABLE `application_state` (\n\t`key` text PRIMARY KEY NOT NULL,\n\t`value` text NOT NULL,\n\t`updated_at` integer NOT NULL\n)"
+    },
+    {
+      "name": "notification_outbox",
+      "sql": "CREATE TABLE `notification_outbox` (\n\t`event_id` text PRIMARY KEY NOT NULL,\n\t`status` text DEFAULT 'PENDING' NOT NULL,\n\t`attempts` integer DEFAULT 0 NOT NULL,\n\t`next_attempt_at` integer NOT NULL,\n\t`lease_until` integer,\n\t`lease_token` text,\n\t`error_code` text,\n\tFOREIGN KEY (`event_id`) REFERENCES `alert_events`(`id`) ON UPDATE no action ON DELETE cascade\n)"
+    },
+    {
+      "name": "notification_outbox_due_idx",
+      "sql": "CREATE INDEX `notification_outbox_due_idx` ON `notification_outbox` (`status`,`next_attempt_at`)"
+    },
+    {
+      "name": "queue_snapshots",
+      "sql": "CREATE TABLE `queue_snapshots` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`ins_code` text NOT NULL,\n\t`timestamp` integer NOT NULL,\n\t`queue_type` text NOT NULL,\n\t`volume` integer NOT NULL,\n\t`price` real,\n\t`order_count` integer NOT NULL, `collected_at` integer, `symbol` text, `session_id` text,\n\tFOREIGN KEY (`ins_code`) REFERENCES `symbols`(`ins_code`) ON UPDATE no action ON DELETE cascade,\n\tCONSTRAINT \"snapshot_queue_type\" CHECK(\"queue_snapshots\".\"queue_type\" IN ('buy', 'sell', 'none')),\n\tCONSTRAINT \"snapshot_quantities\" CHECK(\"queue_snapshots\".\"volume\" >= 0 AND \"queue_snapshots\".\"order_count\" >= 0),\n\tCONSTRAINT \"snapshot_price\" CHECK(\"queue_snapshots\".\"price\" IS NULL OR \"queue_snapshots\".\"price\" > 0)\n)"
+    },
+    {
+      "name": "queue_snapshots_retention_idx",
+      "sql": "CREATE INDEX `queue_snapshots_retention_idx` ON `queue_snapshots` (`timestamp`)"
+    },
+    {
+      "name": "queue_snapshots_symbol_time_idx",
+      "sql": "CREATE UNIQUE INDEX `queue_snapshots_symbol_time_idx` ON `queue_snapshots` (`ins_code`,`timestamp`)"
+    },
+    {
+      "name": "symbols",
+      "sql": "CREATE TABLE `symbols` (\n\t`ins_code` text PRIMARY KEY NOT NULL,\n\t`symbol` text NOT NULL,\n\t`created_at` integer NOT NULL\n)"
+    },
+    {
+      "name": "telegram_channels",
+      "sql": "CREATE TABLE `telegram_channels` (\n\t`channel_id` text PRIMARY KEY NOT NULL,\n\t`title` text DEFAULT 'کانال تنظیم‌شده' NOT NULL,\n\t`can_post` integer DEFAULT false NOT NULL,\n\t`checked_at` integer,\n\t`permission_error` text\n)"
+    },
+    {
+      "name": "users",
+      "sql": "CREATE TABLE `users` (\n\t`telegram_user_id` text PRIMARY KEY NOT NULL,\n\t`private_chat_id` text NOT NULL,\n\t`notifications_enabled` integer DEFAULT true NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n)"
+    },
+    {
+      "name": "watchlists",
+      "sql": "CREATE TABLE `watchlists` (\n\t`user_id` text NOT NULL,\n\t`ins_code` text NOT NULL,\n\t`created_at` integer NOT NULL,\n\tPRIMARY KEY(`user_id`, `ins_code`),\n\tFOREIGN KEY (`user_id`) REFERENCES `users`(`telegram_user_id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`ins_code`) REFERENCES `symbols`(`ins_code`) ON UPDATE no action ON DELETE cascade\n)"
+    },
+    {
+      "name": "watchlists_symbol_idx",
+      "sql": "CREATE INDEX `watchlists_symbol_idx` ON `watchlists` (`ins_code`)"
+    }
+  ]
+}

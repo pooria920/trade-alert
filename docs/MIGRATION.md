@@ -1,6 +1,6 @@
-# Upgrade from Phase 1
+> Current runtime: Python at the repository root. Original SQL migrations and journal now live in `migrations/`, unchanged. Historical phase descriptions below describe data compatibility. See [deployment](../DEPLOYMENT.md).
 
-This document records the historical Telegram schema upgrades. The Bale version starts with a fresh database and uses `BALE_*` settings; do not copy Telegram identities or pending deliveries. See [Bale setup](../README.md#bale-connection-and-fresh-setup). Applied migrations and historical SQL names remain intact.
+# Upgrade from Phase 1
 
 Back up the stopped database volume before updating. Keep the volume and initial migration. Startup applies `0001_multi_user.sql`: it creates users/watchlists and adds a nullable owner foreign key/index to alert rules. No data is deleted or assigned to a guessed owner.
 
@@ -60,6 +60,6 @@ Leave `TELEGRAM_ADMIN_USER_IDS` and `TELEGRAM_CHANNEL_ID` blank for private-only
 
 ## Phase 6A operational changes
 
-No schema migration is introduced. Existing rules, states, events, snapshots and pending outbox records are preserved. Application startup and the dedicated migration CLI now acquire a separate OS-backed SQLite instance lock beside the configured database; it does not hold a transaction on the application's WAL database. A second app or manual migrator cannot own the same database path concurrently. Stop the bot before `node dist/database/migrate.js`; crash/exit releases the OS lock without deleting files. Use a persistent local volume and one process per bot token.
+No schema migration is introduced. Existing rules, states, events, snapshots and pending outbox records are preserved. Application startup and the dedicated migration CLI now acquire a separate OS-backed SQLite instance lock beside the configured database; it does not hold a transaction on the application's WAL database. A second app or manual migrator cannot own the same database path concurrently. Stop the bot before `python -m trade_alert.maintenance migrate /app/data/stock-alert.db`; crash/exit releases the OS lock without deleting files. Use a persistent local volume and one process per bot token.
 
 Use the online backup and new-path restore procedures in [DEPLOYMENT.md](../DEPLOYMENT.md). Do not copy a live database file without its WAL context. Backup artifacts are integrity/foreign-key checked and finalized in DELETE journal mode so a single backup file can be mounted read-only during restore. Restore never overwrites existing DB/WAL/SHM targets or restores automatically. Preserve original files and pair schema-compatible images/backups when rolling back. Admin IDs must now also appear in the authorized user list; update .env before starting the new release. Production refuses schedule bypass, DEBUG logging and in-memory databases.

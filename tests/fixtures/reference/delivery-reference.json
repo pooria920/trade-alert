@@ -1,0 +1,204 @@
+[
+  {
+    "input": [
+      {
+        "channel": false,
+        "outcome": "success"
+      },
+      {
+        "channel": false,
+        "outcome": "429"
+      },
+      {
+        "channel": false,
+        "outcome": "503"
+      },
+      {
+        "channel": false,
+        "outcome": "403"
+      },
+      {
+        "channel": false,
+        "outcome": "muted"
+      },
+      {
+        "channel": false,
+        "outcome": "revision"
+      },
+      {
+        "channel": false,
+        "outcome": "expired"
+      },
+      {
+        "channel": false,
+        "outcome": "denied"
+      },
+      {
+        "channel": true,
+        "outcome": "success"
+      },
+      {
+        "channel": true,
+        "outcome": "429"
+      },
+      {
+        "channel": true,
+        "outcome": "503"
+      },
+      {
+        "channel": true,
+        "outcome": "403"
+      },
+      {
+        "channel": true,
+        "outcome": "muted"
+      },
+      {
+        "channel": true,
+        "outcome": "revision"
+      },
+      {
+        "channel": true,
+        "outcome": "expired"
+      },
+      {
+        "channel": true,
+        "outcome": "denied"
+      }
+    ],
+    "output": [
+      {
+        "status": "DELIVERED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": [
+          "1"
+        ]
+      },
+      {
+        "status": "PENDING",
+        "attempts": 1,
+        "error": "TELEGRAM_429",
+        "next": 1800000070000,
+        "targets": [
+          "1"
+        ]
+      },
+      {
+        "status": "PENDING",
+        "attempts": 1,
+        "error": "TELEGRAM_503",
+        "next": 1800000062000,
+        "targets": [
+          "1"
+        ]
+      },
+      {
+        "status": "FAILED",
+        "attempts": 1,
+        "error": "TELEGRAM_403",
+        "next": 1800000062000,
+        "targets": [
+          "1"
+        ]
+      },
+      {
+        "status": "CANCELLED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": []
+      },
+      {
+        "status": "CANCELLED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": []
+      },
+      {
+        "status": "EXPIRED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000960001,
+        "targets": []
+      },
+      {
+        "status": "DELIVERED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": [
+          "1"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": [
+          "-100123"
+        ]
+      },
+      {
+        "status": "PENDING",
+        "attempts": 1,
+        "error": "TELEGRAM_429",
+        "next": 1800000070000,
+        "targets": [
+          "-100123"
+        ]
+      },
+      {
+        "status": "PENDING",
+        "attempts": 1,
+        "error": "TELEGRAM_503",
+        "next": 1800000062000,
+        "targets": [
+          "-100123"
+        ]
+      },
+      {
+        "status": "FAILED",
+        "attempts": 1,
+        "error": "TELEGRAM_403",
+        "next": 1800000062000,
+        "targets": [
+          "-100123"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": [
+          "-100123"
+        ]
+      },
+      {
+        "status": "CANCELLED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000060000,
+        "targets": []
+      },
+      {
+        "status": "EXPIRED",
+        "attempts": 1,
+        "error": null,
+        "next": 1800000960001,
+        "targets": []
+      },
+      {
+        "status": "FAILED",
+        "attempts": 1,
+        "error": "TELEGRAM_403",
+        "next": 1800000062000,
+        "targets": []
+      }
+    ]
+  }
+]

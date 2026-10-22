@@ -1,8 +1,0 @@
-node_modules
-dist
-coverage
-pnpm-lock.yaml
-src/database/migrations
-python/.venv
-python/.mypy_cache
-python/.ruff_cache
