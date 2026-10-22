@@ -1,5 +1,7 @@
 """Environment validation; receives a mapping, never reads or logs os.environ."""
 
+import base64
+import binascii
 import re
 from collections.abc import Mapping
 from ipaddress import ip_address
@@ -66,6 +68,19 @@ def mtproxy(value: str) -> tuple[str, int, str] | None:
                 raise ValueError
         if not re.fullmatch(r"[1-9][0-9]{0,4}", port):
             raise ValueError
+        if not re.fullmatch(
+            r"(?:[dD]{2})?[a-fA-F0-9]{32}|[eE]{2}[a-fA-F0-9]{34,538}", secret
+        ):
+            if not re.fullmatch(r"[A-Za-z0-9_-]+={0,2}", secret):
+                raise ValueError
+            decoded = base64.b64decode(
+                secret + "=" * (-len(secret) % 4), altchars=b"-_", validate=True
+            )
+            if base64.urlsafe_b64encode(decoded).decode().rstrip("=") != secret.rstrip(
+                "="
+            ):
+                raise ValueError
+            secret = decoded.hex()
         if re.fullmatch(r"[eE]{2}[a-fA-F0-9]{34,538}", secret):
             decoded = bytes.fromhex(secret)
             domain = decoded[17:].decode("ascii")
@@ -78,7 +93,7 @@ def mtproxy(value: str) -> tuple[str, int, str] | None:
         elif not re.fullmatch(r"(?:[dD]{2})?[a-fA-F0-9]{32}", secret):
             raise ValueError
         return host, integer(int(port), 1, 65535), secret.lower()
-    except ValueError, TypeError, UnicodeError:
+    except ValueError, TypeError, UnicodeError, binascii.Error:
         raise ValueError("Invalid or unsupported TELEGRAM_MTPROXY_URL") from None
 
 
@@ -144,6 +159,8 @@ def parse_env(source: Mapping[str, str]) -> dict[str, Any]:
         field = "TELEGRAM_MTPROXY_URL"
         values[field] = source.get(field, "").strip()
         mtproxy(values[field])
+        field = "TELEGRAM_PROXY_AUTO"
+        values[field] = choice(source.get(field, "false"), ("true", "false")) == "true"
         field = "TELEGRAM_ALLOWED_USER_IDS"
         values[field] = user_ids(source[field])
         field = "TELEGRAM_ADMIN_USER_IDS"

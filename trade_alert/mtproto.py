@@ -21,6 +21,7 @@ from telethon.sessions import MemorySession
 
 from .config import channel_id, mtproxy, user_ids
 from .mtproxy_tls import ConnectionTcpMTProxyFakeTLS
+from .proxy_auto import ProxyPool, automatic_connection
 from .validation import integer, obj, text
 
 UPDATE_WAIT_SECONDS = 30
@@ -46,6 +47,8 @@ class TelegramAPI:
         client: Any = None,
         admin_users: Sequence[str] = (),
         proxy_url: str = "",
+        auto_proxy: bool = False,
+        logger: logging.Logger | None = None,
     ) -> None:
         if not re.fullmatch(r"[0-9]+:[A-Za-z0-9_-]{30,}", token):
             raise ValueError("Invalid bot token")
@@ -71,7 +74,13 @@ class TelegramAPI:
         quiet.propagate = False
         quiet.addHandler(logging.NullHandler())
         proxy = mtproxy(proxy_url)
+        self.auto_proxy = auto_proxy and not proxy and client is None
+        self._proxy_failed = False
+        self._connection_lock = asyncio.Lock()
+        self.logger = logger
         transport: dict[str, Any] = {}
+        if self.auto_proxy:
+            transport["connection"] = automatic_connection(ProxyPool())
         if proxy:
             host, port, secret = proxy
             # Prefix once so Telethon does not strip bytes from a raw key starting dd/ee.
@@ -274,6 +283,8 @@ class TelegramAPI:
             code = int(error.code or 0)
             raise TelegramError(429 if code == 420 else code) from None
         except OSError, TimeoutError:
+            if self.auto_proxy:
+                self._proxy_failed = True
             raise TelegramError(0, "NETWORK") from None
         except ValueError, TypeError, KeyError, AttributeError:
             raise TelegramError(0, "INVALID_RESPONSE") from None
@@ -353,6 +364,13 @@ class TelegramAPI:
         return result
 
     async def _request(self, method: str, p: dict[str, Any]) -> Any:
+        if self.auto_proxy and method != "getMe":
+            async with self._connection_lock:
+                if self._proxy_failed:
+                    await self.client.disconnect()
+                if self._proxy_failed or not self.client.is_connected():
+                    await self.client.connect()
+                self._proxy_failed = False
         if method == "getMe":
             if not self.started:
                 await self.client.connect()
@@ -371,6 +389,7 @@ class TelegramAPI:
                             raise
                 self.started = True
             me = await self.client.get_me()
+            self._proxy_failed = False
             return dict(id=me.id, is_bot=me.bot is True, username=me.username)
         if method == "getUpdates":
             # Local queue consumption, not HTTP long polling. The idle probe is a
@@ -480,7 +499,24 @@ class TelegramAPI:
         )
 
     async def initialize(self) -> None:
-        value = obj(await self.call("getMe"))
+        next_notice = 0.0
+        while True:
+            try:
+                value = obj(
+                    await self.call("getMe", timeout=45 if self.auto_proxy else 10)
+                )
+                break
+            except TelegramError as error:
+                if not self.auto_proxy or error.kind != "NETWORK":
+                    raise
+                if self.logger and asyncio.get_running_loop().time() >= next_notice:
+                    self.logger.warning(
+                        "Automatic Telegram proxy connection unavailable; retrying"
+                    )
+                    next_notice = asyncio.get_running_loop().time() + 60
+                await self.client.disconnect()
+                self.started = False
+                await asyncio.sleep(5)
         bot_id = integer(value["id"], 1, 2**52 - 1)
         if value.get("is_bot") is not True or bot_id != self._expected_id:
             raise ValueError("Unexpected bot identity")

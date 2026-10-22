@@ -23,6 +23,8 @@ class FakeTelegramAPI(TelegramAPI):
         self._expected_id = int(token.split(":", 1)[0])
         self.bot_id: int | None = None
         self.username = ""
+        self.auto_proxy = False
+        self.logger = None
         # HTTPX's request logger includes the bot token in the URL.
         logging.getLogger("httpx").disabled = True
         self.http = httpx.AsyncClient(

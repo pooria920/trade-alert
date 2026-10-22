@@ -47,11 +47,17 @@ user IDs. Admins must be authorized and privately registered. `NODE_ENV` retains
 its original name for compatibility. Empty sessions (`[]`) mean closed.
 For direct local execution use an absolute local `DATABASE_URL`.
 
-Optional `TELEGRAM_MTPROXY_URL` accepts the complete `tg://proxy?...` or
-`https://t.me/proxy?...` link, including plain, dd or ee/Fake-TLS hex secrets.
-Fake-TLS SNI is limited to 220 bytes. Only Telegram uses this proxy; failures
-never fall back to a direct connection. Leave blank for direct access. Keep the
-link secret. Protocol tests use synthetic replies without opening sockets.
+With `TELEGRAM_PROXY_AUTO=true` and an empty `TELEGRAM_MTPROXY_URL`, the bot
+downloads two public MTProxy lists and tries bounded, sequential connections.
+It reuses Telethon's initial MTProto handshake before selecting a route and
+rotates on connection failure. The example environment enables this mode;
+missing `TELEGRAM_PROXY_AUTO` defaults to false for compatibility.
+A manual URL takes priority and accepts `tg://proxy?...` or `https://t.me/proxy?...`,
+including hex and URL-safe Base64 plain, dd or ee/Fake-TLS secrets. Fake-TLS SNI
+is limited to 220 bytes. Only Telegram uses the proxy; no direct fallback occurs.
+For explicit direct access, set auto=false and leave the URL blank. Public
+list/proxy availability from Iran is not guaranteed. Tests use synthetic HTTP,
+DNS, socket and MTProto replies without contacting real proxies.
 
 Commands: `/start`, `/help`, `/add`, `/list`, `/queue`, `/remove`, `/status`,
 `/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin`.
