@@ -55,6 +55,41 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def test_admin_status_distinguishes_destination_permission_and_network_failures(
+        self,
+    ):
+        await self.send("/admin")
+        for error, category, explanation in (
+            (
+                TelegramError(400, "DESTINATION_INVALID"),
+                "DESTINATION_INVALID",
+                "شناسهٔ مقصد را نامعتبر",
+            ),
+            (
+                TelegramError(403, "DESTINATION_INACCESSIBLE"),
+                "DESTINATION_INACCESSIBLE",
+                "دسترسی بات به این مقصد را رد",
+            ),
+            (
+                TelegramError(403, "ADMIN_REQUIRED"),
+                "ADMIN_REQUIRED",
+                "دسترسی ادمین می‌خواهد",
+            ),
+            (TelegramError(0, "NETWORK"), "NETWORK", "خطای اتصال"),
+            (TelegramError(429, retry_after=10), "RATE_LIMITED", "موقتاً محدود"),
+            (
+                RuntimeError("PRIVATE_DIAGNOSTIC_MUST_NOT_LEAK"),
+                "UNAVAILABLE",
+                "علت مشخصی ثبت نشده",
+            ),
+        ):
+            self.channels.verify = AsyncMock(side_effect=error)
+            await self.click("ad:status")
+            self.assertIn(explanation, self.texts()[-1])
+            self.assertNotIn("PRIVATE_DIAGNOSTIC_MUST_NOT_LEAK", self.texts()[-1])
+            self.assertFalse(self.channels.status("1")["can_post"])
+            self.assertEqual(self.channels.status("1")["permission_error"], category)
+
     async def test_admin_message_requires_preview_confirmation_and_rechecks_rights(
         self,
     ):

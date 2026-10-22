@@ -250,6 +250,16 @@ class TelegramAPI:
             raise TelegramError(400, "NOT_MODIFIED") from None
         except errors.AuthKeyDuplicatedError:
             raise TelegramError(409, "SESSION_CONFLICT") from None
+        except (
+            errors.ChannelInvalidError,
+            errors.ChatIdInvalidError,
+            errors.PeerIdInvalidError,
+        ):
+            raise TelegramError(400, "DESTINATION_INVALID") from None
+        except errors.ChannelPrivateError, errors.UserNotParticipantError:
+            raise TelegramError(403, "DESTINATION_INACCESSIBLE") from None
+        except errors.ChatAdminRequiredError:
+            raise TelegramError(403, "ADMIN_REQUIRED") from None
         except errors.RPCError as error:
             # A 420 MTProto flood error must never become a permanent outbox failure.
             code = int(error.code or 0)
