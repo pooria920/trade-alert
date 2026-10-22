@@ -28,6 +28,18 @@ def channel(identifier=1234567890, *, broadcast=True, megagroup=False):
     )
 
 
+def basic_group(identifier=123, *, admin=True):
+    return types.Chat(
+        id=identifier,
+        title="Synthetic group",
+        photo=types.ChatPhotoEmpty(),
+        participants_count=0,
+        date=datetime.now(timezone.utc),
+        version=1,
+        admin_rights=types.ChatAdminRights(other=True) if admin else None,
+    )
+
+
 class FakeClient:
     def __init__(self):
         self.handlers = []
@@ -69,7 +81,10 @@ class FakeClient:
                 return response
         if isinstance(request, functions.updates.GetStateRequest):
             return types.updates.State(1, 0, datetime.now(timezone.utc), 1, 0)
-        if isinstance(request, functions.channels.GetChannelsRequest):
+        if isinstance(
+            request,
+            (functions.channels.GetChannelsRequest, functions.messages.GetChatsRequest),
+        ):
             return SimpleNamespace(chats=[self.chat])
         if isinstance(request, functions.channels.GetParticipantRequest):
             participant = (

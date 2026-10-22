@@ -9,7 +9,16 @@ from unittest.mock import AsyncMock, patch
 
 from telethon import errors, functions, types
 from telethon.sessions import MemorySession
-from telethon_fake import API_HASH, API_ID, CHANNEL, TOKEN, FakeClient, channel, user
+from telethon_fake import (
+    API_HASH,
+    API_ID,
+    CHANNEL,
+    TOKEN,
+    FakeClient,
+    basic_group,
+    channel,
+    user,
+)
 
 from trade_alert.config import parse_env
 from trade_alert.mtproto import TelegramAPI, TelegramError
@@ -29,6 +38,99 @@ def event(actor=1, *, chat=None, private=True, callback=False, outgoing=False):
 
 
 class TelethonTests(unittest.IsolatedAsyncioTestCase):
+    async def test_basic_and_supergroup_permissions_peers_and_admin_revocation(self):
+        for destination, chat in (
+            ("-123", basic_group()),
+            (CHANNEL, channel(broadcast=False, megagroup=True)),
+        ):
+            with self.subTest(destination=destination):
+                client = FakeClient()
+                client.chat = chat
+                client.can_post = (
+                    None  # post_messages applies only to broadcast channels.
+                )
+                api = TelegramAPI(
+                    TOKEN,
+                    API_ID,
+                    API_HASH,
+                    ["1"],
+                    destination,
+                    client=client,
+                    admin_users=["1"],
+                )
+                self.addAsyncCleanup(api.close)
+                await api.initialize()
+                self.assertTrue((await api.verify_channel(destination))["canPost"])
+                await api.call(
+                    "sendMessage", dict(chat_id=destination, text="synthetic")
+                )
+                peer = client.calls[-1][1][0]
+                self.assertIsInstance(
+                    peer,
+                    types.InputPeerChat
+                    if destination == "-123"
+                    else types.InputPeerChannel,
+                )
+                if destination == "-123":
+                    chat.admin_rights = None
+                else:
+                    client.admin = False
+                self.assertFalse((await api.verify_channel(destination))["canPost"])
+                for kind, request in client.calls:
+                    if kind == "rpc":
+                        self.assertNotIsInstance(
+                            request, functions.channels.GetParticipantsRequest
+                        )
+                        if isinstance(
+                            request, functions.channels.GetParticipantRequest
+                        ):
+                            self.assertIsInstance(
+                                request.participant, types.InputPeerSelf
+                            )
+                chat.left = True
+                self.assertFalse((await api.verify_channel(destination))["canPost"])
+
+    async def test_group_events_require_configured_chat_and_explicit_admin_before_lookup(
+        self,
+    ):
+        self.api.admins = frozenset(["1"])
+        for actor, chat in ((2, int(CHANNEL)), (1, -999), (9, int(CHANNEL))):
+            item = event(actor, chat=chat, private=False)
+            item.is_group = True
+            await self.api._message(item)
+            await self.api._callback(item)
+            item.get_sender.assert_not_awaited()
+        for callback in (False, True):
+            item = event(1, chat=int(CHANNEL), private=False)
+            item.is_group = True
+            item.message.reply_to_msg_id = 17
+            await (self.api._callback(item) if callback else self.api._message(item))
+        batch = await self.batch()
+        self.assertEqual(
+            batch[0]["message"]["chat"], dict(id=int(CHANNEL), type="supergroup")
+        )
+        self.assertEqual(batch[0]["message"]["reply_to_message"]["message_id"], 17)
+        self.assertEqual(
+            batch[1]["callback_query"]["message"]["chat"]["id"], int(CHANNEL)
+        )
+
+    async def test_migrated_or_wrong_basic_group_and_banned_supergroup_fail_closed(
+        self,
+    ):
+        for chat in (basic_group(999), basic_group()):
+            client = FakeClient()
+            client.chat = chat
+            api = TelegramAPI(TOKEN, API_ID, API_HASH, ["1"], "-123", client=client)
+            self.addAsyncCleanup(api.close)
+            await api.initialize()
+            if chat.id == 123:
+                chat.migrated_to = types.InputChannel(1234567890, 0)
+            self.assertFalse((await api.verify_channel("-123"))["canPost"])
+        self.client.chat = channel(broadcast=False, megagroup=True)
+        self.client.chat.banned_rights = types.ChatBannedRights(None, send_plain=True)
+        await self.api.initialize()
+        self.assertFalse((await self.api.verify_channel(CHANNEL))["canPost"])
+
     async def asyncSetUp(self):
         self.client = FakeClient()
         self.api = TelegramAPI(
@@ -201,7 +303,7 @@ class TelethonTests(unittest.IsolatedAsyncioTestCase):
             ("admin", False),
             ("member", user(999)),
             ("chat", channel(999)),
-            ("chat", channel(broadcast=False, megagroup=True)),
+            ("chat", channel(broadcast=False, megagroup=False)),
         ):
             original = getattr(self.client, attr)
             setattr(self.client, attr, invalid)
