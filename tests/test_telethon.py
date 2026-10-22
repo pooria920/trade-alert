@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from telethon import errors, functions, types
+from telethon import TelegramClient, errors, events, functions, types
 from telethon.sessions import MemorySession
 from telethon_fake import (
     API_HASH,
@@ -38,6 +38,129 @@ def event(actor=1, *, chat=None, private=True, callback=False, outgoing=False):
 
 
 class TelethonTests(unittest.IsolatedAsyncioTestCase):
+    async def test_group_resolution_timeout_and_shutdown_never_send(self):
+        started, ended = asyncio.Event(), asyncio.Event()
+
+        async def blocked(peer):
+            started.set()
+            try:
+                await asyncio.Future()
+            finally:
+                ended.set()
+
+        self.client.get_input_entity = blocked
+        with self.assertRaises(TelegramError) as error:
+            await self.api.call(
+                "sendMessage", dict(chat_id=CHANNEL, text="synthetic"), timeout=0.01
+            )
+        self.assertEqual(error.exception.kind, "NETWORK")
+        self.assertTrue(ended.is_set())
+        started.clear()
+        ended.clear()
+        pending = asyncio.create_task(
+            self.api.call("sendMessage", dict(chat_id=CHANNEL, text="synthetic"))
+        )
+        await started.wait()
+        await self.api.close()
+        await asyncio.gather(pending, return_exceptions=True)
+        self.assertTrue(pending.cancelled())
+        self.assertTrue(ended.is_set())
+        self.assertFalse(any(kind == "send" for kind, _ in self.client.calls))
+
+    async def test_group_callback_without_cached_chat_type_is_verified_before_enqueue(
+        self,
+    ):
+        self.api.admins = frozenset(["1"])
+        for broadcast in (False, True):
+            self.client.chat = channel(broadcast=broadcast, megagroup=not broadcast)
+            query = types.UpdateBotCallbackQuery(
+                query_id=123,
+                user_id=1,
+                peer=types.PeerChannel(1234567890),
+                msg_id=7,
+                chat_instance=1,
+                data=b"ad:menu",
+            )
+            item = events.CallbackQuery.Event(query, query.peer, query.msg_id)
+            item.get_sender = AsyncMock(return_value=user(1, bot=False))
+            self.assertIsNone(item.is_group)
+            await self.api._callback(item)
+            self.assertEqual(self.api.updates.qsize(), 0 if broadcast else 1)
+            if not broadcast:
+                update = self.api.updates.get_nowait()
+                self.assertEqual(
+                    update["callback_query"]["message"]["chat"],
+                    dict(id=int(CHANNEL), type="supergroup"),
+                )
+            else:
+                item.get_sender.assert_not_awaited()
+
+    async def test_group_peer_resolution_rejects_mismatch_missing_and_reconfiguration(
+        self,
+    ):
+        for peer in (types.InputPeerUser(1, 10), types.InputPeerChannel(999, 10)):
+            self.client.get_input_entity = AsyncMock(return_value=peer)
+            with self.assertRaises(TelegramError) as error:
+                await self.api.call(
+                    "sendMessage", dict(chat_id=CHANNEL, text="synthetic")
+                )
+            self.assertEqual(error.exception.kind, "INVALID_RESPONSE")
+        self.client.get_input_entity = AsyncMock(side_effect=ValueError(TOKEN))
+        with self.assertRaises(TelegramError) as error:
+            await self.api.call("sendMessage", dict(chat_id=CHANNEL, text="synthetic"))
+        self.assertEqual(error.exception.kind, "DESTINATION_UNRESOLVED")
+        self.assertNotIn(TOKEN, str(error.exception))
+
+        async def reconfigured(peer):
+            self.api.channel = "-100999999"
+            return types.InputPeerChannel(1234567890, 10)
+
+        self.client.get_input_entity = AsyncMock(side_effect=reconfigured)
+        with self.assertRaises(TelegramError) as error:
+            await self.api.call("sendMessage", dict(chat_id=CHANNEL, text="synthetic"))
+        self.assertEqual(error.exception.code, 403)
+        self.assertFalse(any(kind == "send" for kind, _ in self.client.calls))
+
+    async def test_group_uses_real_telethon_cached_access_hash_for_checks_and_sends(
+        self,
+    ):
+        native = TelegramClient(MemorySession(), API_ID, API_HASH)
+        self.addAsyncCleanup(native.disconnect)
+        chat = channel(broadcast=False, megagroup=True)
+        chat.access_hash = 987654321
+        native.session.process_entities([chat])
+        self.client.chat = chat
+        self.client.get_input_entity = AsyncMock(wraps=native.get_input_entity)
+
+        async def require_full_hash(request):
+            if isinstance(request, functions.channels.GetChannelsRequest):
+                peer = request.id[0]
+            elif isinstance(request, functions.channels.GetParticipantRequest):
+                peer = request.channel
+            else:
+                return
+            if peer.access_hash != chat.access_hash:
+                raise errors.ChannelInvalidError(request)
+
+        self.client.hook = require_full_hash
+        await self.api.initialize()
+        with patch.object(
+            TelegramClient,
+            "__call__",
+            AsyncMock(side_effect=AssertionError("No live RPC permitted")),
+        ):
+            self.assertTrue((await self.api.verify_channel(CHANNEL))["canPost"])
+            await self.api.call("sendMessage", dict(chat_id=CHANNEL, text="synthetic"))
+            peer = self.client.calls[-1][1][0]
+            self.assertEqual(
+                (peer.channel_id, peer.access_hash), (chat.id, chat.access_hash)
+            )
+            await self.api.call(
+                "editMessageText", dict(chat_id=CHANNEL, text="edited", message_id=1)
+            )
+            peer = self.client.calls[-1][1][0]
+            self.assertEqual(peer.access_hash, chat.access_hash)
+
     async def test_basic_and_supergroup_permissions_peers_and_admin_revocation(self):
         for destination, chat in (
             ("-123", basic_group()),

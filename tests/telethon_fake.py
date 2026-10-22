@@ -73,6 +73,12 @@ class FakeClient:
         self.calls.append(("get_me", None))
         return self.me
 
+    async def get_input_entity(self, peer):
+        self.calls.append(("resolve", peer))
+        if isinstance(peer, types.PeerChannel):
+            return types.InputPeerChannel(peer.channel_id, self.chat.access_hash or 0)
+        raise AssertionError("Unexpected peer resolution")
+
     async def __call__(self, request):
         self.calls.append(("rpc", request))
         if self.hook is not None:
