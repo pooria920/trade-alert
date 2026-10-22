@@ -105,7 +105,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.search.assert_not_awaited()
         await self.group_send("خودرو")
         await self.group_press(ITEM.symbol)
-        await self.group_press("ناپدید شدن صف خرید")
+        await self.group_press("از بین رفتن صف خرید")
         await self.group_send("۰")
         saved = self.button("تأیید و ذخیره")
         await self.group_click(saved)
@@ -331,10 +331,10 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
     async def new_channel_draft(self):
         await self.send("/admin")
         await self.press("ساخت هشدار جدید")
-        await self.press("انتخاب این کانال")
+        await self.press("انتخاب این مقصد مشترک")
         await self.send("خودرو")
         await self.press(ITEM.symbol)
-        await self.press("ناپدید شدن صف خرید")
+        await self.press("از بین رفتن صف خرید")
         await self.send("۰")
         return self.button("تأیید و ذخیره")
 
@@ -393,6 +393,179 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.search.assert_not_called()
         self.fetch.assert_not_called()
 
+    async def test_onboarding_buttons_search_and_symbol_shortcut(self):
+        await self.send("/start")
+        self.assertIn("هشدار زنده صادر نمی‌شود", self.texts()[-1])
+        await self.press("افزودن نماد")
+        await self.send("خودرو")
+        self.search.assert_awaited_once_with("خودرو")
+        await self.click(f"add:{ITEM.ins_code}")
+        await self.press("ساخت هشدار برای این نماد")
+        self.assertEqual(self.bot.flows["1"].ins_code, ITEM.ins_code)
+        self.assertEqual(self.bot.flows["1"].step, "type")
+        self.assertIn("هشدار زنده صادر نمی‌شود", self.texts()[-1])
+        await self.click(f"newalert:{ITEM.ins_code}", 2)
+        self.assertNotIn("2", self.bot.flows)
+
+    async def test_read_commands_preserve_drafts_and_resume_refreshes_token(self):
+        save = await self.private_draft()
+        flow = self.bot.flows["1"]
+        for command in ("/help", "/status", "/start", "/list", "/alerts", "/history"):
+            await self.send(command)
+            self.assertIs(self.bot.flows["1"], flow)
+        await self.click("nav:resume")
+        self.assertNotEqual(save, self.button("تأیید و ذخیره"))
+        self.assertEqual(flow.step, "confirm")
+        await self.send("/cancel")
+        self.assertNotIn("1", self.bot.flows)
+        await self.new_channel_draft()
+        draft = self.bot.admin.drafts["1"]
+        for command in ("/help", "/status", "/start"):
+            await self.send(command)
+            self.assertIs(self.bot.admin.drafts["1"], draft)
+        await self.press("ادامهٔ پیش‌نویس")
+        self.assertEqual(draft.step, "builder")
+        self.clock += 600_001
+        await self.click("nav:resume")
+        self.assertNotIn("1", self.bot.admin.drafts)
+        self.assertIn("منقضی", self.texts()[-1])
+
+    async def test_group_help_and_status_preserve_reply_scoped_draft(self):
+        await self.private_draft()
+        private = self.bot.flows["1"]
+        self.search.reset_mock()
+        self.enable_group_replies()
+        await self.group_send("/alert")
+        self.assertIs(self.bot.flows["1"], private)
+        self.assertNotIn("کنار گذاشته", self.texts()[-1])
+        await self.group_press("انتخاب این گروه")
+        scope = f"{CHANNEL}:1"
+        draft = self.bot.admin.drafts[scope]
+        for command in ("/help", "/status"):
+            await self.group_send(command)
+            self.assertIs(self.bot.admin.drafts[scope], draft)
+        await self.group_send("خودرو", reply=False)
+        self.search.assert_not_awaited()
+        await self.group_send("خودرو")
+        self.search.assert_awaited_once()
+        await self.group_click("nav:alert")
+        self.assertIs(self.bot.flows["1"], private)
+
+    async def test_switching_private_and_shared_editors_discards_previous_draft(self):
+        await self.private_draft()
+        private = self.alerts.create("1", ITEM.ins_code, DROP)
+        await self.click("ad:new")
+        self.assertNotIn("1", self.bot.flows)
+        self.assertIn("1", self.bot.admin.drafts)
+        self.assertTrue(
+            any("پیش‌نویس خصوصی قبلی کنار گذاشته" in t for t in self.texts())
+        )
+        await self.click(f"ar:edit:{private}")
+        self.assertNotIn("1", self.bot.admin.drafts)
+        self.assertEqual(self.bot.flows["1"].rule_id, private)
+
+    async def test_deletion_confirmation_preserves_other_owners_and_channel_rules(self):
+        await self.watch()
+        await self.watch(2)
+        private = self.alerts.create("1", ITEM.ins_code, DROP)
+        other = self.alerts.create("2", ITEM.ins_code, DROP)
+        shared = await self.channels.create(
+            "1", dict(insCode=ITEM.ins_code, symbol=ITEM.symbol, name=ITEM.name), GROUP
+        )
+        await self.send(f"/remove rule {private}")
+        self.assertIsNotNone(self.alerts.get("1", private))
+        await self.press("بازگشت")
+        await self.send("/remove خودرو")
+        self.assertIsNotNone(self.alerts.get("1", private))
+        await self.press("انصراف")
+        self.assertTrue(self.users.list_symbols("1"))
+        await self.send("/remove خودرو")
+        confirmation = self.button("حذف نماد و هشدارها")
+        await self.click(confirmation, 3)
+        self.assertIsNotNone(self.alerts.get("1", private))
+        await self.click(confirmation)
+        self.assertIsNone(self.alerts.get("1", private))
+        self.assertIsNotNone(self.alerts.get("2", other))
+        self.assertIsNotNone(self.channels.get("1", shared))
+        self.assertTrue(self.users.list_symbols("2"))
+
+    async def test_edit_keeps_existing_values_and_reports_new_status(self):
+        await self.watch()
+        rule = self.alerts.create("1", ITEM.ins_code, DROP)
+        await self.click(f"ar:edit:{rule}")
+        await self.press("نگه‌داشتن نوع فعلی")
+        for _ in range(3):
+            self.assertIn("مقدار فعلی", self.texts()[-1])
+            await self.press("نگه‌داشتن مقدار فعلی")
+        await self.press("تأیید و ذخیره")
+        self.assertEqual(self.alerts.get("1", rule)["definition"], DROP)
+        await self.click(f"ar:off:{rule}")
+        self.assertIn("خاموش شد", self.texts()[-1])
+        await self.press("مشاهدهٔ هشدار")
+        await self.press("بازگشت به هشدارها")
+        await self.new_channel_draft()
+        await self.press("افزودن شرط")
+        await self.press("کاهش صف فروش")
+        await self.press("۵ دقیقه")
+        await self.send("۳۰")
+        await self.send("۱۰۰")
+        draft = self.bot.admin.drafts["1"]
+        expected = list(draft.conditions)
+        await self.press("ویرایش شرط ۲")
+        await self.press("نگه‌داشتن نوع فعلی")
+        for _ in range(3):
+            await self.press("نگه‌داشتن مقدار فعلی")
+        self.assertEqual(draft.conditions, expected)
+        await self.press("ویرایش شرط ۱")
+        await self.press("نگه‌داشتن نوع فعلی")
+        await self.press("نگه‌داشتن مقدار فعلی")
+        self.assertEqual(draft.conditions, expected)
+        await self.press("تأیید و ذخیره")
+        self.assertIn("کانال آزمایشی", self.texts()[-1])
+        self.assertIn("هشدار زنده صادر نمی‌شود", self.texts()[-1])
+
+    async def test_input_errors_recovery_and_preferences_are_explicit(self):
+        await self.watch()
+        await self.send("/alert")
+        self.assertNotIn(
+            "بازگشت",
+            [
+                b["text"]
+                for row in self.calls[-1][1]["reply_markup"]["inline_keyboard"]
+                for b in row
+            ],
+        )
+        await self.press(ITEM.symbol)
+        await self.press("کاهش صف خرید")
+        await self.press("۱ دقیقه")
+        await self.send("۱۰۱")
+        self.assertIn("درصد نامعتبر", self.texts()[-1])
+        await self.send("۳۰")
+        self.assertIn("ابتدای بازه", self.texts()[-1])
+        await self.send("۱٫۵")
+        self.assertIn("عدد صحیح", self.texts()[-1])
+        await self.click("preferences")
+        self.assertIn("روی هشدارهای گروه یا کانال اثر ندارد", self.texts()[-1])
+        await self.send("/unknown")
+        self.assertIn("دستور شناخته نشد", self.texts()[-1])
+        self.assertIn("1", self.bot.flows)
+
+    async def test_new_search_and_private_resume_expiry_and_cancellation(self):
+        await self.send("/add")
+        self.clock += 300_001
+        await self.send("خودرو")
+        self.search.assert_not_awaited()
+        self.assertIn("منقضی", self.texts()[-1])
+        await self.send("/add")
+        await self.send("/cancel")
+        await self.send("خودرو")
+        self.search.assert_not_awaited()
+        await self.private_draft()
+        self.clock += 600_001
+        await self.click("nav:resume")
+        self.assertNotIn("1", self.bot.flows)
+        self.assertIn("منقضی", self.texts()[-1])
+
     async def test_search_watchlists_preferences_and_queue_are_owner_bound(self):
         await self.send("/add خودرو")
         await self.click(f"add:{ITEM.ins_code}", 2)
@@ -416,6 +589,8 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
             )
         )
         await self.send("/remove خودرو")
+        self.assertTrue(self.users.list_symbols("1"))
+        await self.press("حذف نماد و هشدارها")
         self.assertEqual(self.users.list_symbols("1"), [])
 
     async def test_search_expiry_and_stale_async_results(self):
@@ -482,7 +657,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.send(f"/remove rule {rule}", 2)
         self.assertIsNotNone(self.alerts.get("1", rule))
         await self.click(f"ar:edit:{rule}")
-        await self.press("ناپدید شدن صف فروش")
+        await self.press("از بین رفتن صف فروش")
         await self.send("۰")
         save = self.button("تأیید و ذخیره")
         self.alerts.set_enabled("1", rule, False)
@@ -523,7 +698,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("نامعتبر", self.texts()[-1])
         await self.send("۵۰۰")
         await self.press("ویرایش شرط ۲")
-        await self.press("ناپدید شدن صف فروش")
+        await self.press("از بین رفتن صف فروش")
         await self.send("۱۰۰")
         await self.press("حذف شرط ۲")
         await self.press("افزودن شرط")
@@ -577,10 +752,10 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
     async def test_channel_back_cancel_expiry_and_nested_ui_limits(self):
         await self.send("/admin")
         await self.press("ساخت هشدار جدید")
-        stale = self.button("انتخاب این کانال")
-        await self.press("انتخاب این کانال")
+        stale = self.button("انتخاب این مقصد مشترک")
+        await self.press("انتخاب این مقصد مشترک")
         await self.press("بازگشت")
-        fresh = self.button("انتخاب این کانال")
+        fresh = self.button("انتخاب این مقصد مشترک")
         await self.click(stale)
         self.assertIn("تغییر", self.texts()[-1])
         await self.click(fresh)
@@ -851,11 +1026,19 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         for step in steps:
             actor = step.get("actor", 1)
             if "press" in step:
-                await self.press(step["press"], actor)
+                # Keep the captured Node inputs/expectations unchanged; adapt UI labels only.
+                label = (
+                    step["press"]
+                    .replace("ناپدید شدن صف", "از بین رفتن صف")
+                    .replace("انتخاب این کانال", "انتخاب این مقصد مشترک")
+                )
+                await self.press(label, actor)
             elif "data" in step:
                 await self.click(step["data"], actor)
             else:
                 await self.send(step["text"], actor)
+                if step["text"] == "/remove خودرو":
+                    await self.press("حذف نماد و هشدارها", actor)
             rules = rows(
                 self.db,
                 "SELECT owner_id, channel_id, ins_code, definition, revision, enabled, cooldown_seconds FROM alert_rules ORDER BY channel_id, owner_id",
@@ -891,11 +1074,11 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(draft.conditions), 8)
         await self.press("ویرایش شرط ۸")
         await self.press("کاهش صف فروش")
+        await self.press("۱ دقیقه")
         for invalid in ("۰", "۱۰۱", "۳۰٫۱۲۳۴۵۶۷"):
             await self.send(invalid)
             self.assertIn("نامعتبر", self.texts()[-1])
         await self.send("۲۵٫۱۲۳۴۵۶")
-        await self.press("۱ دقیقه")
         await self.send("۰")
         await self.press("تأیید و ذخیره")
         leaves = self.channels.list("1")[0]["definition"]["conditions"]
