@@ -1,4 +1,5 @@
 *.sh text eol=lf
 *.py text eol=lf
+migrations/0005_channel_symbol_notes.sql text eol=lf
 *.md text eol=lf
 Dockerfile* text eol=lf
