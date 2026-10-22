@@ -131,6 +131,7 @@ class ConfigTests(unittest.TestCase):
                     actual["values"].pop("TELEGRAM_API_ID")
                     actual["values"].pop("TELEGRAM_API_HASH")
                     actual["values"].pop("TELEGRAM_MTPROXY_URL")
+                    actual["values"].pop("TELEGRAM_PROXY_AUTO")
                 except ValueError:
                     actual = dict(valid=False)
                 self.assertEqual(actual, expected)

@@ -1,6 +1,7 @@
 """Synthetic MTProxy protocol checks. No sockets, DNS or Telegram requests."""
 
 import asyncio
+import base64
 import hashlib
 import hmac
 import io
@@ -45,6 +46,32 @@ def server_reply(hello, *, key=KEY, size=1024):
 
 
 class ProxyConfigTests(unittest.TestCase):
+    def test_base64_secrets_normalize_without_misreading_a_textual_ee_prefix(self):
+        for raw in (
+            KEY,
+            b"\xdd" + KEY,
+            bytes.fromhex(SECRET),
+            b"\x10D" + bytes(range(14)),
+        ):
+            encoded = base64.urlsafe_b64encode(raw).decode()
+            for secret in (encoded, encoded.rstrip("=")):
+                self.assertEqual(
+                    mtproxy(LINK + secret), ("proxy.example", 443, raw.hex())
+                )
+                stream = io.StringIO()
+                create_logger(stream=stream, proxy_secret=raw.hex()).error(
+                    LINK + secret
+                )
+                self.assertNotIn(secret.rstrip("="), stream.getvalue())
+        for raw in (bytes(15), bytes(17), b"\xee" + KEY):
+            with self.assertRaises(ValueError):
+                mtproxy(LINK + base64.urlsafe_b64encode(raw).decode())
+        encoded = base64.urlsafe_b64encode(KEY).decode().rstrip("=")
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        noncanonical = encoded[:-1] + alphabet[alphabet.index(encoded[-1]) + 1]
+        with self.assertRaises(ValueError):
+            mtproxy(LINK + noncanonical)
+
     def test_links_transport_selection_and_redaction(self):
         self.assertIsNone(mtproxy(""))
         for host in ("192.0.2.1", "2001:db8::1", "proxy.example"):

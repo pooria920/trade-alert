@@ -1,5 +1,6 @@
 """Small structured logger; only operational fields enter output, never raw errors."""
 
+import base64
 import json
 import logging
 import re
@@ -25,13 +26,20 @@ def create_logger(
             if api_hash:
                 message = message.replace(api_hash, "[REDACTED]")
             if proxy_secret:
-                for secret in (
+                variants = [
                     proxy_secret,
                     proxy_secret[2:34] if len(proxy_secret) > 32 else proxy_secret,
-                ):
+                ]
+                for secret in variants:
                     message = re.sub(
                         re.escape(secret), "[REDACTED]", message, flags=re.I
                     )
+                    try:
+                        decoded = bytes.fromhex(secret)
+                    except ValueError:
+                        continue
+                    encoded = base64.urlsafe_b64encode(decoded).decode().rstrip("=")
+                    message = message.replace(encoded, "[REDACTED]")
             message = re.sub(r"\d+:[A-Za-z0-9_-]{30,}", "[REDACTED]", message)
             value = dict(time=now_ms(), level=record.levelname.lower(), message=message)
             for key in (

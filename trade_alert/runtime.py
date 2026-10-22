@@ -48,6 +48,8 @@ async def run_application(
         api_hash=env["TELEGRAM_API_HASH"],
         proxy_secret=proxy[2] if proxy else "",
     )
+    if env["TELEGRAM_PROXY_AUTO"] and not proxy:
+        logger.info("Automatic public MTProxy discovery enabled")
     # open_database acquires the separate OS lock before migrations or app access.
     with open_database(env["DATABASE_URL"]) as db:
         async with AsyncExitStack() as resources:
@@ -60,6 +62,8 @@ async def run_application(
                 client=telegram_client,
                 admin_users=env["TELEGRAM_ADMIN_USER_IDS"],
                 proxy_url=env["TELEGRAM_MTPROXY_URL"],
+                auto_proxy=env["TELEGRAM_PROXY_AUTO"],
+                logger=logger,
             )
             resources.push_async_callback(api.close)
             client = TsetmcClient(
