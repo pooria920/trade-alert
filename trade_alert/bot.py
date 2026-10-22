@@ -12,11 +12,14 @@ from .admin import AdminCommands
 from .alerts import AlertService
 from .bot_text import (
     LABELS,
+    LIVE_NOTICE,
     PRIVATE_TYPES,
     fa,
     history_text,
+    minimum_prompt,
     monitoring_text,
     numeric,
+    numeric_error,
     tehran_time,
     tree_text,
 )
@@ -29,7 +32,7 @@ from .tsetmc import normalize_persian
 from .users import UserService, now_ms
 from .validation import integer, obj, text
 
-HELP = "دستورهای ربات:\n/start شروع و تنظیم اعلان‌ها\n/help راهنما\n/add خودرو جست‌وجو و افزودن نماد\n/list فهرست شخصی\n/queue خودرو بررسی صف\n/alert ساخت هشدار کاهش یا ناپدید شدن صف خرید و فروش\n/alerts مدیریت هشدارها\n/history ده هشدار اخیر\n/remove خودرو حذف نماد و هشدارهای خصوصی آن\n/remove rule شناسه حذف هشدار\n/status وضعیت پایش مشترک\n/cancel لغو فرایند\nپایش طبق نشست تنظیم‌شده است. هشدار فقط با دادهٔ تازه و قابل تأیید صادر می‌شود."
+HELP = "دستورهای ربات:\n/start شروع و تنظیم اعلان‌ها\n/help راهنما\n/add خودرو جست‌وجو و افزودن نماد\n/list فهرست شخصی\n/queue خودرو بررسی صف\n/alert ساخت هشدار کاهش یا از بین رفتن صف خرید و فروش\n/alerts مدیریت هشدارها\n/history ده هشدار اخیر\n/remove خودرو حذف نماد و هشدارهای خصوصی آن\n/remove rule شناسه حذف هشدار\n/status وضعیت پایش مشترک\n/cancel لغو فرایند\nپایش طبق نشست تنظیم‌شده است. هشدار فقط با دادهٔ تازه و قابل تأیید صادر می‌شود."
 EXPIRED = "این انتخاب منقضی یا تغییر کرده است. از آخرین پیام یا /alert استفاده کنید."
 
 
@@ -65,6 +68,7 @@ class PrivateDraft:
 class Search:
     expires: int
     instruments: list[Instrument] = field(default_factory=list)
+    awaiting_input: bool = False
 
 
 class TelegramBot:
@@ -159,6 +163,17 @@ class TelegramBot:
                 self.users.register(ctx.actor, ctx.actor)
             if ctx.callback_id:
                 if ctx.data.startswith(("ad:", "af:")) and self.admin is not None:
+                    if (
+                        not ctx.group_id
+                        and self.channels
+                        and self.channels.is_admin(ctx.actor)
+                        and (ctx.data == "ad:new" or ctx.data.startswith("ad:edit:"))
+                        and self.flows.pop(ctx.actor, None) is not None
+                    ):
+                        self.searches.pop(ctx.actor, None)
+                        await ctx.reply(
+                            "پیش‌نویس خصوصی قبلی کنار گذاشته شد؛ مدیریت مقصد مشترک شروع می‌شود."
+                        )
                     await self.admin.callback(ctx)
                     return
                 if ctx.group_id:
@@ -175,16 +190,35 @@ class TelegramBot:
             if command:
                 if command[2] and command[2].casefold() != self.api.username.casefold():
                     return
-                if not ctx.group_id:
-                    self.flows.pop(ctx.actor, None)
-                if self.admin:
-                    self.admin.drafts.pop(ctx.scope, None)
+                if command[1].lower() in ("alert", "admin", "cancel"):
+                    replaced = (not ctx.group_id and ctx.actor in self.flows) or bool(
+                        self.admin and ctx.scope in self.admin.drafts
+                    )
+                    if not ctx.group_id:
+                        self.flows.pop(ctx.actor, None)
+                        self.searches.pop(ctx.actor, None)
+                    if self.admin:
+                        self.admin.drafts.pop(ctx.scope, None)
+                    if replaced and command[1].lower() != "cancel":
+                        await ctx.reply(
+                            "پیش‌نویس قبلی کنار گذاشته شد؛ فرایند جدید شروع می‌شود."
+                        )
                 if ctx.group_id:
                     await self._group_command(ctx, command[1].lower())
                 else:
                     await self._command(
                         ctx, command[1].lower(), (command[3] or "").strip()
                     )
+            elif (
+                not ctx.group_id
+                and (search := self.searches.get(ctx.actor)) is not None
+                and search.awaiting_input
+            ):
+                if self.now() > search.expires:
+                    self.searches.pop(ctx.actor, None)
+                    await ctx.reply("جست‌وجو منقضی شد. با /add دوباره شروع کنید.")
+                else:
+                    await self._command(ctx, "add", ctx.message_text.strip())
             elif self.admin and ctx.scope in self.admin.drafts:
                 await self.admin.message(ctx)
             elif not ctx.group_id:
@@ -238,7 +272,7 @@ class TelegramBot:
                                     dict(command=c, description=d)
                                     for c, d in [
                                         *commands,
-                                        ("admin", "مدیریت هشدارهای کانال"),
+                                        ("admin", "مدیریت هشدارهای مقصد مشترک"),
                                     ]
                                 ],
                                 scope=dict(type="chat", chat_id=actor),
@@ -306,24 +340,49 @@ class TelegramBot:
 
     async def _command(self, ctx: Context, command: str, argument: str) -> None:
         if command in ("start", "help"):
-            help_text = HELP
-            if self.channels and self.channels.is_admin(ctx.actor):
-                help_text += "\n/admin مدیریت هشدارهای کانال"
-            await ctx.reply(
-                help_text, [("راهنما", "help"), ("تنظیم اعلان‌ها", "preferences")]
+            help_text = (
+                "نمادها و هشدارهای خصوصی خود را مدیریت کنید.\n" + LIVE_NOTICE
+                if command == "start"
+                else HELP + "\n" + LIVE_NOTICE
             )
+            if self.channels and self.channels.is_admin(ctx.actor):
+                help_text += "\n/admin مدیریت هشدارهای مقصد مشترک"
+            actions = [
+                ("افزودن نماد", "nav:add"),
+                ("ساخت هشدار", "nav:alert"),
+                ("هشدارهای من", "nav:alerts"),
+                ("راهنما", "help"),
+                ("تنظیم اعلان‌ها", "preferences"),
+            ]
+            if ctx.actor in self.flows or (
+                self.admin and ctx.scope in self.admin.drafts
+            ):
+                help_text += "\nپیش‌نویس شما حفظ شده است؛ برای ادامه دکمهٔ زیر را بزنید."
+                actions.insert(0, ("ادامهٔ پیش‌نویس", "nav:resume"))
+            await ctx.reply(help_text, actions)
         elif command == "cancel":
             await ctx.reply("فرایند لغو شد.")
         elif command == "status":
-            await ctx.reply(monitoring_text(self.get_status(), self.now()))
+            await ctx.reply(
+                monitoring_text(self.get_status(), self.now()),
+                [("ادامهٔ پیش‌نویس", "nav:resume")]
+                if ctx.actor in self.flows
+                or (self.admin and ctx.scope in self.admin.drafts)
+                else None,
+            )
         elif command == "admin" and self.admin:
             if self.channels and self.channels.is_admin(ctx.actor):
                 await self.admin.menu(ctx)
             else:
-                await ctx.reply("دسترسی مدیریت کانال ندارید.")
+                await ctx.reply("دسترسی مدیریت مقصد مشترک ندارید.")
         elif command == "add":
             if not argument or len(argument) > 80:
-                await ctx.reply("نام نماد را بعد از دستور بنویسید؛ نمونه: /add خودرو")
+                self.searches[ctx.actor] = Search(
+                    self.now() + 300_000, awaiting_input=True
+                )
+                await ctx.reply(
+                    "نام نماد را بنویسید؛ مثلاً خودرو. می‌توانید /add خودرو هم بفرستید."
+                )
                 return
             search = Search(self.now() + 300_000)
             self.searches[ctx.actor] = search
@@ -344,11 +403,7 @@ class TelegramBot:
             await self._symbols(ctx)
         elif command in ("queue", "remove"):
             if command == "remove" and re.fullmatch(r"rule [a-fA-F0-9-]{36}", argument):
-                await ctx.reply(
-                    "هشدار حذف شد."
-                    if self.alerts.remove(ctx.actor, argument.split()[1])
-                    else "این هشدار در فهرست شما نیست."
-                )
+                await self._rule_action(ctx, "delete", argument.split()[1])
                 return
             matches = [
                 s
@@ -365,7 +420,9 @@ class TelegramBot:
         elif command == "alert":
             flow = PrivateDraft(self.now() + 600_000)
             self.flows[ctx.actor] = flow
-            await self._show_flow(ctx, flow)
+            await self._show_flow(
+                ctx, flow, notice=LIVE_NOTICE + "\nپیش‌نویس تا ۱۰ دقیقه معتبر است."
+            )
         elif command == "alerts":
             await self._rules(ctx)
         elif command == "history":
@@ -374,6 +431,11 @@ class TelegramBot:
                 await ctx.reply(history_text(event))
             if not events:
                 await ctx.reply("هنوز هشداری ثبت نشده است.")
+        else:
+            await ctx.reply(
+                "دستور شناخته نشد. از /help یا منوی شروع استفاده کنید.",
+                [("شروع", "nav:start")],
+            )
 
     async def _group_command(self, ctx: Context, command: str) -> None:
         assert self.channels is not None and self.admin is not None
@@ -381,6 +443,8 @@ class TelegramBot:
         if command in ("start", "help"):
             await ctx.reply(
                 "دستورهای گروه:\n/admin مدیریت هشدارهای گروه\n/alert ساخت هشدار گروه\n/alerts فهرست هشدارهای گروه\n/status وضعیت کلی پایش\n/cancel لغو فرایند\nبرای ورود متن مراحل، به پیام همان مرحله پاسخ بدهید. دستورهای شخصی را در خصوصی اجرا کنید."
+                + "\n"
+                + LIVE_NOTICE
             )
         elif command == "admin":
             await self.admin.menu(ctx)
@@ -402,12 +466,13 @@ class TelegramBot:
             (self.users.preferences(ctx.actor) or {}).get("notifications_enabled")
         )
         await ctx.reply(
-            f"اعلان‌های حساب شما: {'روشن' if enabled else 'خاموش'}",
+            f"ارسال هشدار خصوصی: {'روشن' if enabled else 'خاموش'}\nاین تنظیم فقط ارسال خصوصی را کنترل می‌کند؛ روی هشدارهای گروه یا کانال اثر ندارد.\n{LIVE_NOTICE}",
             [
                 (
                     "خاموش کردن" if enabled else "روشن کردن",
                     f"notifications:{'off' if enabled else 'on'}",
-                )
+                ),
+                ("بازگشت به شروع", "nav:start"),
             ],
         )
 
@@ -439,8 +504,19 @@ class TelegramBot:
         if item is None:
             await ctx.reply("این نماد در فهرست شما نیست.")
         elif action == "remove":
+            await ctx.reply(
+                f"نماد «{item['symbol']}» و هشدارهای خصوصی مربوط به آن حذف شوند؟ سابقهٔ این هشدارها هم حذف می‌شود. این کار قابل‌بازگشت نیست.",
+                [
+                    ("حذف نماد و هشدارها", f"removeconfirm:{ins_code}"),
+                    ("انصراف", "nav:list"),
+                ],
+            )
+        elif action == "removeconfirm":
             self.users.remove_symbol(ctx.actor, ins_code)
-            await ctx.reply("نماد و هشدارهای خصوصی آن از فهرست شما حذف شد.")
+            await ctx.reply(
+                "نماد و هشدارهای خصوصی آن از فهرست شما حذف شد.",
+                [("نمادهای من", "nav:list")],
+            )
         else:
             detection = await self.market.queue(
                 Instrument(ins_code, item["symbol"], item["symbol"])
@@ -457,7 +533,7 @@ class TelegramBot:
                     value.queue_type
                 ]
                 await ctx.reply(
-                    f"نماد: {value.symbol}\nوضعیت: {label}\nحجم صف: {fa(value.volume)}\nتعداد سفارش: {fa(value.order_count)}\nزمان: {tehran_time(value.timestamp)} به وقت تهران"
+                    f"نماد: {value.symbol}\nوضعیت: {label}\nحجم صف: {fa(value.volume)} سهم\nتعداد سفارش: {fa(value.order_count)}\nزمان: {tehran_time(value.timestamp)} به وقت تهران"
                 )
 
     async def _rules(self, ctx: Context, page: int = 0) -> None:
@@ -485,7 +561,39 @@ class TelegramBot:
 
     async def _callback(self, ctx: Context) -> None:
         data = ctx.data
-        if data == "help":
+        if data == "nav:resume":
+            self.searches.pop(ctx.actor, None)
+            if self.admin and ctx.scope in self.admin.drafts:
+                draft = self.admin.drafts[ctx.scope]
+                if self.admin._live(ctx.scope, draft):
+                    await self.admin.show(ctx, draft)
+                else:
+                    self.admin.drafts.pop(ctx.scope, None)
+                    await ctx.reply("پیش‌نویس منقضی شد. با /admin دوباره شروع کنید.")
+            elif ctx.actor in self.flows:
+                flow = self.flows[ctx.actor]
+                if self.now() <= flow.expires:
+                    await self._show_flow(ctx, flow)
+                else:
+                    self.flows.pop(ctx.actor, None)
+                    await ctx.reply(EXPIRED)
+            else:
+                await ctx.reply("پیش‌نویسی ندارید. با /alert شروع کنید.")
+        elif data in ("nav:start", "nav:add", "nav:alert", "nav:alerts", "nav:list"):
+            command = data[4:]
+            if command == "alert":
+                self.searches.pop(ctx.actor, None)
+                replaced = self.flows.pop(ctx.actor, None) is not None
+                if self.admin:
+                    replaced = (
+                        self.admin.drafts.pop(ctx.scope, None) is not None or replaced
+                    )
+                if replaced:
+                    await ctx.reply(
+                        "پیش‌نویس قبلی کنار گذاشته شد؛ فرایند جدید شروع می‌شود."
+                    )
+            await self._command(ctx, command, "")
+        elif data == "help":
             await self._command(ctx, "help", "")
         elif data == "preferences":
             await self._preferences(ctx)
@@ -507,11 +615,40 @@ class TelegramBot:
             await ctx.reply(
                 f"نماد {item.symbol} به فهرست شما اضافه شد."
                 if item
-                else "این انتخاب منقضی شده است. جست‌وجو را با /add تکرار کنید."
+                else "این انتخاب منقضی شده است. جست‌وجو را با /add تکرار کنید.",
+                [
+                    ("ساخت هشدار برای این نماد", f"newalert:{item.ins_code}"),
+                    ("نمادهای من", "nav:list"),
+                ]
+                if item
+                else None,
+            )
+        elif match := re.fullmatch(r"newalert:([1-9][0-9]{0,19})", data):
+            if not self.users.find_symbol(ctx.actor, match[1]):
+                await ctx.reply("این نماد در فهرست شما نیست.")
+                return
+            replaced = self.flows.pop(ctx.actor, None) is not None
+            self.searches.pop(ctx.actor, None)
+            if self.admin:
+                replaced = (
+                    self.admin.drafts.pop(ctx.scope, None) is not None or replaced
+                )
+            new_flow = PrivateDraft(
+                self.now() + 600_000, step="type", ins_code=match[1]
+            )
+            self.flows[ctx.actor] = new_flow
+            await self._show_flow(
+                ctx,
+                new_flow,
+                notice=("پیش‌نویس قبلی کنار گذاشته شد.\n" if replaced else "")
+                + LIVE_NOTICE
+                + "\nپیش‌نویس تا ۱۰ دقیقه معتبر است.",
             )
         elif match := re.fullmatch(r"list:(queue|remove):([0-9]+)", data):
             await self._symbols(ctx, int(match[2]), match[1])
-        elif match := re.fullmatch(r"(queue|remove):([1-9][0-9]{0,19})", data):
+        elif match := re.fullmatch(
+            r"(queue|remove|removeconfirm):([1-9][0-9]{0,19})", data
+        ):
             await self._symbol_action(ctx, match[1], match[2])
         elif data == "remove:alerts":
             await self._rules(ctx)
@@ -542,14 +679,30 @@ class TelegramBot:
             )
         elif action in ("on", "off"):
             self.alerts.set_enabled(ctx.actor, rule_id, action == "on")
-            await ctx.reply("وضعیت هشدار ذخیره شد.")
+            symbol = self.users.find_symbol(ctx.actor, rule["ins_code"])
+            await ctx.reply(
+                f"هشدار «{symbol['symbol'] if symbol else rule['ins_code']}» {'روشن' if action == 'on' else 'خاموش'} شد.",
+                [("مشاهدهٔ هشدار", f"ar:view:{rule_id}"), ("هشدارهای من", "nav:alerts")],
+            )
         elif action == "edit":
+            self.searches.pop(ctx.actor, None)
+            if self.admin and self.admin.drafts.pop(ctx.scope, None) is not None:
+                await ctx.reply(
+                    "پیش‌نویس مقصد مشترک کنار گذاشته شد؛ ویرایش هشدار خصوصی شروع می‌شود."
+                )
             flow = PrivateDraft(
                 self.now() + 600_000,
                 step="type",
                 ins_code=rule["ins_code"],
                 rule_id=rule_id,
                 revision=rule["revision"],
+                kind=rule["definition"]["type"],
+                window=rule["definition"]["config"].get("windowMinutes"),
+                percent=rule["definition"]["config"].get("thresholdPercent"),
+                minimum=rule["definition"]["config"].get(
+                    "minimumBaselineVolume",
+                    rule["definition"]["config"].get("minimumPreviousVolume"),
+                ),
             )
             self.flows[ctx.actor] = flow
             await self._show_flow(ctx, flow)
@@ -564,6 +717,7 @@ class TelegramBot:
                     ),
                     ("ویرایش تنظیمات", f"ar:edit:{rule_id}"),
                     ("حذف", f"ar:delete:{rule_id}"),
+                    ("بازگشت به هشدارها", "nav:alerts"),
                 ],
             )
 
@@ -600,7 +754,7 @@ class TelegramBot:
         elif flow.step == "threshold":
             prompt = "درصد کاهش را بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰، حداکثر شش رقم اعشار."
         elif flow.step == "minimum":
-            prompt = "حداقل حجم مبنا یا حجم قبلی صف را بنویسید؛ برای نداشتن حداقل، صفر بفرستید."
+            prompt = minimum_prompt(flow.kind)
         elif flow.step == "confirm":
             symbol = self.users.find_symbol(ctx.actor, flow.ins_code)
             if not symbol:
@@ -609,7 +763,26 @@ class TelegramBot:
                 return
             prompt = f"تأیید هشدار\nنماد: {symbol['symbol']}\n{tree_text(parse_tree(flow.definition(), channel=False))}"
             actions = [("تأیید و ذخیره", "save")]
-        actions.extend([("بازگشت", "back"), ("لغو", "cancel")])
+        current = {
+            "threshold": flow.percent,
+            "window": flow.window,
+            "minimum": flow.minimum,
+        }.get(flow.step)
+        if current is not None:
+            prompt += f"\nمقدار فعلی: {fa(current)}" + (
+                "٪"
+                if flow.step == "threshold"
+                else " دقیقه"
+                if flow.step == "window"
+                else " سهم"
+            )
+            actions.append(("نگه‌داشتن مقدار فعلی", "keep"))
+        if flow.step == "type" and flow.kind:
+            prompt += f"\nنوع فعلی: {LABELS[flow.kind]}"
+            actions.append(("نگه‌داشتن نوع فعلی", "keep"))
+        if flow.step != "symbol" and not (flow.step == "type" and flow.rule_id):
+            actions.append(("بازگشت", "back"))
+        actions.append(("لغو", "cancel"))
         await ctx.reply(
             (notice + "\n" if notice else "") + prompt,
             [(label, f"aw:{flow.token}:{action}") for label, action in actions],
@@ -638,6 +811,14 @@ class TelegramBot:
                 else "type",
                 "confirm": "minimum",
             }[flow.step]
+        elif action == "keep" and flow.step == "type" and flow.kind:
+            flow.step = "window" if flow.kind.endswith("DROP_PERCENT") else "minimum"
+        elif action == "keep" and flow.step == "window" and flow.window is not None:
+            flow.step = "threshold"
+        elif action == "keep" and flow.step == "threshold" and flow.percent is not None:
+            flow.step = "minimum"
+        elif action == "keep" and flow.step == "minimum" and flow.minimum is not None:
+            flow.step = "confirm"
         elif flow.step == "symbol" and re.fullmatch(r"page[0-9]+", action):
             await self._show_flow(ctx, flow, int(action[4:]))
             return
@@ -670,7 +851,8 @@ class TelegramBot:
                 self.alerts.create(ctx.actor, flow.ins_code, definition)
             self.flows.pop(ctx.actor, None)
             await ctx.reply(
-                "هشدار ذخیره شد. ارزیابی فقط با دادهٔ تازه و قابل تأیید انجام می‌شود."
+                "هشدار ذخیره شد.\n" + LIVE_NOTICE,
+                [("هشدارهای من", "nav:alerts"), ("ساخت هشدار دیگر", "nav:alert")],
             )
             return
         else:
@@ -703,7 +885,7 @@ class TelegramBot:
             await self._show_flow(
                 ctx,
                 flow,
-                notice="عدد نامعتبر است؛ مقدار را در محدودهٔ خواسته‌شده بنویسید.",
+                notice=numeric_error(flow.step, flow.kind),
             )
             return
         await self._show_flow(ctx, flow)

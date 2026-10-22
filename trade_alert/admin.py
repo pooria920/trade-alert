@@ -3,10 +3,19 @@
 import re
 import secrets
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
-from .bot_text import LABELS, fa, numeric, tehran_time, tree_text
+from .bot_text import (
+    LABELS,
+    LIVE_NOTICE,
+    fa,
+    minimum_prompt,
+    numeric,
+    numeric_error,
+    tehran_time,
+    tree_text,
+)
 from .channels import ChannelService
 from .definitions import definition_json, parse_tree
 from .market import Instrument
@@ -28,6 +37,7 @@ class ChannelDraft:
     selected_type: str = ""
     percent: float | None = None
     window: int | None = None
+    minimum: int | None = None
     edit_index: int | None = None
     rule_id: str | None = None
     revision: int | None = None
@@ -61,11 +71,12 @@ class AdminCommands:
         self.channels.authorize(ctx.actor)
         self.drafts.pop(ctx.scope, None)
         await ctx.reply(
-            "مدیریت هشدارهای گروه" if ctx.group_id else "مدیریت هشدارهای کانال",
+            ("مدیریت هشدارهای گروه" if ctx.group_id else "مدیریت هشدارهای مقصد مشترک")
+            + f"\nمقصد: {self.channels.status(ctx.actor)['title']}\n{LIVE_NOTICE}",
             [
                 ("ساخت هشدار جدید", "ad:new"),
                 ("مشاهده هشدارها", "ad:list:0"),
-                ("وضعیت گروه" if ctx.group_id else "وضعیت کانال", "ad:status"),
+                ("وضعیت گروه" if ctx.group_id else "وضعیت مقصد مشترک", "ad:status"),
             ],
             edit=True,
         )
@@ -73,11 +84,11 @@ class AdminCommands:
     async def show(self, ctx: Context, draft: ChannelDraft, notice: str = "") -> None:
         self.channels.authorize(ctx.actor)
         draft.token = secrets.token_hex(4)
-        destination = "گروه" if ctx.group_id else "کانال"
+        destination = "گروه" if ctx.group_id else "مقصد مشترک"
         actions: Buttons = []
         prompt = ""
         if draft.step == "channel":
-            prompt = f"هشدار جدید {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}"
+            prompt = f"هشدار جدید {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nپیش‌نویس تا ۱۰ دقیقه معتبر است.\n{LIVE_NOTICE}"
             actions = [(f"انتخاب این {destination}", "channel")]
         elif draft.step == "search":
             prompt = "نام نماد را برای جست‌وجو بنویسید؛ حداکثر ۸۰ نویسه."
@@ -97,18 +108,14 @@ class AdminCommands:
                 [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
             )
         elif draft.step == "minimum":
-            prompt = (
-                "حداقل حجم فعلی صف را بنویسید؛ عدد صحیح و بزرگ‌تر از صفر."
-                if draft.selected_type.endswith("VOLUME_ABOVE")
-                else "حداقل حجم مبنا یا حجم قبلی صف را بنویسید؛ برای نداشتن حداقل، صفر بفرستید."
-            )
+            prompt = minimum_prompt(draft.selected_type)
         elif draft.step == "builder":
             detail = (
                 tree_text(parse_tree(draft.tree()))
                 if draft.conditions
                 else "هنوز شرطی ثبت نشده است."
             )
-            prompt = f"هشدار {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nنماد: {draft.instrument.symbol if draft.instrument else ''}\n{detail}\nانتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود."
+            prompt = f"هشدار {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nنماد: {draft.instrument.symbol if draft.instrument else ''}\n{detail}\n{LIVE_NOTICE}"
             for i in range(len(draft.conditions)):
                 actions.extend(
                     [
@@ -128,6 +135,23 @@ class AdminCommands:
             )
             if draft.conditions:
                 actions.append(("تأیید و ذخیره", "save"))
+        current = {
+            "percent": draft.percent,
+            "window": draft.window,
+            "minimum": draft.minimum,
+        }.get(draft.step)
+        if current is not None:
+            prompt += f"\nمقدار فعلی: {fa(current)}" + (
+                "٪"
+                if draft.step == "percent"
+                else " دقیقه"
+                if draft.step == "window"
+                else " سهم"
+            )
+            actions.append(("نگه‌داشتن مقدار فعلی", "keep"))
+        if draft.step == "type" and draft.selected_type:
+            prompt += f"\nنوع فعلی: {LABELS[draft.selected_type]}"
+            actions.append(("نگه‌داشتن نوع فعلی", "keep"))
         actions.extend([("بازگشت", "back"), ("لغو", "cancel")])
         if ctx.group_id:
             prompt += "\nبرای ورود متن، به همین پیام پاسخ بدهید."
@@ -139,7 +163,7 @@ class AdminCommands:
 
     async def list(self, ctx: Context, page: int = 0) -> None:
         rules = self.channels.list(ctx.actor)
-        destination = "گروه" if ctx.group_id else "کانال"
+        destination = "گروه" if ctx.group_id else "مقصد مشترک"
         page = max(0, min(page, max(0, (len(rules) - 1) // 10)))
         buttons = [
             (
@@ -174,7 +198,7 @@ class AdminCommands:
         value = self.channels.status(ctx.actor)
         error = value["last_error"]
         await ctx.reply(
-            f"وضعیت کانال\nعنوان: {value['title']}\nشناسهٔ کانال: {value['channel_id']}\nاجازهٔ ارسال: {'دارد' if value['can_post'] else 'ندارد یا قابل تأیید نیست'}\nتعداد هشدارها: {fa(value['total'])}\nفعال: {fa(value['active'])}\nآخرین ارسال موفق: {tehran_time(value['last_success'])}\nآخرین خطای ارسال: {error['code'] + ' · ' + tehran_time(error['timestamp']) if error else 'ثبت نشده'}",
+            f"وضعیت مقصد مشترک\nعنوان: {value['title']}\nشناسهٔ مقصد: {value['channel_id']}\nاجازهٔ ارسال: {'دارد' if value['can_post'] else 'ندارد یا قابل تأیید نیست'}\nتعداد هشدارها: {fa(value['total'])}\nفعال: {fa(value['active'])}\nآخرین ارسال موفق: {tehran_time(value['last_success'])}\nآخرین خطای ارسال: {error['code'] + ' · ' + tehran_time(error['timestamp']) if error else 'ثبت نشده'}",
             [("بررسی دوباره", "ad:status"), ("بازگشت", "ad:menu")],
             edit=True,
         )
@@ -215,7 +239,7 @@ class AdminCommands:
         rule = self.channels.get(ctx.actor, rule_id)
         if rule is None:
             await ctx.reply(
-                "هشدار پیدا نشد یا به این کانال تعلق ندارد.",
+                "هشدار پیدا نشد یا به این مقصد تعلق ندارد.",
                 [("بازگشت", "ad:list:0")],
                 edit=True,
             )
@@ -307,9 +331,9 @@ class AdminCommands:
                 "search": "channel",
                 "results": "search",
                 "type": "builder" if draft.conditions else "search",
-                "percent": "type",
-                "window": "percent",
-                "minimum": "window"
+                "percent": "window",
+                "window": "type",
+                "minimum": "percent"
                 if draft.selected_type.endswith("DROP_PERCENT")
                 else "type",
                 "builder": "search",
@@ -334,22 +358,51 @@ class AdminCommands:
             )
         elif draft.step == "type" and re.fullmatch(r"type[0-5]", action):
             draft.selected_type = tuple(LABELS)[int(action[4:])]
-            draft.percent, draft.window = None, None
+            draft.percent, draft.window, draft.minimum = None, None, None
             draft.step = (
-                "percent" if draft.selected_type.endswith("DROP_PERCENT") else "minimum"
+                "window" if draft.selected_type.endswith("DROP_PERCENT") else "minimum"
             )
         elif draft.step == "window" and action in ("window1", "window5"):
-            draft.window, draft.step = int(action[-1]), "minimum"
+            draft.window, draft.step = int(action[-1]), "percent"
+        elif action == "keep" and draft.step == "type" and draft.selected_type:
+            draft.step = (
+                "window" if draft.selected_type.endswith("DROP_PERCENT") else "minimum"
+            )
+        elif action == "keep" and draft.step == "window" and draft.window is not None:
+            draft.step = "percent"
+        elif action == "keep" and draft.step in ("percent", "minimum"):
+            value = draft.percent if draft.step == "percent" else draft.minimum
+            if value is None:
+                return
+            await self.message(
+                replace(
+                    ctx, message_text=str(value), reply_to_message_id=draft.message_id
+                )
+            )
+            return
         elif draft.step == "builder" and action == "operator":
             draft.operator = "OR" if draft.operator == "AND" else "AND"
         elif draft.step == "builder" and action == "add" and len(draft.conditions) < 8:
             draft.edit_index, draft.step = None, "type"
+            draft.selected_type = ""
+            draft.percent, draft.window, draft.minimum = None, None, None
         elif draft.step == "builder" and re.fullmatch(r"(?:edit|remove)[0-7]", action):
             index = int(action[-1])
             if index >= len(draft.conditions):
                 return
             if action.startswith("edit"):
                 draft.edit_index, draft.step = index, "type"
+                condition = draft.conditions[index]
+                draft.selected_type = condition["type"]
+                config = condition["config"]
+                draft.percent, draft.window = (
+                    config.get("thresholdPercent"),
+                    config.get("windowMinutes"),
+                )
+                draft.minimum = config.get(
+                    "minimumBaselineVolume",
+                    config.get("minimumPreviousVolume", config.get("minimumVolume")),
+                )
             else:
                 draft.conditions.pop(index)
                 draft.edit_index = None
@@ -407,12 +460,12 @@ class AdminCommands:
                 await self.show(
                     ctx,
                     draft,
-                    "ذخیره یا بررسی اجازهٔ ارسال کانال ناموفق بود. دسترسی را بررسی و دوباره تلاش کنید.",
+                    "ذخیره یا بررسی اجازهٔ ارسال مقصد ناموفق بود. دسترسی را بررسی و دوباره تلاش کنید.",
                 )
             return
         self.drafts.pop(ctx.scope, None)
         await ctx.reply(
-            f"هشدار {'گروه' if ctx.group_id else 'کانال'} ذخیره شد. انتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود.",
+            f"هشدار برای مقصد «{self.channels.status(ctx.actor)['title']}» ذخیره شد.\n{LIVE_NOTICE}",
             [("مشاهده هشدارها", "ad:list:0"), ("بازگشت", "ad:menu")],
             edit=True,
         )
@@ -453,7 +506,7 @@ class AdminCommands:
             if draft.step == "percent":
                 if not 0 < value <= 100 or round(value, 6) != value:
                     raise ValueError("Invalid percentage")
-                draft.percent, draft.step = value, "window"
+                draft.percent, draft.step = value, "minimum"
             elif draft.step == "minimum":
                 minimum = integer(
                     value, 1 if draft.selected_type.endswith("VOLUME_ABOVE") else 0
@@ -481,8 +534,6 @@ class AdminCommands:
                 await self.show(ctx, draft, "از دکمه‌های آخرین پیام استفاده کنید.")
                 return
         except ValueError, TypeError, KeyError, OverflowError:
-            await self.show(
-                ctx, draft, "عدد نامعتبر است؛ مقدار را در محدودهٔ خواسته‌شده بنویسید."
-            )
+            await self.show(ctx, draft, numeric_error(draft.step, draft.selected_type))
             return
         await self.show(ctx, draft)
