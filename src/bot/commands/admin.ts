@@ -81,14 +81,14 @@ export function registerAdminCommands(
     drafts.delete(actor(ctx));
     await render(
       ctx,
-      'مدیریت هشدارهای کانال',
+      'مدیریت هشدارهای مقصد',
       keys([
         ['ساخت هشدار جدید', 'ad:new'],
         ['مشاهده هشدارها', 'ad:list:0'],
         ['ویرایش هشدار', 'ad:list:0'],
         ['فعال / غیرفعال کردن هشدار', 'ad:list:0'],
         ['حذف هشدار', 'ad:list:0'],
-        ['وضعیت کانال', 'ad:status'],
+        ['وضعیت مقصد', 'ad:status'],
       ]),
     );
   }
@@ -104,8 +104,8 @@ export function registerAdminCommands(
       rows.push([label, `af:${draft.token}:${value}`]);
     let text = '';
     if (draft.step === 'channel') {
-      text = `هشدار جدید کانال\nکانال: ${channels.status(actor(ctx)).title ?? 'کانال تنظیم‌شده'}`;
-      action('انتخاب این کانال', 'channel');
+      text = `هشدار جدید برای مقصد\nمقصد: ${channels.status(actor(ctx)).title ?? 'مقصد تنظیم‌شده'}`;
+      action('انتخاب این مقصد', 'channel');
     }
     if (draft.step === 'search')
       text = 'نام نماد را برای جست‌وجو بنویسید؛ حداکثر ۸۰ نویسه.';
@@ -134,7 +134,7 @@ export function registerAdminCommands(
         ? 'حداقل حجم فعلی صف را بنویسید؛ عدد صحیح و بزرگ‌تر از صفر.'
         : 'حداقل حجم مبنا یا حجم قبلی صف را بنویسید؛ برای نداشتن حداقل، صفر بفرستید.';
     if (draft.step === 'builder') {
-      text = `هشدار کانال\nکانال: ${channels.status(actor(ctx)).title ?? 'کانال تنظیم‌شده'}\nنماد: ${draft.instrument?.symbol ?? ''}\n\n${treeText(tree(draft))}\n\nبا برقرار شدن شرط‌ها، یک هشدار در کانال منتشر می‌شود.`;
+      text = `هشدار مقصد\nمقصد: ${channels.status(actor(ctx)).title ?? 'مقصد تنظیم‌شده'}\nنماد: ${draft.instrument?.symbol ?? ''}\n\n${treeText(tree(draft))}\n\nبا برقرار شدن شرط‌ها، یک هشدار در مقصد منتشر می‌شود.`;
       draft.conditions.forEach((_, index) => {
         action(
           `ویرایش شرط ${(index + 1).toLocaleString('fa-IR')}`,
@@ -179,8 +179,8 @@ export function registerAdminCommands(
     await render(
       ctx,
       rules.length
-        ? 'هشدارهای کانال؛ برای مدیریت انتخاب کنید:'
-        : 'هشداری برای این کانال ثبت نشده است.',
+        ? 'هشدارهای مقصد؛ برای مدیریت انتخاب کنید:'
+        : 'هشداری برای این مقصد ثبت نشده است.',
       keys(rows),
     );
   }
@@ -197,7 +197,7 @@ export function registerAdminCommands(
     const value = channels.status(actor(ctx));
     await render(
       ctx,
-      `وضعیت کانال\nعنوان: ${value.title ?? 'نامشخص'}\nشناسه کانال: ${value.channelId}\nاجازهٔ ارسال: ${verified && value.canPost ? 'دارد' : 'ندارد یا قابل تأیید نیست'}\nتعداد هشدارها: ${value.total.toLocaleString('fa-IR')}\nفعال: ${value.active.toLocaleString('fa-IR')}\nآخرین ارسال موفق: ${value.lastSuccess === null ? 'ثبت نشده' : tehranTime(value.lastSuccess)}\nآخرین خطای ارسال: ${value.lastError ? `${value.lastError.code} · ${tehranTime(value.lastError.timestamp)}` : 'ثبت نشده'}`,
+      `وضعیت مقصد\nعنوان: ${value.title ?? 'نامشخص'}\nشناسه مقصد: ${value.channelId}\nاجازهٔ ارسال: ${verified && value.canPost ? 'دارد' : 'ندارد یا قابل تأیید نیست'}\nتعداد هشدارها: ${value.total.toLocaleString('fa-IR')}\nفعال: ${value.active.toLocaleString('fa-IR')}\nآخرین ارسال موفق: ${value.lastSuccess === null ? 'ثبت نشده' : tehranTime(value.lastSuccess)}\nآخرین خطای ارسال: ${value.lastError ? `${value.lastError.code} · ${tehranTime(value.lastError.timestamp)}` : 'ثبت نشده'}`,
       keys([
         ['بررسی دوباره', 'ad:status'],
         ['بازگشت', 'ad:menu'],
@@ -206,7 +206,7 @@ export function registerAdminCommands(
   }
   bot.command('admin', async (ctx) => {
     if (!channels.isAdmin(actor(ctx))) {
-      await ctx.reply('دسترسی مدیریت کانال ندارید.');
+      await ctx.reply('دسترسی مدیریت مقصد ندارید.');
       return;
     }
     channels.authorize(actor(ctx));
@@ -252,7 +252,7 @@ export function registerAdminCommands(
     if (!rule) {
       await render(
         ctx,
-        'هشدار پیدا نشد یا به این کانال تعلق ندارد.',
+        'هشدار پیدا نشد یا به این مقصد تعلق ندارد.',
         keys([['بازگشت', 'ad:list:0']]),
       );
       return;
@@ -432,7 +432,7 @@ export function registerAdminCommands(
           await show(
             ctx,
             draft,
-            'ربات اجازهٔ ارسال در کانال ندارد. دسترسی را اصلاح و دوباره تلاش کنید.',
+            'ربات اجازهٔ ارسال در مقصد ندارد. دسترسی را اصلاح و دوباره تلاش کنید.',
           );
           return;
         }
@@ -442,7 +442,7 @@ export function registerAdminCommands(
         await show(
           ctx,
           draft,
-          'دسترسی کانال قابل تأیید نیست. کمی بعد دوباره تلاش کنید.',
+          'دسترسی مقصد قابل تأیید نیست. کمی بعد دوباره تلاش کنید.',
         );
         return;
       }
@@ -469,7 +469,7 @@ export function registerAdminCommands(
       drafts.delete(actor(ctx));
       await render(
         ctx,
-        'هشدار کانال ذخیره شد. انتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود.',
+        'هشدار مقصد ذخیره شد. انتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود.',
         keys([
           ['مشاهده هشدارها', 'ad:list:0'],
           ['بازگشت', 'ad:menu'],

@@ -150,6 +150,8 @@ To add a future condition, extend the discriminated schema, typed strategy regis
 
 ## Channel alerts and administration
 
+The same single destination can also be a Bale group. Put its exact numeric ID in `BALE_CHANNEL_ID` and make the bot a group administrator. The existing service, collector and outbox are reused; no new database or environment variable is needed. Only the configured group/channel receives shared alerts. Manage its rules with `/admin` in an authorized administrator's private conversation. Messages and callbacks inside groups are still ignored; members are not registered or enumerated. Group checks require the bot's `administrator` status; `can_post_messages` is channel-only in the [Bale documentation](https://docs.bale.ai/#chatmemberadministrator). Permission checks still run at startup, save/enable and before each send, with the existing deadline and retry policy.
+
 Channel mode is optional. Leave both new variables blank to retain private-only behavior. To configure the single initial destination:
 
 ```env

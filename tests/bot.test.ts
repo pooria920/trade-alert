@@ -37,7 +37,11 @@ afterEach(() => {
   for (const connection of connections.splice(0)) connection.sqlite.close();
 });
 
-function setup(channelMode = false, interceptApi = true) {
+function setup(
+  channelMode = false,
+  interceptApi = true,
+  chatType: 'channel' | 'group' = 'channel',
+) {
   const connection = openDatabase(':memory:');
   connections.push(connection);
   const users = new UserService(connection.db, [
@@ -83,9 +87,15 @@ function setup(channelMode = false, interceptApi = true) {
       calls.push({ method, payload });
       const result =
         method === 'getChat'
-          ? { id: Number(channelId), type: 'channel', title: 'کانال آزمایشی' }
+          ? { id: Number(channelId), type: chatType, title: 'مقصد آزمایشی' }
           : method === 'getChatMember'
-            ? { status: 'administrator', can_post_messages: canPost }
+            ? {
+                status:
+                  chatType === 'group' && !canPost ? 'member' : 'administrator',
+                ...(chatType === 'channel'
+                  ? { can_post_messages: canPost }
+                  : {}),
+              }
             : true;
       return Promise.resolve({ ok: true, result } as Awaited<
         ReturnType<typeof previous>
@@ -533,104 +543,117 @@ function adminButton(calls: { payload: unknown }[], label: string) {
   if (!button) throw new Error(`Missing admin button: ${label}`);
   return button;
 }
-describe('private Bale channel administration', () => {
-  it('blocks public/group/non-admin commands and every forged management callback', async () => {
-    const { bot, calls, channels } = setup(true);
-    await bot.handleUpdate(command(allowedUserId, '/admin', true));
-    expect(calls).toHaveLength(0);
-    await bot.handleUpdate(command(999, '/admin'));
-    expect(calls).toHaveLength(0);
-    await bot.handleUpdate(command(456789123, '/admin'));
-    expect(calls.at(-1)?.payload).toHaveProperty(
-      'text',
-      expect.stringContaining('دسترسی'),
-    );
-    await bot.handleUpdate(command(allowedUserId, '/admin'));
-    await channels.refresh();
-    const id = channels.create(String(allowedUserId), instrument, {
-      type: 'GROUP',
-      operator: 'AND',
-      conditions: [
-        { type: 'BUY_QUEUE_DISAPPEARED', config: { minimumPreviousVolume: 0 } },
-      ],
-    });
-    const before = calls.length;
-    for (const action of [
-      'view',
-      'edit',
-      'on',
-      'off',
-      'delete',
-      'confirmdelete',
-    ])
-      await bot.handleUpdate(callback(456789123, `ad:${action}:${id}`));
-    await bot.handleUpdate(callback(456789123, 'ad:status'));
-    await bot.handleUpdate(callback(456789123, 'af:12345678:save'));
-    expect(
-      calls
-        .slice(before)
-        .every((call) => call.method === 'answerCallbackQuery'),
-    ).toBe(true);
-    expect(channels.get(String(allowedUserId), id)).toMatchObject({
-      enabled: true,
-      revision: 1,
-    });
-    expect(JSON.stringify(calls.slice(before))).not.toContain('-1001234567890');
-  });
-  it('builds, edits, removes and combines conditions with Persian validation and saves once', async () => {
-    const { bot, calls, channels, provider } = setup(true);
-    const press = async (label: string) =>
-      bot.handleUpdate(callback(allowedUserId, adminButton(calls, label)));
-    await bot.handleUpdate(command(allowedUserId, '/admin'));
-    await press('ساخت هشدار جدید');
-    await press('انتخاب این کانال');
-    await bot.handleUpdate(textMessage(allowedUserId, 'خودرو'));
-    await press('خودرو');
-    await press('کاهش صف خرید');
-    await bot.handleUpdate(textMessage(allowedUserId, '۰'));
-    expect(calls.at(-1)?.payload).toHaveProperty(
-      'text',
-      expect.stringContaining('نامعتبر'),
-    );
-    await bot.handleUpdate(textMessage(allowedUserId, '۳۰'));
-    await press('۵ دقیقه');
-    await bot.handleUpdate(textMessage(allowedUserId, '۰'));
-    await press('افزودن شرط');
-    await press('حداقل حجم صف خرید');
-    await bot.handleUpdate(textMessage(allowedUserId, '۱٬۰۰۰٬۰۰۰'));
-    await press('ویرایش شرط ۲');
-    await press('ناپدید شدن صف فروش');
-    await bot.handleUpdate(textMessage(allowedUserId, '۱۰۰'));
-    await press('حذف شرط ۲');
-    await press('افزودن شرط');
-    await press('حداقل حجم صف خرید');
-    await bot.handleUpdate(textMessage(allowedUserId, '۵۰۰'));
-    await press('تغییر به: حداقل یکی از شرط‌ها');
-    const save = adminButton(calls, 'تأیید و ذخیره');
-    await Promise.all([
-      bot.handleUpdate(callback(allowedUserId, save)),
-      bot.handleUpdate(callback(allowedUserId, save)),
-    ]);
-    expect(channels.list(String(allowedUserId))).toHaveLength(1);
-    expect(channels.list(String(allowedUserId))[0]?.definition).toEqual({
-      type: 'GROUP',
-      operator: 'OR',
-      conditions: [
-        {
-          type: 'BUY_QUEUE_DROP_PERCENT',
-          config: {
-            thresholdPercent: 30,
-            windowMinutes: 5,
-            minimumBaselineVolume: 0,
+describe('private Bale destination administration', () => {
+  it.each(['channel', 'group'] as const)(
+    'blocks public/group/non-admin commands and forged %s callbacks',
+    async (chatType) => {
+      const { bot, calls, channels } = setup(true, true, chatType);
+      await bot.handleUpdate(command(allowedUserId, '/admin', true));
+      expect(calls).toHaveLength(0);
+      await bot.handleUpdate(command(999, '/admin'));
+      expect(calls).toHaveLength(0);
+      await bot.handleUpdate(command(456789123, '/admin'));
+      expect(calls.at(-1)?.payload).toHaveProperty(
+        'text',
+        expect.stringContaining('دسترسی'),
+      );
+      await bot.handleUpdate(command(allowedUserId, '/admin'));
+      await channels.refresh();
+      const id = channels.create(String(allowedUserId), instrument, {
+        type: 'GROUP',
+        operator: 'AND',
+        conditions: [
+          {
+            type: 'BUY_QUEUE_DISAPPEARED',
+            config: { minimumPreviousVolume: 0 },
           },
-        },
-        { type: 'BUY_QUEUE_VOLUME_ABOVE', config: { minimumVolume: 500 } },
-      ],
-    });
-    expect(provider.snapshot).not.toHaveBeenCalled();
-    expect(provider.search).toHaveBeenCalledTimes(1);
-    expect(calls.some((call) => call.method === 'editMessageText')).toBe(true);
-  });
+        ],
+      });
+      const before = calls.length;
+      for (const action of [
+        'view',
+        'edit',
+        'on',
+        'off',
+        'delete',
+        'confirmdelete',
+      ])
+        await bot.handleUpdate(callback(456789123, `ad:${action}:${id}`));
+      await bot.handleUpdate(callback(456789123, 'ad:status'));
+      await bot.handleUpdate(callback(456789123, 'af:12345678:save'));
+      expect(
+        calls
+          .slice(before)
+          .every((call) => call.method === 'answerCallbackQuery'),
+      ).toBe(true);
+      expect(channels.get(String(allowedUserId), id)).toMatchObject({
+        enabled: true,
+        revision: 1,
+      });
+      expect(JSON.stringify(calls.slice(before))).not.toContain(
+        '-1001234567890',
+      );
+    },
+  );
+  it.each(['channel', 'group'] as const)(
+    'builds, edits, removes and combines %s conditions with Persian validation and saves once',
+    async (chatType) => {
+      const { bot, calls, channels, provider } = setup(true, true, chatType);
+      const press = async (label: string) =>
+        bot.handleUpdate(callback(allowedUserId, adminButton(calls, label)));
+      await bot.handleUpdate(command(allowedUserId, '/admin'));
+      await press('ساخت هشدار جدید');
+      await press('انتخاب این مقصد');
+      await bot.handleUpdate(textMessage(allowedUserId, 'خودرو'));
+      await press('خودرو');
+      await press('کاهش صف خرید');
+      await bot.handleUpdate(textMessage(allowedUserId, '۰'));
+      expect(calls.at(-1)?.payload).toHaveProperty(
+        'text',
+        expect.stringContaining('نامعتبر'),
+      );
+      await bot.handleUpdate(textMessage(allowedUserId, '۳۰'));
+      await press('۵ دقیقه');
+      await bot.handleUpdate(textMessage(allowedUserId, '۰'));
+      await press('افزودن شرط');
+      await press('حداقل حجم صف خرید');
+      await bot.handleUpdate(textMessage(allowedUserId, '۱٬۰۰۰٬۰۰۰'));
+      await press('ویرایش شرط ۲');
+      await press('ناپدید شدن صف فروش');
+      await bot.handleUpdate(textMessage(allowedUserId, '۱۰۰'));
+      await press('حذف شرط ۲');
+      await press('افزودن شرط');
+      await press('حداقل حجم صف خرید');
+      await bot.handleUpdate(textMessage(allowedUserId, '۵۰۰'));
+      await press('تغییر به: حداقل یکی از شرط‌ها');
+      const save = adminButton(calls, 'تأیید و ذخیره');
+      await Promise.all([
+        bot.handleUpdate(callback(allowedUserId, save)),
+        bot.handleUpdate(callback(allowedUserId, save)),
+      ]);
+      expect(channels.list(String(allowedUserId))).toHaveLength(1);
+      expect(channels.list(String(allowedUserId))[0]?.definition).toEqual({
+        type: 'GROUP',
+        operator: 'OR',
+        conditions: [
+          {
+            type: 'BUY_QUEUE_DROP_PERCENT',
+            config: {
+              thresholdPercent: 30,
+              windowMinutes: 5,
+              minimumBaselineVolume: 0,
+            },
+          },
+          { type: 'BUY_QUEUE_VOLUME_ABOVE', config: { minimumVolume: 500 } },
+        ],
+      });
+      expect(provider.snapshot).not.toHaveBeenCalled();
+      expect(provider.search).toHaveBeenCalledTimes(1);
+      expect(calls.some((call) => call.method === 'editMessageText')).toBe(
+        true,
+      );
+    },
+  );
   it('supports pagination, independent toggles, status and confirmed deletion by another configured admin', async () => {
     const { bot, calls, channels } = setup(true);
     await bot.handleUpdate(command(allowedUserId, '/admin'));
@@ -668,10 +691,10 @@ describe('private Bale channel administration', () => {
       bot.handleUpdate(callback(allowedUserId, adminButton(calls, label)));
     await bot.handleUpdate(command(allowedUserId, '/admin'));
     await press('ساخت هشدار جدید');
-    await press('انتخاب این کانال');
+    await press('انتخاب این مقصد');
     await press('بازگشت');
-    expect(adminButton(calls, 'انتخاب این کانال')).toContain('af:');
-    await press('انتخاب این کانال');
+    expect(adminButton(calls, 'انتخاب این مقصد')).toContain('af:');
+    await press('انتخاب این مقصد');
     await bot.handleUpdate(textMessage(allowedUserId, 'خودرو'));
     await press('خودرو');
     await press('ناپدید شدن صف خرید');

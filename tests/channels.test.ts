@@ -577,7 +577,64 @@ describe('channel rules and isolation', () => {
 });
 
 describe('channel configuration and plain messages', () => {
+  it('delivers to a configured group and rejects delivery after bot administrator rights are revoked', async () => {
+    const s = setup();
+    const bot = new Bot(`123456:${'x'.repeat(35)}`);
+    let administrator = true;
+    bot.api.config.use((previous, method) =>
+      Promise.resolve({
+        ok: true,
+        result:
+          method === 'getChat'
+            ? { id: Number(channelId), type: 'group', title: 'گروه آزمایشی' }
+            : { status: administrator ? 'administrator' : 'member' },
+      } as Awaited<ReturnType<typeof previous>>),
+    );
+    s.verify.mockImplementation(channelVerifier(bot.api, () => 123456));
+    expect(await s.channels.refresh()).toBe(true);
+    s.channels.create('123', instrument, group('AND'));
+    s.channels.create('123', instrument, group('AND'));
+    s.update(0);
+    s.update(60, 700);
+    const send = vi.fn<SendNotification>().mockResolvedValue({});
+    const worker = s.dispatcher(send);
+    await worker.dispatchOnce();
+    expect(send).toHaveBeenCalledOnce();
+    expect(send.mock.calls[0]?.[0]).toBe(channelId);
+    administrator = false;
+    await worker.dispatchOnce();
+    expect(send).toHaveBeenCalledOnce();
+    expect(
+      s.db
+        .select()
+        .from(notificationOutbox)
+        .all()
+        .map((row) => row.status)
+        .sort(),
+    ).toEqual(['DELIVERED', 'FAILED']);
+  });
+
   it.each([
+    {
+      chatType: 'group',
+      member: { status: 'administrator' },
+      expected: true,
+    },
+    {
+      chatType: 'group',
+      member: { status: 'member' },
+      expected: false,
+    },
+    {
+      chatType: 'group',
+      member: { status: 'restricted', can_send_messages: true },
+      expected: false,
+    },
+    {
+      chatType: 'private',
+      member: { status: 'administrator' },
+      expected: false,
+    },
     {
       chatType: 'channel',
       member: { status: 'administrator', can_post_messages: true },
@@ -621,7 +678,9 @@ describe('channel configuration and plain messages', () => {
         await channelVerifier(bot.api, () => 123456)(channelId),
       ).toMatchObject({ canPost: expected });
       expect(methods).toEqual(
-        chatType === 'channel' ? ['getChat', 'getChatMember'] : ['getChat'],
+        chatType === 'channel' || chatType === 'group'
+          ? ['getChat', 'getChatMember']
+          : ['getChat'],
       );
     },
   );

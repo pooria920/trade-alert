@@ -8,6 +8,8 @@ The [verification record and complete file inventory](docs/PRODUCTION-READINESS.
 
 ## Prerequisites and limits
 
+- The single `BALE_CHANNEL_ID` destination may be a group or channel. For a group, make the bot an administrator; for a channel, also grant posting permission. All rule management remains in the authorized admin's private `/admin` conversation. No commands or callbacks run inside groups.
+
 - Ubuntu with Git, Bash/coreutils, Docker Engine and the Docker Compose plugin. Follow [Docker's Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/). The operator needs Docker access and permission to manage `/opt/stock-alert-bot` and backups.
 - One instance per bot token and one stable Compose project. Defaults below use `stock-alert-bot`. Never scale above one. A separate SQLite OS lock beside the database rejects another app or migration process using the same data path and releases automatically on process death. It cannot protect against an unrelated host using the same token or a different database: Bale 409 is a fatal conflict; stop the other poller.
 - Node 24 LTS is inside the image; host Node/pnpm are unnecessary. Build and runtime share the pinned Debian image/digest so native SQLite binaries use the same ABI/platform. Linux amd64 is tested locally; rebuild and verify on the target architecture rather than copying a mismatched image. Review and refresh the pinned digest for security updates.
