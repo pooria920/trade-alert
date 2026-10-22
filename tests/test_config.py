@@ -15,6 +15,35 @@ REQUIRED = dict(
 
 
 class ConfigTests(unittest.TestCase):
+    def test_shared_destination_accepts_canonical_basic_and_supergroup_ids(self):
+        for destination in ("-123", "-1001234567890"):
+            self.assertEqual(
+                parse_env(
+                    {
+                        **REQUIRED,
+                        "TELEGRAM_ADMIN_USER_IDS": "1",
+                        "TELEGRAM_CHANNEL_ID": destination,
+                    }
+                )["TELEGRAM_CHANNEL_ID"],
+                destination,
+            )
+        for destination in (
+            "123",
+            "-0",
+            "-0123",
+            "-1000000000000",
+            "-4503599627370496",
+            "@group",
+        ):
+            with self.assertRaisesRegex(ValueError, "TELEGRAM_CHANNEL_ID"):
+                parse_env(
+                    {
+                        **REQUIRED,
+                        "TELEGRAM_ADMIN_USER_IDS": "1",
+                        "TELEGRAM_CHANNEL_ID": destination,
+                    }
+                )
+
     def test_force_active_is_test_only(self):
         # Intentional tightening to the project requirement; TS also allows development.
         for environment in ("development", "production"):

@@ -1,4 +1,4 @@
-"""Authorized private commands and serial consumption of Telethon events."""
+"""Authorized private/group commands and serial consumption of Telethon events."""
 
 import asyncio
 import logging
@@ -117,17 +117,37 @@ class TelegramBot:
             if (
                 sender.get("is_bot") is not False
                 or actor not in self.users.allowed
-                or chat.get("type") != "private"
                 or type(chat.get("id")) is not int
-                or str(chat["id"]) != actor
             ):
+                return None
+            group_id = None
+            if chat.get("type") == "private":
+                if str(chat["id"]) != actor:
+                    return None
+            elif chat.get("type") in ("group", "supergroup") and self.channels:
+                if str(chat["id"]) != self.channels.channel_id:
+                    return None
+                self.channels.authorize(actor)
+                group_id = self.channels.channel_id
+            else:
                 return None
             message_id = integer(message["message_id"], 1)
             message_text = text(message.get("text", ""), 4096, trim=False, minimum=0)
             return Context(
-                self.api, self.users, actor, message_text, data, callback_id, message_id
+                self.api,
+                self.users,
+                actor,
+                message_text,
+                data,
+                callback_id,
+                message_id,
+                group_id,
+                self.channels,
+                integer(obj(message["reply_to_message"])["message_id"], 1)
+                if "reply_to_message" in message
+                else None,
             )
-        except ValueError, TypeError, KeyError, OverflowError:
+        except ValueError, TypeError, KeyError, OverflowError, PermissionError:
             return None
 
     async def handle_update(self, update: object) -> None:
@@ -135,10 +155,14 @@ class TelegramBot:
         if ctx is None:
             return
         try:
-            self.users.register(ctx.actor, ctx.actor)
+            if not ctx.group_id:
+                self.users.register(ctx.actor, ctx.actor)
             if ctx.callback_id:
                 if ctx.data.startswith(("ad:", "af:")) and self.admin is not None:
                     await self.admin.callback(ctx)
+                    return
+                if ctx.group_id:
+                    await ctx.answer("این دکمه مربوط به گفت‌وگوی خصوصی است.")
                     return
                 await ctx.answer()
                 await self._callback(ctx)
@@ -151,13 +175,19 @@ class TelegramBot:
             if command:
                 if command[2] and command[2].casefold() != self.api.username.casefold():
                     return
-                self.flows.pop(ctx.actor, None)
+                if not ctx.group_id:
+                    self.flows.pop(ctx.actor, None)
                 if self.admin:
-                    self.admin.drafts.pop(ctx.actor, None)
-                await self._command(ctx, command[1].lower(), (command[3] or "").strip())
-            elif self.admin and ctx.actor in self.admin.drafts:
+                    self.admin.drafts.pop(ctx.scope, None)
+                if ctx.group_id:
+                    await self._group_command(ctx, command[1].lower())
+                else:
+                    await self._command(
+                        ctx, command[1].lower(), (command[3] or "").strip()
+                    )
+            elif self.admin and ctx.scope in self.admin.drafts:
                 await self.admin.message(ctx)
-            else:
+            elif not ctx.group_id:
                 await self._flow_message(ctx)
         except PermissionError:
             self.logger.warning("Telegram command authorization failed")
@@ -344,6 +374,28 @@ class TelegramBot:
                 await ctx.reply(history_text(event))
             if not events:
                 await ctx.reply("هنوز هشداری ثبت نشده است.")
+
+    async def _group_command(self, ctx: Context, command: str) -> None:
+        assert self.channels is not None and self.admin is not None
+        self.channels.authorize(ctx.actor)
+        if command in ("start", "help"):
+            await ctx.reply(
+                "دستورهای گروه:\n/admin مدیریت هشدارهای گروه\n/alert ساخت هشدار گروه\n/alerts فهرست هشدارهای گروه\n/status وضعیت کلی پایش\n/cancel لغو فرایند\nبرای ورود متن مراحل، به پیام همان مرحله پاسخ بدهید. دستورهای شخصی را در خصوصی اجرا کنید."
+            )
+        elif command == "admin":
+            await self.admin.menu(ctx)
+        elif command == "alert":
+            await self.admin.new(ctx)
+        elif command == "alerts":
+            await self.admin.list(ctx)
+        elif command == "status":
+            await ctx.reply(monitoring_text(self.get_status(), self.now()))
+        elif command == "cancel":
+            await ctx.reply("فرایند گروه لغو شد.")
+        else:
+            await ctx.reply(
+                "برای مدیریت گروه /admin را بفرستید. دستورهای شخصی فقط در خصوصی اجرا می‌شوند."
+            )
 
     async def _preferences(self, ctx: Context) -> None:
         enabled = bool(

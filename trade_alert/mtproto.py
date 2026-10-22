@@ -33,6 +33,7 @@ class TelegramAPI:
         configured_channel: str = "",
         *,
         client: Any = None,
+        admin_users: Sequence[str] = (),
     ) -> None:
         if not re.fullmatch(r"[0-9]+:[A-Za-z0-9_-]{30,}", token):
             raise ValueError("Invalid bot token")
@@ -43,6 +44,9 @@ class TelegramAPI:
             if user_ids(actor) != [actor]:
                 raise ValueError("Invalid authorized user ID")
         self.allowed = frozenset(allowed_users)
+        if not set(admin_users).issubset(self.allowed):
+            raise ValueError("Group admins must be authorized users")
+        self.admins = frozenset(admin_users)
         self.channel = channel_id(configured_channel) if configured_channel else ""
         self._token, self._expected_id = token, int(token.split(":", 1)[0])
         self.bot_id: int | None = None
@@ -92,18 +96,23 @@ class TelegramAPI:
         await self._receive(event, callback=True)
 
     async def _receive(self, event: Any, *, callback: bool) -> None:
-        """Reject unauthorized/group/mismatched peers before even resolving a sender."""
+        """Reject unknown peers and non-admin group actors before sender lookup."""
         task = asyncio.current_task()
         assert task is not None
         self.active.add(task)
         try:
             self._cancelled()
             actor = integer(event.sender_id, 1, 2**52 - 1)
+            private = event.is_private is True
+            group = (
+                getattr(event, "is_group", False) is True
+                and str(actor) in self.admins
+                and str(event.chat_id) == self.channel
+            )
             if (
                 str(actor) not in self.allowed
-                or event.is_private is not True
                 or type(event.chat_id) is not int
-                or event.chat_id != actor
+                or not ((private and event.chat_id == actor) or (not private and group))
             ):
                 return
             if callback:
@@ -125,7 +134,24 @@ class TelegramAPI:
                 return
             if not isinstance(sender, types.User) or sender.id != actor or sender.bot:
                 return
-            message = dict(message_id=message_id, chat=dict(id=actor, type="private"))
+            message = dict(
+                message_id=message_id,
+                chat=dict(
+                    id=event.chat_id,
+                    type="private"
+                    if private
+                    else "group"
+                    if utils.resolve_id(event.chat_id)[1] is types.PeerChat
+                    else "supergroup",
+                ),
+            )
+            reply = (
+                getattr(event.message, "reply_to_msg_id", None)
+                if not callback
+                else None
+            )
+            if reply is not None:
+                message["reply_to_message"] = dict(message_id=integer(reply, 1))
             human = dict(id=actor, is_bot=False)
             self.sequence += 1
             if callback:
@@ -212,11 +238,46 @@ class TelegramAPI:
 
     def _peer(self, value: str) -> Any:
         if value == self.channel and value:
+            identifier, kind = utils.resolve_id(int(value))
+            if kind is types.PeerChat:
+                return types.InputPeerChat(identifier)
             channel = self._channel(value)
             return types.InputPeerChannel(channel.channel_id, channel.access_hash)
         if value not in self.allowed:
             raise TelegramError(403)
         return types.InputPeerUser(int(value), 0)
+
+    async def _chat(self, value: str) -> Any:
+        if not self.channel or value != self.channel:
+            raise TelegramError(403)
+        peer = self._peer(value)
+        request = (
+            functions.messages.GetChatsRequest([peer.chat_id])
+            if isinstance(peer, types.InputPeerChat)
+            else functions.channels.GetChannelsRequest([self._channel(value)])
+        )
+        response = await self.client(request)
+        if len(response.chats) != 1:
+            raise ValueError("Unexpected destination result")
+        return response.chats[0]
+
+    @staticmethod
+    def _chat_type(chat: Any) -> str:
+        if getattr(chat, "left", False) or getattr(chat, "deactivated", False):
+            return "invalid"
+        if isinstance(chat, types.Chat) and not chat.migrated_to:
+            return "group"
+        if isinstance(chat, types.Channel):
+            banned = chat.banned_rights
+            if banned and (
+                banned.view_messages or banned.send_messages or banned.send_plain
+            ):
+                return "invalid"
+            if chat.megagroup and not chat.broadcast:
+                return "supergroup"
+            if chat.broadcast and not chat.megagroup:
+                return "channel"
+        return "invalid"
 
     @staticmethod
     def _buttons(payload: dict[str, Any]) -> Any:
@@ -278,25 +339,27 @@ class TelegramAPI:
                 self.ready.clear()
             return batch
         if method == "getChat":
-            requested = self._channel(str(p["chat_id"]))
-            response = await self.client(
-                functions.channels.GetChannelsRequest([requested])
-            )
-            if len(response.chats) != 1:
-                raise ValueError("Unexpected channel result")
-            chat = response.chats[0]
+            chat = await self._chat(str(p["chat_id"]))
             return dict(
                 id=utils.get_peer_id(chat),
-                type="channel"
-                if isinstance(chat, types.Channel)
-                and chat.broadcast is True
-                and not chat.megagroup
-                else "invalid",
+                type=self._chat_type(chat),
                 title=chat.title,
             )
         if method == "getChatMember":
             if p["user_id"] != self.bot_id:
                 raise TelegramError(403)
+            if isinstance(self._peer(str(p["chat_id"])), types.InputPeerChat):
+                chat = await self._chat(str(p["chat_id"]))
+                admin = (
+                    self._chat_type(chat) == "group"
+                    and str(utils.get_peer_id(chat)) == str(p["chat_id"])
+                    and bool(chat.admin_rights or chat.creator)
+                )
+                return dict(
+                    status="administrator" if admin else "member",
+                    can_post_messages=admin,
+                    user=dict(id=self.bot_id, is_bot=True),
+                )
             result = await self.client(
                 functions.channels.GetParticipantRequest(
                     self._channel(str(p["chat_id"])), types.InputPeerSelf()
@@ -374,12 +437,16 @@ class TelegramAPI:
             if (
                 type(chat.get("id")) is not int
                 or str(chat["id"]) != configured
-                or chat.get("type") != "channel"
+                or chat.get("type") not in ("channel", "group", "supergroup")
             ):
                 return dict(channelId=configured, title="مقصد نامعتبر", canPost=False)
             member = obj(
                 await self.call(
-                    "getChatMember", dict(chat_id=configured, user_id=self.bot_id)
+                    "getChatMember",
+                    dict(
+                        chat_id=configured,
+                        user_id=self.bot_id,
+                    ),
                 )
             )
         self._cancelled()
@@ -389,7 +456,7 @@ class TelegramAPI:
             channelId=configured,
             title=text(chat["title"], 255),
             canPost=member.get("status") == "administrator"
-            and member.get("can_post_messages") is True
+            and (chat["type"] != "channel" or member.get("can_post_messages") is True)
             and type(obj(member.get("user", {})).get("id")) is int
             and obj(member.get("user", {})).get("id") == self.bot_id
             and obj(member.get("user", {})).get("is_bot") is True,

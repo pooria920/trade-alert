@@ -54,6 +54,7 @@ async def run_application(
                 env["TELEGRAM_ALLOWED_USER_IDS"],
                 env["TELEGRAM_CHANNEL_ID"],
                 client=telegram_client,
+                admin_users=env["TELEGRAM_ADMIN_USER_IDS"],
             )
             resources.push_async_callback(api.close)
             client = TsetmcClient(

@@ -25,6 +25,68 @@ from trade_alert.users import UserService
 
 
 class DeliveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_basic_and_supergroup_delivery_rechecks_real_adapter_permissions(
+        self,
+    ):
+        from telethon import utils
+        from telethon_fake import (
+            API_HASH,
+            API_ID,
+            CHANNEL,
+            TOKEN,
+            FakeClient,
+            basic_group,
+            channel,
+        )
+
+        from trade_alert.mtproto import TelegramAPI as MTProtoAPI
+
+        for destination, chat in (
+            ("-123", basic_group()),
+            (CHANNEL, channel(broadcast=False, megagroup=True)),
+        ):
+            self.db.execute("DELETE FROM alert_rules")
+            self.db.execute("DELETE FROM queue_snapshots")
+            self.db.execute("DELETE FROM application_state")
+            self.clock = START
+            client = FakeClient()
+            client.chat, client.can_post = chat, None
+            api = MTProtoAPI(
+                TOKEN, API_ID, API_HASH, ["1", "2"], destination, client=client
+            )
+            self.addAsyncCleanup(api.close)
+            await api.initialize()
+            self.channels = ChannelService(
+                self.db,
+                self.users,
+                self.admins,
+                destination,
+                api.verify_channel,
+                now=lambda: self.clock,
+            )
+            await self.trigger(channel=True)
+            self.users.set_notifications("1", False)
+            self.users.remove_symbol("1", "123")
+
+            async def send(target, message):
+                await api.call("sendMessage", dict(chat_id=target, text=message))
+
+            worker = self.worker(send)
+            await worker.dispatch_once()
+            self.assertEqual(self.outbox()["status"], "DELIVERED")
+            sent = [value for kind, value in client.calls if kind == "send"]
+            self.assertEqual(str(utils.get_peer_id(sent[0][0])), destination)
+            self.db.execute(
+                "UPDATE notification_outbox SET status='PENDING', next_attempt_at=0"
+            )
+            if destination == "-123":
+                chat.admin_rights = None
+            else:
+                client.admin = False
+            await worker.dispatch_once()
+            self.assertEqual(self.outbox()["status"], "FAILED")
+            self.assertEqual(len([1 for kind, _ in client.calls if kind == "send"]), 1)
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)

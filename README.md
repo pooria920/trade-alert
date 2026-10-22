@@ -51,6 +51,13 @@ Commands: `/start`, `/help`, `/add`, `/list`, `/queue`, `/remove`, `/status`,
 `/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin`.
 Private preferences and ownership remain separate from channel rules.
 
+Basic groups and supergroups can also be the single configured shared destination
+in `TELEGRAM_CHANNEL_ID`. Make the bot an administrator. Configured authorized
+admins must first `/start` privately; they can then use `/admin`, `/alert`, `/alerts`,
+`/status`, `/cancel`, `/start` and `/help` in that group. Draft text must reply to
+the current bot prompt. Personal commands/data and delivery-error details remain
+private; other group members cannot operate the bot. See [group setup](DEPLOYMENT.fa.md).
+
 Original migrations and journal live unchanged under `migrations/`. Startup and
 manual migration share an OS-backed instance lock. The image runs as `node`
 (UID/GID 1000) for existing-volume compatibility; it contains Python, not Node.

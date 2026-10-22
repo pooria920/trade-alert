@@ -55,6 +55,155 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def group_send(self, content, actor=1, *, reply=True, chat=CHANNEL):
+        self.sequence += 1
+        update = message(
+            actor, content, chat=int(chat), kind="supergroup", update_id=self.sequence
+        )
+        draft = self.bot.admin.drafts.get(f"{chat}:{actor}")
+        if reply and draft and draft.message_id:
+            update["message"]["reply_to_message"] = dict(message_id=draft.message_id)
+        await self.bot.handle_update(update)
+
+    async def group_click(self, data, actor=1, *, chat=CHANNEL):
+        self.sequence += 1
+        update = callback(
+            actor, data, chat=int(chat), kind="supergroup", update_id=self.sequence
+        )
+        update["callback_query"]["message"]["message_id"] = self.group_message_id
+        await self.bot.handle_update(update)
+
+    async def group_press(self, label, actor=1):
+        await self.group_click(self.button(label), actor)
+
+    def enable_group_replies(self):
+        self.chat_type = "supergroup"
+        self.group_message_id = 100
+
+        async def hook(method, payload):
+            if method in ("sendMessage", "editMessageText"):
+                if method == "sendMessage":
+                    self.group_message_id += 1
+                else:
+                    self.group_message_id = payload["message_id"]
+                return httpx.Response(
+                    200,
+                    json=dict(ok=True, result=dict(message_id=self.group_message_id)),
+                )
+
+        self.hook = hook
+
+    async def test_group_commands_build_manage_and_delete_only_group_rules(self):
+        await self.watch()
+        private = self.alerts.create("1", ITEM.ins_code, DROP)
+        self.enable_group_replies()
+        await self.group_send("/admin@test_bot")
+        await self.group_press("ساخت هشدار جدید")
+        await self.group_press("انتخاب این گروه")
+        self.search.reset_mock()
+        await self.group_send("unrelated admin conversation", reply=False)
+        self.search.assert_not_awaited()
+        await self.group_send("خودرو")
+        await self.group_press(ITEM.symbol)
+        await self.group_press("ناپدید شدن صف خرید")
+        await self.group_send("۰")
+        saved = self.button("تأیید و ذخیره")
+        await self.group_click(saved)
+        await self.group_click(saved)
+        group_rules = self.channels.list("1")
+        self.assertEqual(len(group_rules), 1)
+        self.assertEqual(group_rules[0]["channel_id"], CHANNEL)
+        self.assertEqual(len(self.alerts.list("1")), 1)
+        await self.group_send("/alerts")
+        self.assertNotIn(private, str(self.calls[-1]))
+        await self.group_click("ad:view:" + group_rules[0]["id"])
+        await self.group_press("حذف")
+        await self.group_press("تأیید حذف")
+        self.assertFalse(self.channels.list("1"))
+        self.assertIsNotNone(self.alerts.get("1", private))
+
+    async def test_group_never_registers_users_or_accepts_other_groups_nonadmins(self):
+        self.enable_group_replies()
+        await self.group_send("/admin")
+        self.assertFalse(self.calls)
+        self.assertEqual(rows(self.db, "SELECT * FROM users"), [])
+        await self.send("/start")
+        await self.send("/start", 3)
+        self.calls.clear()
+        for actor, chat in ((1, "-999"), (2, CHANNEL), (3, CHANNEL), (9, CHANNEL)):
+            await self.group_send("/admin", actor, chat=chat)
+            await self.group_click("ad:new", actor, chat=chat)
+        self.assertFalse(self.calls)
+        self.assertEqual(len(rows(self.db, "SELECT * FROM users")), 2)
+        await self.group_send("/admin@another_bot")
+        self.assertFalse(self.calls)
+        await self.group_send("/admin")
+        self.assertEqual(str(self.calls[-1][1]["chat_id"]), CHANNEL)
+        self.admins.remove("1")
+        self.calls.clear()
+        await self.group_click("ad:new")
+        self.assertFalse(self.calls)
+
+    async def test_group_replies_stop_after_bot_demotion_or_admin_revocation_during_check(
+        self,
+    ):
+        await self.send("/start")
+        self.enable_group_replies()
+        self.member_status = "member"
+        self.calls.clear()
+        await self.group_send("/admin")
+        self.assertFalse(any(method == "sendMessage" for method, _ in self.calls))
+        self.member_status = "administrator"
+        original = self.hook
+
+        async def revoke(method, payload):
+            if method == "getChatMember":
+                self.admins.remove("1")
+            return await original(method, payload)
+
+        self.hook = revoke
+        self.calls.clear()
+        await self.group_send("/admin")
+        self.assertFalse(any(method == "sendMessage" for method, _ in self.calls))
+
+    async def test_group_private_buttons_preferences_and_drafts_are_separate(self):
+        await self.watch()
+        await self.send("/admin")
+        await self.press("ساخت هشدار جدید")
+        private_draft = self.bot.admin.drafts["1"]
+        private_token = private_draft.token
+        self.enable_group_replies()
+        await self.group_send("/alert")
+        group_draft = self.bot.admin.drafts[f"{CHANNEL}:1"]
+        self.assertIsNot(group_draft, private_draft)
+        await self.group_click(f"af:{private_token}:channel")
+        self.assertEqual(private_draft.step, "channel")
+        self.assertEqual(group_draft.step, "channel")
+        await self.send("/start", 2)
+        before = sum(
+            method in ("sendMessage", "editMessageText") for method, _ in self.calls
+        )
+        await self.group_click(f"af:{group_draft.token}:channel", actor=2)
+        self.assertEqual(
+            sum(
+                method in ("sendMessage", "editMessageText") for method, _ in self.calls
+            ),
+            before,
+        )
+        self.assertEqual(group_draft.step, "channel")
+        await self.group_click("notifications:off")
+        self.assertTrue(self.users.preferences("1")["notifications_enabled"])
+        for command in ("/list", "/history", "/queue خودرو", "/remove خودرو"):
+            await self.group_send(command)
+            self.assertIn("خصوصی", self.texts()[-1])
+            self.assertNotIn(ITEM.symbol, self.texts()[-1])
+        await self.group_send("/cancel")
+        self.assertIn("1", self.bot.admin.drafts)
+        self.assertNotIn(f"{CHANNEL}:1", self.bot.admin.drafts)
+        await self.group_click("ad:status")
+        self.assertIn("خصوصی", self.texts()[-1])
+        self.assertNotIn("آخرین خطای", self.texts()[-1])
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -510,7 +659,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(self.db.execute("SELECT count(*) FROM users").fetchone()[0], 0)
         for attribute, invalid in (
-            ("chat_type", "supergroup"),
+            ("chat_type", "private"),
             ("can_post", False),
             ("member_status", "member"),
             ("member_id", 999),

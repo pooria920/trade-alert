@@ -1,4 +1,4 @@
-"""Private current-admin channel UI, using expiring flat-tree drafts only."""
+"""Current-admin shared-destination UI, with per-chat expiring flat-tree drafts."""
 
 import re
 import secrets
@@ -32,6 +32,7 @@ class ChannelDraft:
     rule_id: str | None = None
     revision: int | None = None
     saving: bool = False
+    message_id: int | None = None
 
     def tree(self) -> dict[str, Any]:
         return definition_json(
@@ -46,25 +47,25 @@ class AdminCommands:
         self, channels: ChannelService, market: MarketService, now: Callable[[], int]
     ) -> None:
         self.channels, self.market, self.now = channels, market, now
-        # ponytail: one bounded ten-minute draft per admin, discarded on restart.
+        # ponytail: one ten-minute draft per admin/chat (private + one group), lost on restart.
         self.drafts: dict[str, ChannelDraft] = {}
 
-    def _live(self, actor: str, draft: ChannelDraft) -> bool:
+    def _live(self, scope: str, draft: ChannelDraft) -> bool:
         return (
-            self.drafts.get(actor) is draft
+            self.drafts.get(scope) is draft
             and self.now() <= draft.expires
             and draft.channel_id == self.channels.channel_id
         )
 
     async def menu(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
-        self.drafts.pop(ctx.actor, None)
+        self.drafts.pop(ctx.scope, None)
         await ctx.reply(
-            "مدیریت هشدارهای کانال",
+            "مدیریت هشدارهای گروه" if ctx.group_id else "مدیریت هشدارهای کانال",
             [
                 ("ساخت هشدار جدید", "ad:new"),
                 ("مشاهده هشدارها", "ad:list:0"),
-                ("وضعیت کانال", "ad:status"),
+                ("وضعیت گروه" if ctx.group_id else "وضعیت کانال", "ad:status"),
             ],
             edit=True,
         )
@@ -72,13 +73,12 @@ class AdminCommands:
     async def show(self, ctx: Context, draft: ChannelDraft, notice: str = "") -> None:
         self.channels.authorize(ctx.actor)
         draft.token = secrets.token_hex(4)
+        destination = "گروه" if ctx.group_id else "کانال"
         actions: Buttons = []
         prompt = ""
         if draft.step == "channel":
-            prompt = (
-                f"هشدار جدید کانال\nکانال: {self.channels.status(ctx.actor)['title']}"
-            )
-            actions = [("انتخاب این کانال", "channel")]
+            prompt = f"هشدار جدید {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}"
+            actions = [(f"انتخاب این {destination}", "channel")]
         elif draft.step == "search":
             prompt = "نام نماد را برای جست‌وجو بنویسید؛ حداکثر ۸۰ نویسه."
         elif draft.step == "results":
@@ -108,7 +108,7 @@ class AdminCommands:
                 if draft.conditions
                 else "هنوز شرطی ثبت نشده است."
             )
-            prompt = f"هشدار کانال\nکانال: {self.channels.status(ctx.actor)['title']}\nنماد: {draft.instrument.symbol if draft.instrument else ''}\n{detail}\nانتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود."
+            prompt = f"هشدار {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nنماد: {draft.instrument.symbol if draft.instrument else ''}\n{detail}\nانتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود."
             for i in range(len(draft.conditions)):
                 actions.extend(
                     [
@@ -129,7 +129,9 @@ class AdminCommands:
             if draft.conditions:
                 actions.append(("تأیید و ذخیره", "save"))
         actions.extend([("بازگشت", "back"), ("لغو", "cancel")])
-        await ctx.reply(
+        if ctx.group_id:
+            prompt += "\nبرای ورود متن، به همین پیام پاسخ بدهید."
+        draft.message_id = await ctx.reply(
             (notice + "\n\n" if notice else "") + prompt,
             [(label, f"af:{draft.token}:{action}") for label, action in actions],
             edit=True,
@@ -137,6 +139,7 @@ class AdminCommands:
 
     async def list(self, ctx: Context, page: int = 0) -> None:
         rules = self.channels.list(ctx.actor)
+        destination = "گروه" if ctx.group_id else "کانال"
         page = max(0, min(page, max(0, (len(rules) - 1) // 10)))
         buttons = [
             (
@@ -151,14 +154,19 @@ class AdminCommands:
             buttons.append(("بعدی", f"ad:list:{page + 1}"))
         buttons.append(("بازگشت", "ad:menu"))
         await ctx.reply(
-            "هشدارهای کانال؛ برای مدیریت انتخاب کنید:"
+            f"هشدارهای {destination}؛ برای مدیریت انتخاب کنید:"
             if rules
-            else "هشداری برای این کانال ثبت نشده است.",
+            else f"هشداری برای این {destination} ثبت نشده است.",
             buttons,
             edit=True,
         )
 
     async def status(self, ctx: Context) -> None:
+        if ctx.group_id:
+            await ctx.reply(
+                "جزئیات مجوز و خطاهای ارسال فقط در /admin خصوصی مدیر نمایش داده می‌شود."
+            )
+            return
         try:
             await self.channels.refresh()
         except Exception:
@@ -189,15 +197,19 @@ class AdminCommands:
         elif action == "status":
             await self.status(ctx)
         elif action == "new":
-            draft = ChannelDraft(self.now() + 600_000, self.channels.channel_id)
-            self.drafts[ctx.actor] = draft
-            await self.show(ctx, draft)
+            await self.new(ctx)
         elif re.fullmatch(r"list:[0-9]+", action):
             await self.list(ctx, int(action[5:]))
         elif match := re.fullmatch(
             r"(view|edit|on|off|delete|confirmdelete):([a-f0-9-]{36})", action
         ):
             await self._rule_action(ctx, match[1], match[2])
+
+    async def new(self, ctx: Context) -> None:
+        self.channels.authorize(ctx.actor)
+        draft = ChannelDraft(self.now() + 600_000, self.channels.channel_id)
+        self.drafts[ctx.scope] = draft
+        await self.show(ctx, draft)
 
     async def _rule_action(self, ctx: Context, action: str, rule_id: str) -> None:
         rule = self.channels.get(ctx.actor, rule_id)
@@ -249,7 +261,7 @@ class AdminCommands:
                 rule_id=rule_id,
                 revision=rule["revision"],
             )
-            self.drafts[ctx.actor] = draft
+            self.drafts[ctx.scope] = draft
             await self.show(ctx, draft)
         elif action == "view":
             await ctx.reply(
@@ -268,10 +280,14 @@ class AdminCommands:
             )
 
     async def _draft_callback(self, ctx: Context, token: str, action: str) -> None:
-        draft = self.drafts.get(ctx.actor)
-        if draft is None or draft.token != token or not self._live(ctx.actor, draft):
-            if draft and not self._live(ctx.actor, draft):
-                self.drafts.pop(ctx.actor, None)
+        draft = self.drafts.get(ctx.scope)
+        if ctx.group_id and (
+            draft is None or draft.token != token or ctx.message_id != draft.message_id
+        ):
+            return
+        if draft is None or draft.token != token or not self._live(ctx.scope, draft):
+            if draft and not self._live(ctx.scope, draft):
+                self.drafts.pop(ctx.scope, None)
             await ctx.reply(
                 "این مرحله منقضی یا تغییر کرده است. از آخرین پیام یا /admin استفاده کنید.",
                 [("مدیریت", "ad:menu")],
@@ -356,7 +372,7 @@ class AdminCommands:
         draft.saving = True
 
         def guard() -> bool:
-            return self._live(ctx.actor, draft)
+            return self._live(ctx.scope, draft)
 
         try:
             if draft.rule_id:
@@ -367,7 +383,7 @@ class AdminCommands:
                     revision=draft.revision,
                     guard=guard,
                 ):
-                    self.drafts.pop(ctx.actor, None)
+                    self.drafts.pop(ctx.scope, None)
                     await ctx.reply(
                         "هشدار تغییر کرده یا حذف شده است؛ دوباره انتخاب کنید.",
                         [("بازگشت", "ad:list:0")],
@@ -387,27 +403,31 @@ class AdminCommands:
                 )
         except Exception:
             draft.saving = False
-            if self._live(ctx.actor, draft):
+            if self._live(ctx.scope, draft):
                 await self.show(
                     ctx,
                     draft,
                     "ذخیره یا بررسی اجازهٔ ارسال کانال ناموفق بود. دسترسی را بررسی و دوباره تلاش کنید.",
                 )
             return
-        self.drafts.pop(ctx.actor, None)
+        self.drafts.pop(ctx.scope, None)
         await ctx.reply(
-            "هشدار کانال ذخیره شد. انتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود.",
+            f"هشدار {'گروه' if ctx.group_id else 'کانال'} ذخیره شد. انتشار فقط با دادهٔ تازه و قابل تأیید انجام می‌شود.",
             [("مشاهده هشدارها", "ad:list:0"), ("بازگشت", "ad:menu")],
             edit=True,
         )
 
     async def message(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
-        draft = self.drafts.get(ctx.actor)
+        draft = self.drafts.get(ctx.scope)
         if draft is None:
             return
-        if not self._live(ctx.actor, draft):
-            self.drafts.pop(ctx.actor, None)
+        if ctx.group_id and (
+            draft.message_id is None or ctx.reply_to_message_id != draft.message_id
+        ):
+            return
+        if not self._live(ctx.scope, draft):
+            self.drafts.pop(ctx.scope, None)
             await ctx.reply("فرایند منقضی شد. با /admin دوباره شروع کنید.")
             return
         if draft.saving:
@@ -419,7 +439,7 @@ class AdminCommands:
                 return
             token = draft.token
             results = (await self.market.search(query))[:8]
-            if not self._live(ctx.actor, draft) or token != draft.token:
+            if not self._live(ctx.scope, draft) or token != draft.token:
                 return
             self.channels.authorize(ctx.actor)
             draft.results = results

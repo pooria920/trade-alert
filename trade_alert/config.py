@@ -32,8 +32,9 @@ NUMBERS = {
 def channel_id(value: object) -> str:
     if (
         not isinstance(value, str)
-        or not re.fullmatch(r"-100[1-9][0-9]{0,12}", value)
+        or not re.fullmatch(r"-[1-9][0-9]{0,15}", value)
         or int(value) < -(2**52 - 1)
+        or int(value) == -(10**12)
     ):
         raise ValueError("Invalid channel ID")
     return value
