@@ -98,6 +98,7 @@ class ChannelService:
             reason = "UNAVAILABLE"
             if kind in (
                 "DESTINATION_INVALID",
+                "DESTINATION_UNRESOLVED",
                 "DESTINATION_INACCESSIBLE",
                 "ADMIN_REQUIRED",
                 "NETWORK",

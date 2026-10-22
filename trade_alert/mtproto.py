@@ -137,8 +137,9 @@ class TelegramAPI:
             self._cancelled()
             actor = integer(event.sender_id, 1, 2**52 - 1)
             private = event.is_private is True
+            group_type = getattr(event, "is_group", False)
             group = (
-                getattr(event, "is_group", False) is True
+                (group_type is True or group_type is None)
                 and str(actor) in self.admins
                 and str(event.chat_id) == self.channel
             )
@@ -161,6 +162,14 @@ class TelegramAPI:
                 content = text(event.raw_text or "", 4096, trim=False, minimum=0)
                 message_id = integer(event.message.id, 1)
             async with asyncio.timeout(10) as deadline:
+                if not private and group_type is None:
+                    # Callback updates may omit the chat entity entirely. Resolve
+                    # only the exact configured peer after the actor/scope guard.
+                    chat = await self._chat(self.channel)
+                    if self._chat_type(chat) not in ("group", "supergroup") or str(
+                        utils.get_peer_id(chat)
+                    ) != str(event.chat_id):
+                        return
                 sender = await event.get_sender()
             self._cancelled()
             if deadline.expired():
@@ -271,21 +280,26 @@ class TelegramAPI:
         finally:
             self.active.discard(task)
 
-    def _channel(self, value: str) -> Any:
-        if not self.channel or channel_id(value) != self.channel:
-            raise TelegramError(403)
-        identifier, kind = utils.resolve_id(int(value))
-        if kind is not types.PeerChannel:
-            raise TelegramError(400)
-        return types.InputChannel(identifier, 0)
-
-    def _peer(self, value: str) -> Any:
+    async def _peer(self, value: str) -> Any:
         if value == self.channel and value:
             identifier, kind = utils.resolve_id(int(value))
             if kind is types.PeerChat:
                 return types.InputPeerChat(identifier)
-            channel = self._channel(value)
-            return types.InputPeerChannel(channel.channel_id, channel.access_hash)
+            # Let Telethon reuse the current session's full access hash. Its bot
+            # zero-hash discovery is a fallback, not a replacement for known hashes.
+            try:
+                peer = await self.client.get_input_entity(types.PeerChannel(identifier))
+            except ValueError:
+                raise TelegramError(400, "DESTINATION_UNRESOLVED") from None
+            self._cancelled()
+            if value != self.channel:
+                raise TelegramError(403)
+            if (
+                not isinstance(peer, types.InputPeerChannel)
+                or str(utils.get_peer_id(peer)) != value
+            ):
+                raise TelegramError(0, "INVALID_RESPONSE")
+            return peer
         if value not in self.allowed:
             raise TelegramError(403)
         return types.InputPeerUser(int(value), 0)
@@ -293,11 +307,11 @@ class TelegramAPI:
     async def _chat(self, value: str) -> Any:
         if not self.channel or value != self.channel:
             raise TelegramError(403)
-        peer = self._peer(value)
+        peer = await self._peer(value)
         request = (
             functions.messages.GetChatsRequest([peer.chat_id])
             if isinstance(peer, types.InputPeerChat)
-            else functions.channels.GetChannelsRequest([self._channel(value)])
+            else functions.channels.GetChannelsRequest([utils.get_input_channel(peer)])
         )
         response = await self.client(request)
         if len(response.chats) != 1:
@@ -391,7 +405,8 @@ class TelegramAPI:
         if method == "getChatMember":
             if p["user_id"] != self.bot_id:
                 raise TelegramError(403)
-            if isinstance(self._peer(str(p["chat_id"])), types.InputPeerChat):
+            peer = await self._peer(str(p["chat_id"]))
+            if isinstance(peer, types.InputPeerChat):
                 chat = await self._chat(str(p["chat_id"]))
                 admin = (
                     self._chat_type(chat) == "group"
@@ -405,7 +420,7 @@ class TelegramAPI:
                 )
             result = await self.client(
                 functions.channels.GetParticipantRequest(
-                    self._channel(str(p["chat_id"])), types.InputPeerSelf()
+                    utils.get_input_channel(peer), types.InputPeerSelf()
                 )
             )
             participant = result.participant
@@ -428,7 +443,7 @@ class TelegramAPI:
                 ),
             )
         if method in ("sendMessage", "editMessageText"):
-            peer = self._peer(str(p["chat_id"]))
+            peer = await self._peer(str(p["chat_id"]))
             options = dict(
                 parse_mode=None, link_preview=False, buttons=self._buttons(p)
             )
@@ -450,7 +465,7 @@ class TelegramAPI:
         if kind == "all_private_chats":
             target = types.BotCommandScopeUsers()
         elif kind == "chat":
-            target = types.BotCommandScopePeer(self._peer(str(scope["chat_id"])))
+            target = types.BotCommandScopePeer(await self._peer(str(scope["chat_id"])))
         else:
             raise ValueError("Unsupported command scope")
         return await self.client(

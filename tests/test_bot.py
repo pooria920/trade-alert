@@ -63,7 +63,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
             (
                 TelegramError(400, "DESTINATION_INVALID"),
                 "DESTINATION_INVALID",
-                "شناسهٔ مقصد را نامعتبر",
+                "اطلاعات این مقصد را نپذیرفت",
             ),
             (
                 TelegramError(403, "DESTINATION_INACCESSIBLE"),
