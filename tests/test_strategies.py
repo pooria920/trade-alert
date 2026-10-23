@@ -387,6 +387,7 @@ class StrategyTests(unittest.IsolatedAsyncioTestCase):
                     if table == "alert_states":
                         for row in after:
                             self.assertIsNone(row.pop("strategy_data"))
+                            self.assertIsNone(row.pop("evaluation_detail"))
                     self.assertEqual(after, before[table], table)
                 self.assertEqual(
                     db.execute(

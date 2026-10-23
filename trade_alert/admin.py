@@ -25,6 +25,7 @@ from .bot_text import (
     minimum_prompt,
     numeric,
     numeric_error,
+    rule_status_text,
     statistics_text,
     tehran_time,
     tree_text,
@@ -709,7 +710,15 @@ class AdminCommands:
             await self.show(ctx, draft)
         elif action == "view":
             await ctx.reply(
-                f"نماد: {rule['symbol']}\nوضعیت: {'روشن' if rule['enabled'] else 'خاموش'}\n{tree_text(parse_tree(rule['definition']))}",
+                f"نماد: {rule['symbol']}\nوضعیت: {'روشن' if rule['enabled'] else 'خاموش'}\n{tree_text(parse_tree(rule['definition']))}"
+                + "\n\n"
+                + rule_status_text(
+                    rule,
+                    self.now(),
+                    self.is_market_open(),
+                    self.session_at(self.now()),
+                    self.market.detector.max_age_ms,
+                ),
                 [
                     ("ویرایش", f"ad:edit:{rule_id}"),
                     ("تنظیمات پیشرفته", f"ad:qualityc:{rule_id}"),

@@ -117,3 +117,14 @@ backup before build/stop/migration and the bot stopped for manual migration. See
 No schema migration is introduced. Existing rules, states, events, snapshots and pending outbox records are preserved. Application startup and the dedicated migration CLI now acquire a separate OS-backed SQLite instance lock beside the configured database; it does not hold a transaction on the application's WAL database. A second app or manual migrator cannot own the same database path concurrently. Stop the bot before `python -m trade_alert.maintenance migrate /app/data/stock-alert.db`; crash/exit releases the OS lock without deleting files. Use a persistent local volume and one process per bot token.
 
 Use the online backup and new-path restore procedures in [DEPLOYMENT.md](../DEPLOYMENT.md). Do not copy a live database file without its WAL context. Backup artifacts are integrity/foreign-key checked and finalized in DELETE journal mode so a single backup file can be mounted read-only during restore. Restore never overwrites existing DB/WAL/SHM targets or restores automatically. Preserve original files and pair schema-compatible images/backups when rolling back. Admin IDs must now also appear in the authorized user list; update .env before starting the new release. Production refuses schedule bypass, DEBUG logging and in-memory databases.
+
+## Alert explanations
+
+`0009_alert_explanations.sql` adds nullable `alert_states.evaluation_detail`.
+Existing states retain all fields; explanation metadata is populated atomically
+with subsequent accepted evaluations. Replays do not update it, and rule edits
+clear it with the existing state reset. The field records evaluation phase and
+per-leaf outcomes, never delivery destinations or creator identities. Old events
+remain readable; new events retain their definition to explain the trigger.
+The original SQL and existing journal entries are unchanged. Startup applies the
+additive migration under the existing instance lock; no live deployment is implied.

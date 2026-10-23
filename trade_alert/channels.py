@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from .alerts import reset_rule
+from .alerts import evaluation_state, reset_rule
 from .config import channel_id
 from .database import rows, transaction
 from .definitions import definition_json, parse_definition, parse_tree
@@ -184,7 +184,11 @@ class ChannelService:
                 )
 
     def get(self, actor: str, rule_id: str) -> dict[str, Any] | None:
-        return next((rule for rule in self.list(actor) if rule["id"] == rule_id), None)
+        rule = next((rule for rule in self.list(actor) if rule["id"] == rule_id), None)
+        if rule is not None:
+            rule["evaluation"] = evaluation_state(self.db, rule)
+            rule["eligible"] = self.eligible(rule)
+        return rule
 
     async def create(
         self,

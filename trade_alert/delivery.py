@@ -43,6 +43,12 @@ def parse_payload(raw: str | None) -> dict[str, Any]:
     p = obj(loads(raw))
     text(p["symbol"], 80, trim=False, minimum=0)
     integer(p["timestamp"])
+    if "definition" in p:
+        definition = parse_tree(p["definition"])
+        if p["type"] != "COMPOSITE" and (
+            not isinstance(definition, Condition) or definition.type != p["type"]
+        ):
+            raise ValueError("Mismatched event definition")
     if "severity" in p:
         choice(p["severity"], SEVERITIES)
     if p["type"] == "COMPOSITE":

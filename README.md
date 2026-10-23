@@ -79,6 +79,16 @@ Commands: `/start`, `/help`, `/add`, `/list`, `/queue`, `/remove`, `/status`,
 `/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin` and `/stats`.
 Private preferences and ownership remain separate from channel rules.
 
+Rule details in private `/alerts` and the admin shared-rule menu explain the last
+recorded evaluation: initial priming, insufficient baseline/confirmation evidence,
+opposite-side queues, crossing readiness, unmet conditions, recovery and cooldown.
+Composite details include each leaf's result and the overall three-valued result.
+These are timestamped historical results, not a fresh-data assertion; stale or
+other-session evidence is explicitly marked. Views perform no market requests.
+Notifications and history include the triggering condition and its stored evidence.
+Migration `0009_alert_explanations.sql` adds nullable evaluation metadata without
+changing existing rule definitions, state transitions or historical events.
+
 Basic groups and supergroups can also be the single configured shared destination
 in `TELEGRAM_CHANNEL_ID`. Make the bot an administrator. Configured authorized
 admins must first `/start` privately and manage rules with `/admin` in private.

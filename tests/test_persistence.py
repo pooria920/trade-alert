@@ -506,6 +506,7 @@ class PersistenceTests(unittest.IsolatedAsyncioTestCase):
                             # Compare the legacy state machine to its unchanged capture.
                             state.pop("quality_data")
                             state.pop("strategy_data")
+                            state.pop("evaluation_detail")
                             if state["recovery_data"]:
                                 state["recovery_data"] = json.loads(
                                     state["recovery_data"]
@@ -516,6 +517,8 @@ class PersistenceTests(unittest.IsolatedAsyncioTestCase):
                         )
                         for event in events:
                             event["payload"] = json.loads(event["payload"])
+                            # Explanation metadata is additive; keep the frozen capture.
+                            event["payload"].pop("definition", None)
                         trace.append(
                             dict(
                                 inserted=inserted,

@@ -23,6 +23,18 @@ def reset_rule(db: sqlite3.Connection, rule_id: str) -> None:
     )
 
 
+def evaluation_state(
+    db: sqlite3.Connection, rule: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Internal lookup; callers must first resolve an authorized, scoped rule."""
+    found = rows(
+        db,
+        "SELECT * FROM alert_states WHERE rule_id=? AND revision=?",
+        (rule["id"], rule["revision"]),
+    )
+    return found[0] if found else None
+
+
 class AlertService:
     def __init__(
         self,
@@ -47,7 +59,13 @@ class AlertService:
         return result
 
     def get(self, actor: str, rule_id: str) -> dict[str, Any] | None:
-        return next((r for r in self.list(actor) if r["id"] == rule_id), None)
+        rule = next((r for r in self.list(actor) if r["id"] == rule_id), None)
+        if rule is not None:
+            rule["evaluation"] = evaluation_state(self.db, rule)
+            rule["notifications_enabled"] = bool(
+                (self.users.preferences(actor) or {}).get("notifications_enabled")
+            )
+        return rule
 
     def create(
         self, actor: str, ins_code: str, value: object, cooldown: int | None = None

@@ -12,12 +12,13 @@ from .composite import (
     definition_recovered,
     evaluate_definition,
     evaluate_tree,
+    evaluation_detail,
     parse_evidence,
     ready_thresholds,
 )
 from .database import rows, transaction
 from .definitions import Group, RuleTree, conditions, definition_json, parse_definition
-from .evaluators import ObservedPeak, PeakConfig, QueueSnapshot, ThresholdConfig
+from .evaluators import ObservedPeak, PeakConfig, QueueSnapshot
 from .lifecycle import LifecycleConfig, LifecycleContext, LifecycleTracker, weakening
 from .outcomes import AlertOutcomeTracker
 from .quality import QualityPolicy, classify, stored_policy
@@ -189,6 +190,10 @@ class AlertEngine:
                         rule["id"],
                     ),
                 )
+            self.db.execute(
+                "UPDATE alert_states SET evaluation_detail=? WHERE rule_id=?",
+                (json.dumps(dict(phase="PRIMING")), rule["id"]),
+            )
             return
         ready = json.loads(state["strategy_data"] or "{}")
         ready_thresholds(definition, value, ready)
@@ -197,20 +202,19 @@ class AlertEngine:
             state["last_triggered_at"] is None
             or now - state["last_triggered_at"] >= rule["cooldown_seconds"] * 1000
         )
+        recovery_met = False
         if state["status"] != "ARMED":
             state["status"] = "WAITING_FOR_RECOVERY"
-            if (
-                definition_recovered(
-                    definition,
-                    value,
-                    at,
-                    state["baseline_volume"],
-                    state["recovery_data"],
-                    peaks,
-                    lifecycle,
-                )
-                and cooled
-            ):
+            recovery_met = definition_recovered(
+                definition,
+                value,
+                at,
+                state["baseline_volume"],
+                state["recovery_data"],
+                peaks,
+                lifecycle,
+            )
+            if recovery_met and cooled:
                 state.update(
                     status="ARMED",
                     baseline_volume=None,
@@ -340,8 +344,22 @@ class AlertEngine:
                 self._emit(
                     rule, definition, value, session_id, now, result, policy, occurrence
                 )
+        detail = evaluation_detail(definition, value, at, peaks, ready, lifecycle)
+        detail["phase"] = (
+            "TRIGGERED"
+            if state["status"] == "TRIGGERED"
+            else "COOLDOWN"
+            if recovery_met and not cooled
+            else "RECOVERY"
+            if state["status"] != "ARMED"
+            else "COOLDOWN"
+            if not cooled
+            else "REARMED"
+            if not was_armed
+            else "EVALUATED"
+        )
         self.db.execute(
-            "UPDATE alert_states SET status=?, last_evaluated_at=?, last_triggered_at=?, baseline_volume=?, recovery_data=?, quality_data=?, strategy_data=? WHERE rule_id=?",
+            "UPDATE alert_states SET status=?, last_evaluated_at=?, last_triggered_at=?, baseline_volume=?, recovery_data=?, quality_data=?, strategy_data=?, evaluation_detail=? WHERE rule_id=?",
             (
                 state["status"],
                 value.timestamp,
@@ -350,6 +368,7 @@ class AlertEngine:
                 state["recovery_data"],
                 state["quality_data"],
                 json.dumps(ready),
+                json.dumps(detail),
                 rule["id"],
             ),
         )
@@ -379,10 +398,7 @@ class AlertEngine:
             actualPercent=result["actualPercent"],
             windowMinutes=result["windowMinutes"],
         )
-        if not isinstance(definition, Group) and isinstance(
-            definition.config, (PeakConfig, ThresholdConfig)
-        ):
-            payload["definition"] = definition_json(definition)
+        payload["definition"] = definition_json(definition)
         if matches:
             payload["matches"] = matches
         if escalation:

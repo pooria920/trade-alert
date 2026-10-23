@@ -55,6 +55,23 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def test_rule_details_explain_missing_evidence_in_both_scopes_without_fetch(
+        self,
+    ):
+        await self.watch()
+        private = self.alerts.create("1", ITEM.ins_code, DROP)
+        await self.click(f"ar:view:{private}")
+        self.assertIn("وضعیت بررسی قانون", self.texts()[-1])
+        self.assertIn("هنوز ارزیابی ثبت نشده", self.texts()[-1])
+        await self.send("/admin")
+        shared = await self.channels.create(
+            "1", dict(insCode=ITEM.ins_code, symbol=ITEM.symbol, name=ITEM.name), GROUP
+        )
+        await self.click(f"ad:view:{shared}")
+        self.assertIn("وضعیت بررسی قانون", self.texts()[-1])
+        self.assertIn("هنوز ارزیابی ثبت نشده", self.texts()[-1])
+        self.fetch.assert_not_called()
+
     async def test_lifecycle_private_wizard_presets_duration_and_edit(self):
         await self.watch()
         cases = [
