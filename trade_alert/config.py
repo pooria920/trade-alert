@@ -31,6 +31,20 @@ NUMBERS = {
     "NOTIFICATION_MAX_AGE_MINUTES": (15, 1, 1440),
 }
 
+OUTCOME_NUMBERS = {
+    "ALERT_OUTCOME_TOLERANCE_SECONDS": (30, 1, 300),
+    "ALERT_OUTCOME_RETENTION_DAYS": (30, 1, 365),
+}
+
+LIFECYCLE_NUMBERS = {
+    "LIFECYCLE_CONFIRMATION_SNAPSHOTS": (2, 1, 10),
+    "LIFECYCLE_MAX_GAP_SECONDS": (30, 1, 300),
+    "LIFECYCLE_WEAKENING_PERCENT": (20, 1, 100),
+    "LIFECYCLE_ESCALATION_STEP_PERCENT": (10, 1, 100),
+    "LIFECYCLE_MINIMUM_BASELINE_VOLUME": (0, 0, MAX_SAFE_INTEGER),
+    "LIFECYCLE_EVENT_RETENTION_DAYS": (30, 1, 365),
+}
+
 
 def mtproxy(value: str) -> tuple[str, int, str] | None:
     """Parse a Telegram MTProxy link locally; never resolve or connect here."""
@@ -225,6 +239,23 @@ def parse_env(source: Mapping[str, str]) -> dict[str, Any]:
             source.get(field, "info"),
             ("fatal", "error", "warn", "info", "debug", "trace", "silent"),
         )
+        for field, (default, minimum, maximum) in (
+            OUTCOME_NUMBERS | LIFECYCLE_NUMBERS
+        ).items():
+            raw = source.get(field, str(default))
+            if not re.fullmatch(r"[0-9]+", raw):
+                raise ValueError("Expected decimal setting")
+            values[field] = integer(int(raw), minimum, maximum)
+        field = "ALERT_OUTCOME_WINDOWS_MINUTES"
+        raw = source.get(field, "5,15,30")
+        windows = raw.split(",")
+        if (
+            not windows
+            or any(w not in ("5", "15", "30") for w in windows)
+            or len(set(windows)) != len(windows)
+        ):
+            raise ValueError("Expected distinct outcome windows")
+        values[field] = tuple(int(w) for w in windows)
     except (
         ValueError,
         TypeError,

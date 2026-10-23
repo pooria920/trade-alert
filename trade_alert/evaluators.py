@@ -7,7 +7,7 @@ Session selection, history tolerance, cooldown and priming belong to the engine.
 
 from dataclasses import dataclass
 from math import isfinite
-from typing import Literal
+from typing import Any, Literal
 
 from .validation import MAX_SAFE_INTEGER as MAX_SAFE_INTEGER
 from .validation import code, text
@@ -58,7 +58,7 @@ class QueueSnapshot:
 @dataclass(frozen=True, slots=True)
 class DropConfig:
     threshold_percent: float
-    window_minutes: Literal[1, 5]
+    window_minutes: Literal[1, 5, 15]
     minimum_baseline_volume: int
 
     def __post_init__(self) -> None:
@@ -70,8 +70,12 @@ class DropConfig:
             or round(value, 6) != value
         ):
             raise ValueError("Percentage must be in (0, 100] with at most six decimals")
-        if type(self.window_minutes) is not int or self.window_minutes not in (1, 5):
-            raise ValueError("Window must be one or five minutes")
+        if type(self.window_minutes) is not int or self.window_minutes not in (
+            1,
+            5,
+            15,
+        ):
+            raise ValueError("Window must be one, five or fifteen minutes")
         _quantity(self.minimum_baseline_volume)
 
 
@@ -84,12 +88,126 @@ class DisappearedConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class ThresholdConfig:
+    threshold_volume: int
+    hysteresis_percent: float = 5
+
+    def __post_init__(self) -> None:
+        _quantity(self.threshold_volume)
+        if self.threshold_volume == 0:
+            raise ValueError("Threshold must be positive")
+        _hysteresis(self.hysteresis_percent)
+
+
+def _hysteresis(value: float) -> None:
+    if type(value) not in (int, float) or not isfinite(value) or not 0 <= value <= 100:
+        raise ValueError("Hysteresis must be between zero and 100")
+    if round(value, 6) != value:
+        raise ValueError("At most six decimals")
+
+
+@dataclass(frozen=True, slots=True)
+class PeakConfig:
+    threshold_percent: float
+    minimum_peak_volume: int = 0
+    hysteresis_percent: float = 5
+
+    def __post_init__(self) -> None:
+        DropConfig(self.threshold_percent, 1, self.minimum_peak_volume)
+        _hysteresis(self.hysteresis_percent)
+
+
+@dataclass(frozen=True, slots=True)
 class EvaluationResult:
     status: Literal["INSUFFICIENT_DATA", "CLEAR", "TRIGGER"]
     previous_volume: int | None = None
     current_volume: int | None = None
     actual_percent: float | None = None
     window_minutes: int | None = None
+    details: dict[str, Any] | None = None
+
+
+def queue_threshold(
+    side: Side,
+    config: ThresholdConfig,
+    below: bool,
+    current: QueueSnapshot,
+    previous: QueueSnapshot | None,
+) -> EvaluationResult:
+    if current.queue_type not in (side, "none"):
+        return EvaluationResult("INSUFFICIENT_DATA")
+    hit = (
+        current.volume <= config.threshold_volume
+        if below
+        else current.volume >= config.threshold_volume
+    )
+    if not hit:
+        return EvaluationResult("CLEAR")
+    if (
+        previous is None
+        or previous.queue_type not in (side, "none")
+        or previous.timestamp >= current.timestamp
+        or previous.ins_code != current.ins_code
+    ):
+        return EvaluationResult("INSUFFICIENT_DATA")
+    return EvaluationResult("TRIGGER", previous.volume, current.volume, 0)
+
+
+def threshold_recovered(
+    side: Side, config: ThresholdConfig, below: bool, current: QueueSnapshot
+) -> bool:
+    if current.queue_type not in (side, "none"):
+        return False
+    scale = 100_000_000
+    margin = round(config.hysteresis_percent * 1_000_000)
+    return (
+        current.volume * scale > config.threshold_volume * (scale + margin)
+        if below
+        else current.volume * scale < config.threshold_volume * (scale - margin)
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ObservedPeak:
+    volume: int
+    timestamp: int
+
+
+def queue_peak_drop(
+    side: Side, config: PeakConfig, current: QueueSnapshot, peak: ObservedPeak | None
+) -> EvaluationResult:
+    if (
+        peak is None
+        or peak.volume <= 0
+        or peak.volume < config.minimum_peak_volume
+        or current.queue_type not in (side, "none")
+        or peak.timestamp > current.timestamp
+    ):
+        return EvaluationResult("INSUFFICIENT_DATA")
+    lost = peak.volume - current.volume
+    if lost <= 0 or lost * 100_000_000 < peak.volume * round(
+        config.threshold_percent * 1_000_000
+    ):
+        return EvaluationResult("CLEAR")
+    return EvaluationResult(
+        "TRIGGER", peak.volume, current.volume, lost / peak.volume * 100
+    )
+
+
+def peak_recovered(
+    side: Side, config: PeakConfig, current: QueueSnapshot, baseline: int | None
+) -> bool:
+    return (
+        current.queue_type == side
+        and baseline is not None
+        and baseline > 0
+        and current.volume * 100_000_000
+        >= baseline
+        * round(
+            (100 - max(0, config.threshold_percent - config.hysteresis_percent))
+            * 1_000_000
+        )
+    )
 
 
 def queue_drop(

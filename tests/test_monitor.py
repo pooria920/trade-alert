@@ -30,6 +30,84 @@ def wire(item):
 
 
 class MonitorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_lifecycle_shared_collection_halts_transport_gaps_and_closure(self):
+        from test_lifecycle import lifecycle
+
+        self.users.add_symbol("2", wire(ITEM))
+        for actor in ("1", "2"):
+            for kind in ("FORMED", "WEAKENED", "CONFIRMED_DISAPPEARED", "REFORMED"):
+                self.alerts.create(actor, ITEM.ins_code, lifecycle(kind), 0)
+        await self.channels.create("1", wire(ITEM), lifecycle())
+        monitor = self.monitor(interval=1000)
+        monitor.on_unavailable = self.engine.lifecycle.unavailable
+        side, volume, mode = "none", 1000, "open"
+
+        async def fetch(item):
+            if mode == "failure":
+                raise TimeoutError("synthetic")
+            book = synthetic_book(item, self.clock, side, volume)
+            book["tradingStatus"] = mode
+            return book
+
+        self.fetch.side_effect = fetch
+        for _ in range(2):
+            await monitor.poll_once()
+            self.clock += 10_000
+        side = "buy"
+        for _ in range(2):
+            await monitor.poll_once()
+            self.clock += 10_000
+
+        def state():
+            return self.db.execute(
+                "SELECT status, observation_valid FROM queue_lifecycle_states WHERE ins_code=? AND side='buy'",
+                (ITEM.ins_code,),
+            ).fetchone()
+
+        self.assertEqual(state(), ("ACTIVE", 1))
+        for mode in ("closed", "failure"):
+            await monitor.poll_once()
+            self.clock += 10_000
+            self.assertEqual(state(), ("ACTIVE", 0))
+        mode, volume = "open", 500
+        for _ in range(2):
+            await monitor.poll_once()
+            self.clock += 10_000
+        self.assertEqual(
+            self.db.execute(
+                "SELECT count(*) FROM queue_lifecycle_events WHERE event_type='QUEUE_FORMED'"
+            ).fetchone()[0],
+            1,
+        )
+        self.assertEqual(
+            self.db.execute(
+                "SELECT count(*) FROM queue_lifecycle_events WHERE event_type='QUEUE_WEAKENED'"
+            ).fetchone()[0],
+            0,
+        )
+        side = "none"
+        for _ in range(2):
+            await monitor.poll_once()
+            self.clock += 10_000
+        side = "buy"
+        for _ in range(2):
+            await monitor.poll_once()
+            self.clock += 10_000
+        self.assertEqual(self.fetch.await_count, 12)
+        self.assertEqual(
+            self.db.execute("SELECT count(*) FROM queue_lifecycle_events").fetchone()[
+                0
+            ],
+            3,
+        )
+        self.assertEqual(
+            self.db.execute("SELECT count(*) FROM alert_events").fetchone()[0], 7
+        )
+        with patch.object(self.schedule, "is_open", return_value=False):
+            await monitor.poll_once()
+        self.assertEqual(state(), ("ACTIVE", 0))
+        self.assertEqual(self.fetch.await_count, 12)
+
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)

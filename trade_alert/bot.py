@@ -1,25 +1,27 @@
-"""Authorized private/group commands and serial consumption of Telethon events."""
+"""Authorized private commands and serial consumption of Telethon events."""
 
 import asyncio
 import logging
 import re
 import secrets
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .admin import AdminCommands
 from .alerts import AlertService
 from .bot_text import (
-    GROUP_HELP,
     HELP,
+    HYSTERESIS_PROMPT,
     LABELS,
+    LIFECYCLE_LABELS,
     LIVE_NOTICE,
     PERCENT_PROMPT,
     PRIVATE_TYPES,
     TYPE_PROMPT,
     WINDOW_PROMPT,
     fa,
+    first_step,
     history_text,
     minimum_prompt,
     monitoring_text,
@@ -27,9 +29,12 @@ from .bot_text import (
     numeric_error,
     tehran_time,
     tree_text,
+    type_buttons,
+    wizard_config,
 )
 from .channels import ChannelService
 from .definitions import definition_json, parse_tree
+from .lifecycle import LifecycleTracker
 from .market import Instrument
 from .market_service import MarketService
 from .telegram import Buttons, Context, TelegramAPI, TelegramError
@@ -52,16 +57,20 @@ class PrivateDraft:
     minimum: int | None = None
     rule_id: str | None = None
     revision: int | None = None
+    hysteresis: float = 5
+    legacy_volume: bool = False
+    family: str = ""
+    disappearance_seconds: int = 0
 
     def definition(self) -> dict[str, Any]:
-        config = (
-            dict(
-                thresholdPercent=self.percent,
-                windowMinutes=self.window,
-                minimumBaselineVolume=self.minimum,
-            )
-            if self.kind.endswith("DROP_PERCENT")
-            else dict(minimumPreviousVolume=self.minimum)
+        config = wizard_config(
+            self.kind,
+            self.percent,
+            self.window,
+            self.minimum,
+            self.hysteresis,
+            self.legacy_volume,
+            self.disappearance_seconds,
         )
         return definition_json(
             parse_tree(dict(type=self.kind, config=config), channel=False)
@@ -87,12 +96,25 @@ class TelegramBot:
         *,
         now: Callable[[], int] = now_ms,
         logger: logging.Logger | None = None,
+        lifecycle: LifecycleTracker | None = None,
+        session_at: Callable[[int], str | None] = lambda timestamp: None,
     ) -> None:
         self.api, self.users, self.market, self.alerts = api, users, market, alerts
         self.get_status, self.channels, self.now = get_status, channels, now
         self.logger = logger or logging.getLogger(__name__)
+        self.lifecycle = lifecycle or LifecycleTracker(users.db)
         self.admin = (
-            AdminCommands(channels, market, now) if channels is not None else None
+            AdminCommands(
+                channels,
+                market,
+                now,
+                alerts,
+                lifecycle=self.lifecycle,
+                is_market_open=lambda: bool(get_status()["is_market_open"]),
+                session_at=session_at,
+            )
+            if channels is not None
+            else None
         )
         # ponytail: one expiring draft/search per authorized user; restart discards drafts.
         self.flows: dict[str, PrivateDraft] = {}
@@ -128,16 +150,7 @@ class TelegramBot:
                 or type(chat.get("id")) is not int
             ):
                 return None
-            group_id = None
-            if chat.get("type") == "private":
-                if str(chat["id"]) != actor:
-                    return None
-            elif chat.get("type") in ("group", "supergroup") and self.channels:
-                if str(chat["id"]) != self.channels.channel_id:
-                    return None
-                self.channels.authorize(actor)
-                group_id = self.channels.channel_id
-            else:
+            if chat.get("type") != "private" or str(chat["id"]) != actor:
                 return None
             message_id = integer(message["message_id"], 1)
             message_text = text(message.get("text", ""), 4096, trim=False, minimum=0)
@@ -149,7 +162,7 @@ class TelegramBot:
                 data,
                 callback_id,
                 message_id,
-                group_id,
+                None,
                 self.channels,
                 integer(obj(message["reply_to_message"])["message_id"], 1)
                 if "reply_to_message" in message
@@ -166,14 +179,19 @@ class TelegramBot:
             if not ctx.group_id:
                 self.users.register(ctx.actor, ctx.actor)
             if ctx.callback_id:
-                if ctx.data.startswith(("ad:", "af:")) and self.admin is not None:
+                if (
+                    ctx.data.startswith(("ad:", "af:", "qf:"))
+                    and self.admin is not None
+                ):
                     if (
                         not ctx.group_id
                         and self.channels
                         and self.channels.is_admin(ctx.actor)
                         and (
                             ctx.data in ("ad:new", "ad:post")
-                            or ctx.data.startswith(("ad:edit:", "ad:note:"))
+                            or ctx.data.startswith(
+                                ("ad:edit:", "ad:note:", "ad:quality")
+                            )
                         )
                         and self.flows.pop(ctx.actor, None) is not None
                     ):
@@ -214,12 +232,7 @@ class TelegramBot:
                         await ctx.reply(
                             "پیش‌نویس قبلی کنار گذاشته شد؛ فرایند جدید شروع می‌شود."
                         )
-                if ctx.group_id:
-                    await self._group_command(ctx, command[1].lower())
-                else:
-                    await self._command(
-                        ctx, command[1].lower(), (command[3] or "").strip()
-                    )
+                await self._command(ctx, command[1].lower(), (command[3] or "").strip())
             elif (
                 not ctx.group_id
                 and (search := self.searches.get(ctx.actor)) is not None
@@ -231,7 +244,9 @@ class TelegramBot:
                 else:
                     await self._command(ctx, "add", ctx.message_text.strip())
             elif self.admin and (
-                ctx.scope in self.admin.drafts or ctx.scope in self.admin.messages
+                ctx.scope in self.admin.drafts
+                or ctx.scope in self.admin.messages
+                or ctx.scope in self.admin.settings
             ):
                 await self.admin.message(ctx)
             elif not ctx.group_id:
@@ -263,6 +278,7 @@ class TelegramBot:
             ("alert", "ساخت هشدار"),
             ("alerts", "مدیریت هشدارها"),
             ("history", "سابقهٔ هشدارها"),
+            ("stats", "آمار هشدارهای مقصد مشترک، ویژهٔ مدیر"),
             ("remove", "حذف نماد یا هشدار"),
             ("status", "وضعیت پایش"),
             ("cancel", "لغو فرایند"),
@@ -286,6 +302,7 @@ class TelegramBot:
                                     for c, d in [
                                         *commands,
                                         ("admin", "مدیریت هشدارهای مقصد مشترک"),
+                                        ("lifecycle", "رفتار مشاهده‌شدهٔ صف، ویژهٔ مدیر"),
                                     ]
                                 ],
                                 scope=dict(type="chat", chat_id=actor),
@@ -398,6 +415,24 @@ class TelegramBot:
                 await self.admin.menu(ctx)
             else:
                 await ctx.reply("دسترسی مدیریت مقصد مشترک ندارید.")
+        elif command == "stats" and self.admin:
+            if self.channels and self.channels.is_admin(ctx.actor):
+                from .bot_text import statistics_text
+
+                try:
+                    await ctx.reply(
+                        statistics_text(await self.channels.statistics(ctx.actor))
+                    )
+                except Exception:
+                    self.logger.error("Alert statistics failed")
+                    await ctx.reply("دریافت آمار ناموفق بود؛ دوباره تلاش کنید.")
+            else:
+                await ctx.reply("دسترسی مدیریت ندارید.")
+        elif command == "lifecycle" and self.admin:
+            if self.channels and self.channels.is_admin(ctx.actor):
+                await self.admin.lifecycle_menu(ctx)
+            else:
+                await ctx.reply("دسترسی مدیریت ندارید.")
         elif command == "add":
             if not argument or len(argument) > 80:
                 self.searches[ctx.actor] = Search(
@@ -449,38 +484,32 @@ class TelegramBot:
         elif command == "alerts":
             await self._rules(ctx)
         elif command == "history":
-            events = self.alerts.history(ctx.actor)
-            for event in events:
-                await ctx.reply(history_text(event))
-            if not events:
-                await ctx.reply(
-                    "هنوز رخداد هشداری در سابقهٔ خصوصی شما ثبت نشده است. تنظیمات هشدارها را با /alerts ببینید.\n"
-                    + LIVE_NOTICE
-                )
+            if not argument or re.fullmatch(r"[0-9]{1,7}", argument):
+                await self._history(ctx, int(argument or "0"))
+            else:
+                await ctx.reply("از /history یا دکمه‌های صفحه‌بندی استفاده کنید.")
         else:
             await ctx.reply(
                 "دستور شناخته نشد. از /help یا منوی شروع استفاده کنید.",
                 [("شروع", "nav:start")],
             )
 
-    async def _group_command(self, ctx: Context, command: str) -> None:
-        assert self.channels is not None and self.admin is not None
-        self.channels.authorize(ctx.actor)
-        if command in ("start", "help"):
-            await ctx.reply(GROUP_HELP + "\n" + LIVE_NOTICE)
-        elif command == "admin":
-            await self.admin.menu(ctx)
-        elif command == "alert":
-            await self.admin.new(ctx)
-        elif command == "alerts":
-            await self.admin.list(ctx)
-        elif command == "status":
-            await ctx.reply(monitoring_text(self.get_status(), self.now()))
-        elif command == "cancel":
-            await ctx.reply("فرایند گروه لغو شد.")
-        else:
+    async def _history(self, ctx: Context, page: int = 0) -> None:
+        events = self.alerts.history(ctx.actor, page)
+        buttons = []
+        if page:
+            buttons.append(("قبلی", f"history:{page - 1}"))
+        if len(events) == self.alerts.history_limit:
+            buttons.append(("بعدی", f"history:{page + 1}"))
+        for index, event in enumerate(events):
             await ctx.reply(
-                "برای مدیریت گروه /admin را بفرستید. دستورهای شخصی فقط در خصوصی اجرا می‌شوند."
+                history_text(event), buttons if index == len(events) - 1 else None
+            )
+        if not events:
+            await ctx.reply(
+                "هنوز رخداد هشداری در سابقهٔ خصوصی شما ثبت نشده است. تنظیمات هشدارها را با /alerts ببینید.\n"
+                + LIVE_NOTICE,
+                buttons,
             )
 
     async def _preferences(self, ctx: Context) -> None:
@@ -584,6 +613,9 @@ class TelegramBot:
         )
 
     async def _callback(self, ctx: Context) -> None:
+        if match := re.fullmatch(r"history:([0-9]{1,7})", ctx.data):
+            await self._history(ctx, int(match[1]))
+            return
         data = ctx.data
         if data == "nav:resume":
             self.searches.pop(ctx.actor, None)
@@ -728,7 +760,21 @@ class TelegramBot:
                 percent=rule["definition"]["config"].get("thresholdPercent"),
                 minimum=rule["definition"]["config"].get(
                     "minimumBaselineVolume",
-                    rule["definition"]["config"].get("minimumPreviousVolume"),
+                    rule["definition"]["config"].get(
+                        "minimumPreviousVolume",
+                        rule["definition"]["config"].get(
+                            "minimumPeakVolume",
+                            rule["definition"]["config"].get(
+                                "thresholdVolume",
+                                rule["definition"]["config"].get("minimumVolume"),
+                            ),
+                        ),
+                    ),
+                ),
+                hysteresis=rule["definition"]["config"].get("hysteresisPercent", 5),
+                legacy_volume="minimumVolume" in rule["definition"]["config"],
+                disappearance_seconds=rule["definition"]["config"].get(
+                    "minimumDisappearanceSeconds", 0
                 ),
             )
             self.flows[ctx.actor] = flow
@@ -736,7 +782,12 @@ class TelegramBot:
         elif action == "view":
             symbol = self.users.find_symbol(ctx.actor, rule["ins_code"])
             await ctx.reply(
-                f"نماد: {symbol['symbol'] if symbol else rule['ins_code']}\n{tree_text(parse_tree(rule['definition'], channel=False))}\nوضعیت: {'روشن' if rule['enabled'] else 'خاموش'}\nوقفهٔ هشدار: {fa(rule['cooldown_seconds'])} ثانیه\nشناسه: {rule_id}",
+                f"نماد: {symbol['symbol'] if symbol else rule['ins_code']}\n{tree_text(parse_tree(rule['definition'], channel=False))}\nوضعیت: {'روشن' if rule['enabled'] else 'خاموش'}\nوقفهٔ هشدار: {fa(rule['cooldown_seconds'])} ثانیه"
+                + (
+                    ""
+                    if rule["definition"]["type"] in LIFECYCLE_LABELS
+                    else f"\nشناسه: {rule_id}"
+                ),
                 [
                     (
                         "خاموش کردن" if rule["enabled"] else "روشن کردن",
@@ -745,7 +796,12 @@ class TelegramBot:
                     ("ویرایش تنظیمات", f"ar:edit:{rule_id}"),
                     ("حذف", f"ar:delete:{rule_id}"),
                     ("بازگشت به هشدارها", "nav:alerts"),
-                ],
+                ]
+                + (
+                    [("تنظیمات پیشرفته، ویژهٔ مدیر", f"ad:qualityp:{rule_id}")]
+                    if self.channels and self.channels.is_admin(ctx.actor)
+                    else []
+                ),
             )
 
     async def _show_flow(
@@ -772,16 +828,34 @@ class TelegramBot:
                 actions.append(("بعدی", f"page{page + 1}"))
         elif flow.step == "type":
             prompt = TYPE_PROMPT
-            actions = [(LABELS[t], f"type{i}") for i, t in enumerate(PRIVATE_TYPES)]
+            actions = type_buttons(flow.family, channel=False)
+            if flow.family in ("life", "formed", "weakened", "gone", "reformed"):
+                prompt = f"هشدارهای رفتار صف\nچه اتفاقی را بررسی کنیم؟\nتأیید تغییر پس از {fa(self.lifecycle.options.confirmation_snapshots)} مشاهدهٔ تازهٔ پیاپی؛ وقفهٔ داده رویداد بازار نیست."
         elif flow.step == "window":
             prompt, actions = (
                 WINDOW_PROMPT,
-                [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
+                [
+                    ("۱ دقیقه", "window1"),
+                    ("۵ دقیقه", "window5"),
+                    ("۱۵ دقیقه", "window15"),
+                ],
             )
         elif flow.step == "threshold":
             prompt = PERCENT_PROMPT
+            actions = [(fa(n) + "٪", f"percent{n}") for n in (10, 20, 30, 50, 75)]
+            if flow.kind in LIFECYCLE_LABELS:
+                actions.append(("مقدار دلخواه", "custom"))
+        elif flow.step == "hysteresis":
+            prompt = HYSTERESIS_PROMPT
         elif flow.step == "minimum":
             prompt = minimum_prompt(flow.kind)
+            if flow.kind in LIFECYCLE_LABELS:
+                actions = [
+                    (fa(v // 1_000_000) + " میلیون", f"volume{v}")
+                    for v in (1_000_000, 5_000_000, 10_000_000)
+                ] + [("مقدار دلخواه", "custom")]
+        elif flow.step == "duration":
+            prompt = "حداقل چند ثانیه پس از جمع شدن تأییدشده، تشکیل دوباره بررسی شود؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید. پیش‌فرض ۰ است."
         elif flow.step == "confirm":
             symbol = self.users.find_symbol(ctx.actor, flow.ins_code)
             if not symbol:
@@ -790,6 +864,15 @@ class TelegramBot:
                 return
             prompt = f"تأیید هشدار\nنماد: {symbol['symbol']}\n{tree_text(parse_tree(flow.definition(), channel=False))}"
             actions = [("تأیید و ذخیره", "save")]
+            if flow.kind.endswith("REFORMED"):
+                actions.append(("تنظیم فاصله تا تشکیل دوباره", "duration"))
+            if (
+                flow.kind.endswith(
+                    ("VOLUME_BELOW", "VOLUME_ABOVE", "PEAK_DROP_PERCENT")
+                )
+                and not flow.legacy_volume
+            ):
+                actions.append(("تنظیم فاصلهٔ بازگشت", "hysteresis"))
         current = {
             "threshold": flow.percent,
             "window": flow.window,
@@ -827,19 +910,40 @@ class TelegramBot:
             self.flows.pop(ctx.actor, None)
             await ctx.reply("ساخت هشدار لغو شد.")
             return
-        if action == "back":
+        if action == "back" and flow.step == "type" and flow.family:
+            flow.family = (
+                "life"
+                if flow.family in ("formed", "weakened", "gone", "reformed")
+                else ""
+            )
+        elif flow.step == "type" and action in (
+            "familylife",
+            "familyformed",
+            "familyweakened",
+            "familygone",
+            "familyreformed",
+            "familyvolume",
+            "familypeak",
+            "familyrapid",
+        ):
+            flow.family = action[6:]
+        elif action == "back":
             flow.step = {
                 "symbol": "symbol",
                 "type": "symbol" if not flow.rule_id else "type",
                 "window": "type",
-                "threshold": "window",
+                "threshold": "type"
+                if flow.kind.endswith(("PEAK_DROP_PERCENT", "WEAKENED"))
+                else "window",
                 "minimum": "threshold"
-                if flow.kind.endswith("DROP_PERCENT")
+                if flow.kind.endswith(("DROP_PERCENT", "WEAKENED"))
                 else "type",
                 "confirm": "minimum",
+                "hysteresis": "confirm",
+                "duration": "confirm",
             }[flow.step]
         elif action == "keep" and flow.step == "type" and flow.kind:
-            flow.step = "window" if flow.kind.endswith("DROP_PERCENT") else "minimum"
+            flow.step = first_step(flow.kind, "threshold")
         elif action == "keep" and flow.step == "window" and flow.window is not None:
             flow.step = "threshold"
         elif action == "keep" and flow.step == "threshold" and flow.percent is not None:
@@ -854,12 +958,48 @@ class TelegramBot:
                 await ctx.reply("این نماد در فهرست شما نیست.")
                 return
             flow.ins_code, flow.step = action[6:], "type"
-        elif flow.step == "type" and re.fullmatch(r"type[0-3]", action):
+        elif (
+            flow.step == "type"
+            and re.fullmatch(r"type[0-9]+", action)
+            and int(action[4:]) < len(PRIVATE_TYPES)
+        ):
             flow.kind = PRIVATE_TYPES[int(action[4:])]
             flow.percent, flow.window, flow.minimum = None, None, None
-            flow.step = "window" if flow.kind.endswith("DROP_PERCENT") else "minimum"
-        elif flow.step == "window" and action in ("window1", "window5"):
-            flow.window, flow.step = int(action[-1]), "threshold"
+            flow.hysteresis, flow.legacy_volume = 5, False
+            flow.disappearance_seconds = 0
+            if flow.kind in LIFECYCLE_LABELS:
+                flow.minimum = 0
+            flow.step = first_step(flow.kind, "threshold")
+        elif flow.step == "window" and action in ("window1", "window5", "window15"):
+            flow.window, flow.step = int(action[6:]), "threshold"
+        elif flow.step == "threshold" and action in (
+            "percent10",
+            "percent20",
+            "percent30",
+            "percent50",
+            "percent75",
+        ):
+            flow.percent, flow.step = float(action[7:]), "minimum"
+            flow.minimum = 0
+        elif (
+            flow.step == "confirm" and action == "hysteresis" and not flow.legacy_volume
+        ):
+            flow.step = "hysteresis"
+        elif (
+            flow.step == "confirm"
+            and action == "duration"
+            and flow.kind.endswith("REFORMED")
+        ):
+            flow.step = "duration"
+        elif flow.step == "minimum" and action in (
+            "volume1000000",
+            "volume5000000",
+            "volume10000000",
+        ):
+            await self._flow_message(replace(ctx, message_text=action[6:]))
+            return
+        elif flow.step in ("minimum", "threshold") and action == "custom":
+            pass
         elif flow.step == "confirm" and action == "save":
             definition = flow.definition()
             if flow.rule_id:
@@ -867,7 +1007,9 @@ class TelegramBot:
                 if (
                     not rule
                     or rule["revision"] != flow.revision
-                    or not self.alerts.update(ctx.actor, flow.rule_id, definition)
+                    or not self.alerts.update(
+                        ctx.actor, flow.rule_id, definition, revision=flow.revision
+                    )
                 ):
                     self.flows.pop(ctx.actor, None)
                     await ctx.reply(
@@ -901,8 +1043,21 @@ class TelegramBot:
                 if not 0 < value <= 100 or round(value, 6) != value:
                     raise ValueError("Invalid percentage")
                 flow.percent, flow.step = value, "minimum"
+                if flow.minimum is None:
+                    flow.minimum = 0
+            elif flow.step == "hysteresis":
+                if not 0 <= value <= 100 or round(value, 6) != value:
+                    raise ValueError("Invalid hysteresis")
+                flow.hysteresis, flow.step = value, "confirm"
+            elif flow.step == "duration":
+                flow.disappearance_seconds, flow.step = (
+                    integer(value, 0, 86_400),
+                    "confirm",
+                )
             elif flow.step == "minimum":
-                flow.minimum, flow.step = integer(value), "confirm"
+                flow.minimum = integer(value, 1 if "VOLUME_" in flow.kind else 0)
+                flow.definition()
+                flow.step = "confirm"
             else:
                 await self._show_flow(
                     ctx, flow, notice="از دکمه‌های آخرین پیام استفاده کنید."

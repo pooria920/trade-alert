@@ -1,5 +1,29 @@
 > Current runtime: Python at the repository root. Original SQL migrations and journal now live in `migrations/`, unchanged. Historical phase descriptions below describe data compatibility. See [deployment](../DEPLOYMENT.md).
 
+## Phase 7
+
+`0006_alert_quality.sql` appends one journal entry, without changing any previous
+SQL/entry. It adds nullable `alert_rules.quality_config`, nullable
+`alert_states.quality_data`, event severity defaulting to `normal`, indexed
+`alert_outcomes` and daily per-rule `alert_suppressions`. No rebuild, data reset,
+legacy ownership assignment, automatic event deletion or state rearming occurs.
+Existing pending outbox messages remain deliverable with normal severity.
+
+Outcomes snapshot their authenticated owner/shared destination, source event key,
+source queue volume/side and session. Their event FK becomes NULL on event deletion;
+the immutable source key remains unique per window. This keeps pending observations
+alive after watchlist/rule deletion without preserving deleted event/outbox records.
+They never route notifications. Detached private outcomes have no public endpoint;
+channel statistics remain current-admin and configured-destination bound. Outcome
+retention deletes only outcome/suppression rows in batches of at most 1,000 total.
+
+Upgrade only after a verified online backup. Stop the bot, run the existing locked
+maintenance migration CLI with the new image, then start one replica. Startup is
+also idempotent. A migration failure rolls back the transaction; leave the bot
+stopped for review. Do not run older application versions against the upgraded
+database as an automatic rollback. Restore a reviewed backup only to a new path.
+See [exact manual steps](../DEPLOYMENT.md).
+
 # Upgrade from Phase 1
 
 Back up the stopped database volume before updating. Keep the volume and initial migration. Startup applies `0001_multi_user.sql`: it creates users/watchlists and adds a nullable owner foreign key/index to alert rules. No data is deleted or assigned to a guessed owner.
@@ -57,6 +81,36 @@ Validated composite definitions reuse the authoritative JSON `definition` column
 Startup upserts metadata only for the configured channel; other stored channels/rules remain untouched but are not eligible while unconfigured. Removing an admin suspends rules that they created; a current admin may explicitly edit/adopt a rule. Do not reassign old owners automatically. Channel delivery success/failure metadata uses channel-specific `application_state` keys and contains no credentials; last delivery statistics remain available after rule deletion.
 
 Leave `TELEGRAM_ADMIN_USER_IDS` and `TELEGRAM_CHANNEL_ID` blank for private-only operation, or configure both, grant the bot posting permission, and initiate private admin conversations. No subscriber records or new infrastructure are needed. Back up the stopped volume, retain all migrations and verify foreign-key integrity as above. This phase does not deploy the application or fix the unverified TSETMC source contract.
+
+## Phase 9 queue lifecycle
+
+Phase 9 subsequently applies additive `0008_queue_lifecycle.sql`. It creates shared
+`queue_lifecycle_states` keyed by instrument/side and source-timestamped
+`queue_lifecycle_events`, with deterministic IDs, uniqueness and indexed
+instrument/session history and retention. Existing tables, configurations, peaks,
+snapshots, recovery data, destinations, events/outbox and outcomes are untouched.
+There is no backfill: historical snapshots cannot establish unseen transitions.
+Rule deletion cannot cascade shared lifecycle state/history. Prior SQL files and
+journal entries remain intact; one entry is appended. See
+[Phase 9 lifecycle semantics](LIFECYCLE.md) and
+[manual upgrade](../DEPLOYMENT.md#manual-phase-9-upgrade).
+
+## Phase 8 queue strategies
+
+Phase 8 adds `0007_queue_strategies.sql` after the Phase 7 quality migration. It adds
+nullable `alert_states.strategy_data` for per-leaf crossing readiness and creates
+`queue_session_peaks` with an instrument/session primary key and indexed retention
+time. Peaks keep separate buy/sell source quantities/timestamps and observation
+coverage start/end. They are shared history, independent of rule deletion.
+
+No existing definition, destination, state recovery, event, outbox or outcome is
+rewritten. Old state rows gain NULL strategy data; existing channel `minimumVolume`
+definitions retain their semantics. Prior migration SQL and journal entries are
+unchanged; one journal entry is appended. Disposable upgrade tests preserve prior
+migration hashes and quarantined rules and verify integrity/foreign keys. Follow
+the [manual Phase 8 upgrade](../DEPLOYMENT.md#manual-phase-8-upgrade), with checked
+backup before build/stop/migration and the bot stopped for manual migration. See
+[strategy details](QUEUE-STRATEGIES.md) for definition and recovery compatibility.
 
 ## Phase 6A operational changes
 

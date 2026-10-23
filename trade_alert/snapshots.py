@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .database import rows, transaction
-from .evaluators import QueueSnapshot
+from .evaluators import ObservedPeak, QueueSnapshot
 from .validation import code, integer, text
 
 
@@ -35,6 +35,42 @@ class SnapshotRepository:
     def __init__(self, db: sqlite3.Connection, tolerance_ms: int = 20_000) -> None:
         self.db = db
         self.tolerance_ms = integer(tolerance_ms)
+
+    def observe_peaks(
+        self, value: QueueSnapshot, session_id: str
+    ) -> dict[str, ObservedPeak]:
+        """Called by the fresh-evidence engine only; no claim of full-session coverage.
+
+        One indexed row per instrument/session survives history retention and restart.
+        Opposite-side observations never erase either side's highest observed volume.
+        """
+        buy = value.volume if value.queue_type == "buy" else 0
+        sell = value.volume if value.queue_type == "sell" else 0
+        self.db.execute(
+            "INSERT INTO queue_session_peaks(ins_code, session_id, first_observed_at, last_observed_at, buy_volume, buy_timestamp, sell_volume, sell_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(ins_code, session_id) DO UPDATE SET last_observed_at=excluded.last_observed_at, buy_volume=max(buy_volume, excluded.buy_volume), buy_timestamp=CASE WHEN excluded.buy_volume>buy_volume THEN excluded.buy_timestamp ELSE buy_timestamp END, sell_volume=max(sell_volume, excluded.sell_volume), sell_timestamp=CASE WHEN excluded.sell_volume>sell_volume THEN excluded.sell_timestamp ELSE sell_timestamp END WHERE excluded.last_observed_at>last_observed_at",
+            (
+                value.ins_code,
+                session_id,
+                value.timestamp,
+                value.timestamp,
+                buy,
+                value.timestamp if buy else None,
+                sell,
+                value.timestamp if sell else None,
+            ),
+        )
+        row = rows(
+            self.db,
+            "SELECT * FROM queue_session_peaks WHERE ins_code=? AND session_id=?",
+            (value.ins_code, session_id),
+        )[0]
+        result: dict[str, ObservedPeak] = {}
+        for side in ("buy", "sell"):
+            if row[f"{side}_timestamp"] is not None:
+                result[side] = ObservedPeak(
+                    row[f"{side}_volume"], row[f"{side}_timestamp"]
+                )
+        return result
 
     def save(
         self, value: QueueSnapshot, collected_at: int, session_id: str | None = None
@@ -150,4 +186,10 @@ class SnapshotRepository:
         return self.db.execute(
             "DELETE FROM queue_snapshots WHERE id IN (SELECT id FROM queue_snapshots WHERE timestamp < ? ORDER BY timestamp LIMIT ?)",
             (cutoff, batch_size),
+        ).rowcount
+
+    def delete_expired_peaks(self, cutoff: int) -> int:
+        return self.db.execute(
+            "DELETE FROM queue_session_peaks WHERE rowid IN (SELECT rowid FROM queue_session_peaks WHERE last_observed_at<? ORDER BY last_observed_at LIMIT 1000)",
+            (integer(cutoff),),
         ).rowcount

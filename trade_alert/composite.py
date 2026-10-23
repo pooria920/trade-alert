@@ -16,12 +16,26 @@ from .evaluators import (
     DisappearedConfig,
     DropConfig,
     EvaluationResult,
+    ObservedPeak,
+    PeakConfig,
     QueueSnapshot,
     Side,
+    ThresholdConfig,
     disappeared_recovered,
     drop_recovered,
+    peak_recovered,
     queue_disappeared,
     queue_drop,
+    queue_peak_drop,
+    queue_threshold,
+    threshold_recovered,
+)
+from .lifecycle import (
+    LifecycleConfig,
+    LifecycleContext,
+    evaluate_lifecycle,
+    event_kind,
+    validate_event,
 )
 from .validation import integer, loads, number, obj, text
 
@@ -62,16 +76,69 @@ def _disappeared(side: Side, condition: Condition) -> Strategy:
     )
 
 
+def _peak(side: Side, condition: Condition) -> Strategy:
+    config = condition.config
+    if not isinstance(config, PeakConfig):
+        raise ValueError("Invalid peak configuration")
+    return Strategy(
+        lambda current, baseline, previous: queue_peak_drop(
+            side,
+            config,
+            current,
+            ObservedPeak(baseline.volume, baseline.timestamp) if baseline else None,
+        ),
+        lambda current, baseline: peak_recovered(side, config, current, baseline),
+        None,
+    )
+
+
+def _threshold(side: Side, condition: Condition) -> Strategy:
+    config = condition.config
+    if not isinstance(config, ThresholdConfig):
+        raise ValueError("Invalid threshold configuration")
+    below = condition.type.endswith("BELOW")
+    return Strategy(
+        lambda current, baseline, previous: queue_threshold(
+            side, config, below, current, previous
+        ),
+        lambda current, baseline: threshold_recovered(side, config, below, current),
+        None,
+    )
+
+
 REGISTRY: dict[str, Callable[[Condition], Strategy]] = {
     "BUY_QUEUE_DROP_PERCENT": lambda c: _drop("buy", c),
     "SELL_QUEUE_DROP_PERCENT": lambda c: _drop("sell", c),
     "BUY_QUEUE_DISAPPEARED": lambda c: _disappeared("buy", c),
     "SELL_QUEUE_DISAPPEARED": lambda c: _disappeared("sell", c),
+    "BUY_QUEUE_PEAK_DROP_PERCENT": lambda c: _peak("buy", c),
+    "SELL_QUEUE_PEAK_DROP_PERCENT": lambda c: _peak("sell", c),
+    "BUY_QUEUE_VOLUME_BELOW": lambda c: _threshold("buy", c),
+    "SELL_QUEUE_VOLUME_BELOW": lambda c: _threshold("sell", c),
+    "BUY_QUEUE_VOLUME_ABOVE": lambda c: _threshold("buy", c),
+    "SELL_QUEUE_VOLUME_ABOVE": lambda c: _threshold("sell", c),
 }
 
 
 def strategy_for(condition: Condition) -> Strategy:
     return REGISTRY[condition.type](condition)
+
+
+def ready_thresholds(
+    tree: RuleTree, current: QueueSnapshot, ready: dict[str, bool]
+) -> None:
+    """A threshold must observe its recovery side after creation/edit before firing."""
+
+    def visit(node: RuleTree, path: str) -> None:
+        if isinstance(node, Group):
+            for index, child in enumerate(node.conditions):
+                visit(child, f"{path}.{index}")
+        elif isinstance(node.config, ThresholdConfig):
+            ready[path] = ready.get(path, False) or strategy_for(node).recovered(
+                current, None
+            )
+
+    visit(tree, "0")
 
 
 def combine(operator: Literal["AND", "OR"], values: Sequence[Truth]) -> Truth:
@@ -95,8 +162,17 @@ def combine(operator: Literal["AND", "OR"], values: Sequence[Truth]) -> Truth:
 
 
 def leaf(
-    condition: Condition, current: QueueSnapshot, history: History
+    condition: Condition,
+    current: QueueSnapshot,
+    history: History,
+    peaks: dict[str, ObservedPeak] | None = None,
+    lifecycle: LifecycleContext | None = None,
 ) -> EvaluationResult:
+    if isinstance(condition.config, LifecycleConfig):
+        return evaluate_lifecycle(condition.type, condition.config, current, lifecycle)
+    if isinstance(condition.config, PeakConfig):
+        side: Side = "buy" if condition.type.startswith("BUY_") else "sell"
+        return queue_peak_drop(side, condition.config, current, (peaks or {}).get(side))
     if isinstance(condition.config, VolumeConfig):
         side = "buy" if condition.type == "BUY_QUEUE_VOLUME_ABOVE" else "sell"
         if current.queue_type not in (side, "none"):
@@ -136,9 +212,10 @@ class Evidence:
     current_volume: int
     actual_percent: float
     window_minutes: float | None
+    details: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
-        return dict(
+        value = dict(
             status="TRIGGER",
             path=self.path,
             condition=definition_json(self.condition),
@@ -147,6 +224,9 @@ class Evidence:
             actualPercent=self.actual_percent,
             windowMinutes=self.window_minutes,
         )
+        if self.details is not None:
+            value["lifecycle"] = self.details
+        return value
 
 
 def parse_evidence(value: str | None) -> tuple[Evidence, ...]:
@@ -159,6 +239,17 @@ def parse_evidence(value: str | None) -> tuple[Evidence, ...]:
         condition = parse_tree(v["condition"])
         if not isinstance(condition, Condition):
             raise ValueError("Expected a leaf condition")
+        details = (
+            validate_event(v["lifecycle"])
+            if isinstance(condition.config, LifecycleConfig)
+            else None
+        )
+        if details is not None and (
+            details["event_type"] != event_kind(condition.type)
+            or details["side"]
+            != ("buy" if condition.type.startswith("BUY_") else "sell")
+        ):
+            raise ValueError("Mismatched lifecycle evidence")
         result.append(
             Evidence(
                 text(v["path"], 2**53 - 1, trim=False, minimum=0),
@@ -169,6 +260,7 @@ def parse_evidence(value: str | None) -> tuple[Evidence, ...]:
                 None
                 if v["windowMinutes"] is None
                 else number(v["windowMinutes"], -float("inf")),
+                details,
             )
         )
     return tuple(result)
@@ -185,6 +277,11 @@ def evaluate_tree(
     current: QueueSnapshot,
     history: History,
     latched: Sequence[Evidence] = (),
+    *,
+    frozen_baselines: bool = False,
+    peaks: dict[str, ObservedPeak] | None = None,
+    threshold_ready: dict[str, bool] | None = None,
+    lifecycle: LifecycleContext | None = None,
 ) -> TreeResult:
     matches = []
 
@@ -198,9 +295,96 @@ def evaluate_tree(
                 ],
             )
         saved = next((item for item in latched if item.path == path), None)
-        if saved is not None:
+        if isinstance(node.config, LifecycleConfig) and saved is not None:
+            side: Side = "buy" if node.type.startswith("BUY_") else "sell"
+            if lifecycle is None or side not in lifecycle.valid_sides:
+                return "UNKNOWN"
+            if node.type.endswith("WEAKENED"):
+                if lifecycle.weak_occurrences.get(side) != (saved.details or {}).get(
+                    "occurrence_at"
+                ):
+                    return "FALSE"
+                if current.queue_type == "none":
+                    return "UNKNOWN"
+                if not frozen_baselines:
+                    return (
+                        "FALSE"
+                        if peak_recovered(
+                            side,
+                            PeakConfig(node.config.threshold_percent),
+                            current,
+                            saved.previous_volume,
+                        )
+                        else "TRUE"
+                    )
+                if (
+                    current.queue_type not in (side, "none")
+                    or saved.previous_volume <= 0
+                ):
+                    return "UNKNOWN"
+                percent = (
+                    (saved.previous_volume - current.volume)
+                    / saved.previous_volume
+                    * 100
+                )
+                if percent < node.config.threshold_percent:
+                    return "FALSE"
+                matches.append(
+                    Evidence(
+                        path,
+                        node,
+                        saved.previous_volume,
+                        current.volume,
+                        percent,
+                        None,
+                        saved.details,
+                    )
+                )
+                return "TRUE"
+            if not frozen_baselines:
+                # A later transition is a new pulse, even when its kind matches.
+                return (
+                    "TRUE"
+                    if any(
+                        e["id"] == (saved.details or {}).get("id")
+                        and e["timestamp"] == current.timestamp
+                        for e in lifecycle.events
+                    )
+                    else "FALSE"
+                )
+            # Earlier pulses cannot satisfy a composite escalation on a later update.
+            if (saved.details or {}).get("timestamp") != current.timestamp:
+                return "FALSE"
+        if saved is not None and not frozen_baselines:
             return recovered(node, current, saved.previous_volume)
-        result = leaf(node, current, history)
+        if saved is not None and isinstance(node.config, (DropConfig, PeakConfig)):
+            side = "buy" if node.type.startswith("BUY_") else "sell"
+            if current.queue_type not in (side, "none") or saved.previous_volume <= 0:
+                return "UNKNOWN"
+            percent = (
+                (saved.previous_volume - current.volume) / saved.previous_volume * 100
+            )
+            result = (
+                EvaluationResult(
+                    "TRIGGER",
+                    saved.previous_volume,
+                    current.volume,
+                    percent,
+                    node.config.window_minutes
+                    if isinstance(node.config, DropConfig)
+                    else None,
+                )
+                if percent >= node.config.threshold_percent
+                else EvaluationResult("CLEAR")
+            )
+        else:
+            result = leaf(node, current, history, peaks, lifecycle)
+        if (
+            isinstance(node.config, ThresholdConfig)
+            and threshold_ready is not None
+            and not threshold_ready.get(path, False)
+        ):
+            return "UNKNOWN"
         if result.status == "TRIGGER":
             assert result.previous_volume is not None
             assert result.current_volume is not None
@@ -213,6 +397,7 @@ def evaluate_tree(
                     result.current_volume,
                     result.actual_percent,
                     result.window_minutes,
+                    result.details,
                 )
             )
             return "TRUE"
@@ -235,11 +420,29 @@ def result_json(result: EvaluationResult) -> dict[str, Any]:
 
 
 def evaluate_definition(
-    tree: RuleTree, current: QueueSnapshot, history: History
+    tree: RuleTree,
+    current: QueueSnapshot,
+    history: History,
+    peaks: dict[str, ObservedPeak] | None = None,
+    threshold_ready: dict[str, bool] | None = None,
+    lifecycle: LifecycleContext | None = None,
 ) -> dict[str, Any]:
-    if isinstance(tree, Condition) and not isinstance(tree.config, VolumeConfig):
-        return result_json(leaf(tree, current, history))
-    result = evaluate_tree(tree, current, history)
+    if isinstance(tree, Condition) and isinstance(tree.config, ThresholdConfig):
+        if threshold_ready is not None and not threshold_ready.get("0", False):
+            return dict(status="INSUFFICIENT_DATA")
+        return result_json(leaf(tree, current, history, peaks))
+    if isinstance(tree, Condition) and not isinstance(
+        tree.config, (VolumeConfig, LifecycleConfig)
+    ):
+        return result_json(leaf(tree, current, history, peaks))
+    result = evaluate_tree(
+        tree,
+        current,
+        history,
+        peaks=peaks,
+        threshold_ready=threshold_ready,
+        lifecycle=lifecycle,
+    )
     if result.truth != "TRUE":
         return dict(status="CLEAR" if result.truth == "FALSE" else "INSUFFICIENT_DATA")
     if not result.matches:
@@ -261,14 +464,21 @@ def definition_recovered(
     history: History,
     baseline: int | None,
     data: str | None,
+    peaks: dict[str, ObservedPeak] | None = None,
+    lifecycle: LifecycleContext | None = None,
 ) -> bool:
-    if isinstance(tree, Condition) and not isinstance(tree.config, VolumeConfig):
+    if isinstance(tree, Condition) and not isinstance(
+        tree.config, (VolumeConfig, LifecycleConfig)
+    ):
         return strategy_for(tree).recovered(current, baseline)
     try:
         matches = parse_evidence(data)
         return (
             bool(matches)
-            and evaluate_tree(tree, current, history, matches).truth == "FALSE"
+            and evaluate_tree(
+                tree, current, history, matches, peaks=peaks, lifecycle=lifecycle
+            ).truth
+            == "FALSE"
         )
     except ValueError, TypeError, KeyError, RecursionError, OverflowError:
         return False
