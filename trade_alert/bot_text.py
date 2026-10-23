@@ -133,7 +133,7 @@ HELP = """راهنمای دستورهای خصوصی
 مشاهده، ویرایش، روشن/خاموش کردن یا حذف هشدارهای خصوصی:
 /alerts
 
-آخرین هشدارهای رخ‌دادهٔ خصوصی، حداکثر ۱۰ مورد:
+سابقهٔ هشدارهای خصوصی؛ هر صفحه ۱۰ مورد:
 /history
 
 حذف نماد و هشدارهای خصوصی آن، پس از تأیید:
@@ -154,7 +154,29 @@ PERCENT_PROMPT = "درصد کاهش حجم صف را بنویسید؛ عددی �
 WINDOW_PROMPT = "بازهٔ مقایسه را انتخاب کنید:\nمثلاً «۵ دقیقه» یعنی مقایسهٔ حجم فعلی صف با دادهٔ معتبر حدود ۵ دقیقه قبل. این گزینه فاصلهٔ ارسال پیام‌ها نیست."
 TYPE_PROMPT = "نوع هشدار را انتخاب کنید:\n«کاهش صف» یعنی کم‌شدن حجم سفارش‌های صف؛ «از بین رفتن صف» یعنی پس از صف خرید یا فروش، وضعیت «بدون صف» با دادهٔ معتبر تأیید شود. صف مخالف به‌تنهایی نشانهٔ از بین رفتن صف نیست."
 
-HYSTERESIS_PROMPT = "برای هشدار دوباره، حجم صف چقدر از مرز برگردد؟ عددی از ۰ تا ۱۰۰ بنویسید؛ پیش‌فرض ۵ است. برای هشدار حجمی، درصدی از مقدار تعیین‌شده است؛ برای کاهش از بیشترین حجم، واحد درصد است."
+
+def lifecycle_prompt(confirmations: int) -> str:
+    return (
+        "هشدارهای رفتار صف\nچه تغییری را می‌خواهید دنبال کنید؟\n"
+        f"تغییر باید در {fa(confirmations)} دادهٔ معتبرِ پشت‌سرهم دیده شود؛ خواندن دوبارهٔ همان داده حساب نمی‌شود.\n"
+        "قطع دریافت داده به معنی تغییر صف نیست. پس از وصل‌شدن، بات ابتدا وضعیت صف را دوباره تأیید می‌کند."
+    )
+
+
+def hysteresis_prompt(kind: str) -> str:
+    example = (
+        "مثال: برای حد ۱ میلیون سهم و مقدار ۵، حجم باید ابتدا از ۱٬۰۵۰٬۰۰۰ سهم بیشتر شود تا رسیدن دوباره به حد هشدار بررسی شود."
+        if kind.endswith("VOLUME_BELOW")
+        else "مثال: برای حد ۱ میلیون سهم و مقدار ۵، حجم باید ابتدا از ۹۵۰٬۰۰۰ سهم کمتر شود تا رسیدن دوباره به حد هشدار بررسی شود. مقدار ۱۰۰ این هشدار را غیرقابل‌فعال‌شدن می‌کند."
+        if kind.endswith("VOLUME_ABOVE")
+        else "مثال: اگر هشدار برای افت ۳۰٪ باشد و اینجا ۵ بنویسید، افت باید به ۲۵٪ یا کمتر برگردد تا هشدار بعدی ممکن شود."
+    )
+    return (
+        "صف چقدر برگردد تا هشدار دوباره آماده شود؟\n"
+        "عددی از ۰ تا ۱۰۰ بنویسید؛ مقدار پیش‌فرض ۵ است.\n"
+        + example
+        + "\nزمان انتظار بین هشدارها هم باید تمام شده باشد."
+    )
 
 
 def first_step(kind: str, percent_step: str) -> str:
@@ -211,11 +233,18 @@ def wizard_config(
 
 def minimum_prompt(kind: str) -> str:
     if kind in LIFECYCLE_LABELS:
-        return "حداقل حجم صف چند سهم باشد؟ فقط عدد صحیح بنویسید یا یک مقدار را انتخاب کنید. برای نداشتن فیلتر حجم، ۰ بفرستید. در هشدار جمع شدن صف، این مقدار به آخرین حجم معتبر قبلی مربوط است."
+        label = (
+            "بیشترین حجم ثبت‌شدهٔ این صف، پیش از ضعیف‌شدن"
+            if kind.endswith("WEAKENED")
+            else "آخرین حجم صف، پیش از جمع‌شدن"
+            if kind.endswith("DISAPPEARED")
+            else "حجم صف هنگام تشکیل"
+        )
+        return f"{label} دست‌کم چند سهم باشد؟\nیک مقدار را انتخاب کنید یا عدد صحیح بنویسید. برای بررسی صف با هر حجمی، ۰ بفرستید. این شرط فقط هنگام تأیید تغییر بررسی می‌شود؛ بزرگ‌ترشدن صف در زمان بعد، هشدار قبلی را فعال نمی‌کند."
     if kind.endswith(("VOLUME_BELOW", "VOLUME_ABOVE")):
         return "مقدار موردنظر چند سهم باشد؟ عدد صحیح بزرگ‌تر از صفر بنویسید؛ مثلاً ۲٬۰۰۰٬۰۰۰. مقایسه شامل مقدار مساوی هم می‌شود. این مقدار حجم صف است، نه حجم معاملات."
     if kind.endswith("PEAK_DROP_PERCENT"):
-        return "بیشترین حجم مشاهده‌شده دست‌کم چند سهم باشد؟ برای نداشتن فیلتر، ۰ بفرستید. پوشش از ابتدای جلسه تضمین نمی‌شود."
+        return "بیشترین حجم ثبت‌شدهٔ صف دست‌کم چند سهم باشد تا کاهش آن بررسی شود؟ برای بررسی صف با هر حجمی، ۰ بفرستید. ممکن است بخشی از داده‌های امروز را دریافت نکرده باشیم؛ این عدد لزوماً بیشترین حجم کل روز نیست."
     label = (
         "حجم صف در ابتدای بازهٔ مقایسه"
         if kind.endswith("DROP_PERCENT")
@@ -247,7 +276,11 @@ def numeric_error(step: str, kind: str) -> str:
         "درصد نامعتبر است؛ عددی بزرگ‌تر از ۰ و حداکثر ۱۰۰ با حداکثر شش رقم اعشار بنویسید؛ مثلاً ۳۰."
         if step in ("percent", "threshold")
         else "حجم نامعتبر است؛ عدد صحیح "
-        + ("بزرگ‌تر از صفر" if kind.endswith("VOLUME_ABOVE") else "صفر یا بیشتر")
+        + (
+            "بزرگ‌تر از صفر"
+            if kind.endswith(("VOLUME_ABOVE", "VOLUME_BELOW"))
+            else "صفر یا بیشتر"
+        )
         + " بر حسب سهم بنویسید؛ مثلاً ۱۰۰٬۰۰۰."
     )
 
@@ -302,7 +335,7 @@ def tree_text(tree: RuleTree) -> str:
     c = tree.config
     if isinstance(c, LifecycleConfig):
         if tree.type.endswith("WEAKENED"):
-            return f"{label}: کاهش حداقل {fa(c.threshold_percent)}٪ از بیشترین حجم مشاهده‌شده؛ مبنا حداقل {fa(c.minimum_baseline_volume)} سهم"
+            return f"{label}: کاهش حداقل {fa(c.threshold_percent)}٪ از بیشترین حجم ثبت‌شدهٔ همین صف؛ حجم پیش از کاهش دست‌کم {fa(c.minimum_baseline_volume)} سهم"
         if tree.type.endswith("REFORMED"):
             return f"{label}؛ حجم جدید حداقل {fa(c.minimum_volume)} سهم؛ دست‌کم {fa(c.minimum_disappearance_seconds)} ثانیه پس از جمع شدن تأییدشده"
         return f"{label}؛ حجم {'قبلی' if tree.type.endswith('DISAPPEARED') else 'جدید'} حداقل {fa(c.minimum_volume)} سهم"
@@ -310,9 +343,9 @@ def tree_text(tree: RuleTree) -> str:
         comparison = (
             "کمتر یا مساوی" if tree.type.endswith("BELOW") else "بیشتر یا مساوی"
         )
-        return f"{label}: {comparison} {fa(c.threshold_volume)} سهم؛ فاصلهٔ بازگشت {fa(c.hysteresis_percent)}٪"
+        return f"{label}: {comparison} {fa(c.threshold_volume)} سهم؛ بازگشت لازم برای آماده‌شدن دوباره: {fa(c.hysteresis_percent)}٪ از مقدار تعیین‌شده. پیش از اولین هشدار هم باید شرط بازگشت دیده شود."
     if isinstance(c, PeakConfig):
-        return f"{label}: حداقل {fa(c.threshold_percent)}٪؛ بیشترین حجم مشاهده‌شده حداقل {fa(c.minimum_peak_volume)} سهم؛ فاصلهٔ بازگشت {fa(c.hysteresis_percent)} واحد درصد"
+        return f"{label}: حداقل {fa(c.threshold_percent)}٪؛ بیشترین حجم مشاهده‌شده حداقل {fa(c.minimum_peak_volume)} سهم؛ برای آماده‌شدن دوباره، افت باید به {fa(max(0, c.threshold_percent - c.hysteresis_percent))}٪ یا کمتر برگردد."
     if isinstance(c, DropConfig):
         return f"{label}: حداقل {fa(c.threshold_percent)}٪ در {fa(c.window_minutes)} دقیقه؛ حجم صف در ابتدای بازه حداقل {fa(c.minimum_baseline_volume)} سهم"
     if isinstance(c, DisappearedConfig):
@@ -326,7 +359,7 @@ def monitoring_text(status: dict[str, Any], now: int) -> str:
     service = (
         "متوقف"
         if not status["is_running"]
-        else "در انتظار نشست"
+        else "منتظر شروع ساعت پایش"
         if not status["is_market_open"]
         else "بدون نماد"
         if not status["monitored_symbols"]
@@ -339,7 +372,7 @@ def monitoring_text(status: dict[str, Any], now: int) -> str:
     market = (
         "اجباری برای آزمایش"
         if status["force_active"]
-        else "نشست پیکربندی نشده"
+        else "روزها و ساعت‌های پایش تنظیم نشده‌اند"
         if not status["schedule_configured"]
         else "باز طبق برنامهٔ تنظیم‌شده"
         if status["is_market_open"]
@@ -397,7 +430,7 @@ def history_text(event: dict[str, Any]) -> str:
             if window is not None:
                 number(window, -float("inf"))
             comparison = (
-                "مبنای ثابت رخداد اولیه"
+                "همان حجم مبنای هشدار اول"
                 if payload.get("escalation")
                 else "آخرین وضعیت تأییدشده"
                 if window is None
@@ -405,7 +438,7 @@ def history_text(event: dict[str, Any]) -> str:
             )
             message = f"هشدار {LABELS[kind]}\nنماد: {symbol}\nحجم قبلی صف: {quantity(previous)} سهم\nحجم فعلی صف: {quantity(current)} سهم\nمیزان کاهش: {fa(round(percent, 2))}٪\nبازهٔ مقایسه: {comparison}\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
             if kind.endswith("PEAK_DROP_PERCENT"):
-                message = f"هشدار {LABELS[kind]}\nنماد: {symbol}\nبیشترین حجم مشاهده‌شده: {quantity(previous)} سهم\nحجم فعلی صف: {quantity(current)} سهم\nکاهش نسبت به بیشترین حجم مشاهده‌شده: {fa(round(percent, 2))}٪\nپوشش از ابتدای جلسه تضمین نمی‌شود.\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
+                message = f"هشدار {LABELS[kind]}\nنماد: {symbol}\nبیشترین حجم مشاهده‌شده: {quantity(previous)} سهم\nحجم فعلی صف: {quantity(current)} سهم\nکاهش نسبت به بیشترین حجم مشاهده‌شده: {fa(round(percent, 2))}٪\nممکن است همهٔ داده‌های امروز را نداشته باشیم؛ این عدد لزوماً بیشترین حجم کل روز نیست.\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
             elif kind.endswith(("VOLUME_BELOW", "VOLUME_ABOVE")):
                 condition = parse_tree(payload["definition"])
                 message = f"هشدار حجم صف\nنماد: {symbol}\n{tree_text(condition)}\nحجم قبلی: {quantity(previous)} سهم\nحجم فعلی: {quantity(current)} سهم\nحجم صف به حد تعیین‌شده رسید.\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
@@ -419,13 +452,13 @@ def history_text(event: dict[str, Any]) -> str:
         )
         if payload.get("escalation") is True:
             message += (
-                "\nتشدید همان رخداد؛ مقایسه با حجم اولیهٔ ثابت\nزمان رخداد اولیه: "
+                "\nافت صف بیشتر شده است؛ این پیام ادامهٔ هشدار قبلی است و با همان حجم مبنای هشدار اول مقایسه می‌شود.\nزمان هشدار اول: "
                 + tehran_time(payload.get("initialTimestamp"))
             )
         for outcome in event.get("outcomes", []):
             message += f"\n\n{fa(outcome['window_minutes'])} دقیقه بعد: "
             if outcome["status"] == "pending":
-                message += "در انتظار مشاهده"
+                message += "منتظر دریافت داده در زمان تعیین‌شده"
             elif outcome["status"] != "completed":
                 message += "دادهٔ معتبر موجود نیست"
             else:
@@ -458,7 +491,7 @@ def evidence_text(evidence: Evidence, escalation: bool = False) -> str:
         if evidence.condition.type.endswith("CONFIRMED_DISAPPEARED"):
             message += f"\nآخرین حجم معتبر صف: {quantity(evidence.previous_volume)} سهم\nزمان آخرین صف معتبر: {tehran_time((evidence.details or {}).get('previous_timestamp'))}\nوضعیت تأییدشدهٔ فعلی: بدون صف"
         elif evidence.condition.type.endswith("WEAKENED"):
-            message += f"\nبیشترین حجم مشاهده‌شدهٔ مبنا: {quantity(evidence.previous_volume)} سهم\nحجم فعلی: {quantity(evidence.current_volume)} سهم\nمیزان کاهش: {fa(round(evidence.actual_percent, 2))}٪\nپوشش از ابتدای جلسه تضمین نمی‌شود."
+            message += f"\nحجمی که کاهش نسبت به آن حساب شده: {quantity(evidence.previous_volume)} سهم\nحجم فعلی: {quantity(evidence.current_volume)} سهم\nمیزان کاهش: {fa(round(evidence.actual_percent, 2))}٪\nممکن است همهٔ داده‌های امروز را نداشته باشیم؛ این عدد لزوماً بیشترین حجم کل روز نیست."
         else:
             message += f"\nحجم صف جدید: {quantity(evidence.current_volume)} سهم"
             if evidence.condition.type.endswith("REFORMED"):
@@ -474,7 +507,7 @@ def evidence_text(evidence: Evidence, escalation: bool = False) -> str:
     if not isinstance(c, ThresholdConfig):
         message += f"\nمیزان کاهش: {fa(round(evidence.actual_percent, 2))}٪"
     if isinstance(c, PeakConfig):
-        message += "\nپوشش از ابتدای جلسه تضمین نمی‌شود."
+        message += "\nممکن است همهٔ داده‌های امروز را نداشته باشیم؛ این عدد لزوماً بیشترین حجم کل روز نیست."
     return message
 
 
@@ -508,7 +541,9 @@ def statistics_text(stats: dict[str, Any]) -> str:
         f"هشدارهای {label}: {fa(counts.get(severity, 0))}"
         for severity, label in SEVERITY_LABELS.items()
     )
-    lines.append(f"تداوم‌های تکراری حذف‌شده: {fa(stats['suppressed'])}")
+    lines.append(
+        f"دفعات ادامهٔ شرایط هشدار بدون ارسال پیام تکراری: {fa(stats['suppressed'])}"
+    )
     for window in (5, 15, 30):
         group = [row for row in stats["outcomes"] if row["window_minutes"] == window]
         completed: dict[str, Any] = next(
@@ -522,7 +557,7 @@ def statistics_text(stats: dict[str, Any]) -> str:
         pending = sum(row["count"] for row in group if row["status"] == "pending")
         average = completed.get("price_average")
         lines.append(
-            f"\n{fa(window)} دقیقه: {fa(completed.get('count', 0))} مشاهدهٔ کامل؛ {fa(missing)} فاقد داده؛ {fa(pending)} در انتظار"
+            f"\n{fa(window)} دقیقه پس از هشدار: {fa(completed.get('count', 0))} مورد با دادهٔ صف؛ {fa(missing)} مورد بدون دادهٔ معتبر؛ {fa(pending)} مورد در انتظار داده"
         )
         lines.append(
             "میانگین تغییر قیمت: "
@@ -533,5 +568,7 @@ def statistics_text(stats: dict[str, Any]) -> str:
                 + f"٪؛ {fa(completed['price_samples'])} نمونه"
             )
         )
-    lines.append("این آمار مشاهدهٔ تاریخی است و سودآوری معامله را نشان نمی‌دهد.")
+    lines.append(
+        "این آمار فقط وضعیت ثبت‌شدهٔ صف‌ها را نشان می‌دهد؛ از آن نمی‌توان سودآوری معامله را نتیجه گرفت."
+    )
     return "\n".join(lines)

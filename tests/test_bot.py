@@ -171,7 +171,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.press(ITEM.symbol)
         self.assertIn("معتبر و تازه", self.texts()[-1])
         self.assertIn("تشکیل صف", self.texts()[-1])
-        self.assertIn("پوشش از ابتدای جلسه تضمین نمی‌شود", self.texts()[-1])
+        self.assertIn("ممکن است همهٔ داده‌های امروز را نداشته باشیم", self.texts()[-1])
         await self.press("صف فروش")
         self.assertIn("در دسترس نیست", self.texts()[-1])
         await self.click("ad:life:buy:456")
@@ -240,7 +240,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
                 if not kind.endswith("DROP_PERCENT") or kind.endswith(
                     "PEAK_DROP_PERCENT"
                 ):
-                    await self.press("تنظیم فاصلهٔ بازگشت")
+                    await self.press("شرط آماده‌شدن دوباره")
                     await self.send("۱۰۱")
                     self.assertIn("نامعتبر", self.texts()[-1])
                     await self.send("۱۰")
@@ -272,7 +272,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.press("بازگشت")
         await self.press("حجم صف به عدد مشخصی برسد")
         await self.press("حجم صف فروش بیشتر یا مساوی مقدار مشخص")
-        await self.press("تنظیم فاصلهٔ بازگشت")
+        await self.press("شرط آماده‌شدن دوباره")
         await self.send("۱۰")
         await self.send("۲۰۰۰۰۰۰")
         await self.press("افزودن شرط")
@@ -303,7 +303,7 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.alerts.admins = self.admins
         rule = self.alerts.create("1", ITEM.ins_code, DROP)
         await self.click(f"ad:qualityp:{rule}")
-        old = self.button("تغییر وضعیت ثبت نتیجه")
+        old = self.button("روشن/خاموش کردن ثبت وضعیت بعدی صف")
         await self.press("مهم")
         await self.click(old)  # A previous step's token is no longer usable.
         self.assertFalse(self.bot.admin.settings["1"].settings["outcome_tracking"])
@@ -312,8 +312,8 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.send("۷۵ ۵۰")
         self.assertIn("نامعتبر", self.texts()[-1])
         await self.send("۵۰ ۷۵")
-        await self.press("تغییر وضعیت ثبت نتیجه")
-        await self.press("فاصلهٔ اعلان‌ها")
+        await self.press("روشن/خاموش کردن ثبت وضعیت بعدی صف")
+        await self.press("حداقل فاصلهٔ پیام‌ها")
         await self.send("۱۲۰")
         save = self.button("تأیید و ذخیرهٔ تنظیمات بالا")
         self.assertIsNone(self.alerts.get("1", rule)["quality_config"])
@@ -337,10 +337,10 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         item = dict(insCode=ITEM.ins_code, symbol=ITEM.symbol, name=ITEM.name)
         rule = await self.channels.create("1", item, GROUP)
         await self.click(f"ad:qualityc:{rule}")
-        await self.press("تغییر وضعیت تشدید")
-        await self.press("حداقل افزایش کاهش")
+        await self.press("روشن/خاموش کردن پیام افت بیشتر")
+        await self.press("مقدار افت بیشتر برای پیام بعدی")
         await self.send("۳۰")
-        await self.press("فاصلهٔ تشدید")
+        await self.press("فاصلهٔ پیام‌های افت بیشتر")
         await self.send("۶۰")
         save = self.button("تأیید و ذخیرهٔ تنظیمات بالا")
         # Another admin changes the rule while this draft is open.
