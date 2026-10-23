@@ -10,7 +10,6 @@ from typing import Any
 from .alerts import AlertService
 from .bot_text import (
     ADMIN_TYPES,
-    HYSTERESIS_PROMPT,
     LABELS,
     LIFECYCLE_LABELS,
     LIVE_NOTICE,
@@ -21,6 +20,8 @@ from .bot_text import (
     fa,
     first_step,
     history_text,
+    hysteresis_prompt,
+    lifecycle_prompt,
     minimum_prompt,
     numeric,
     numeric_error,
@@ -175,14 +176,14 @@ class AdminCommands:
             )
             actions = type_buttons(draft.family, channel=True)
             if draft.family in ("life", "formed", "weakened", "gone", "reformed"):
-                prompt = f"هشدارهای رفتار صف\nچه اتفاقی را بررسی کنیم؟\nتأیید تغییر پس از {fa(self.lifecycle.options.confirmation_snapshots)} مشاهدهٔ تازهٔ پیاپی؛ وقفهٔ داده رویداد بازار نیست."
+                prompt = lifecycle_prompt(self.lifecycle.options.confirmation_snapshots)
         elif draft.step == "percent":
             prompt = PERCENT_PROMPT
             actions = [(fa(n) + "٪", f"percent{n}") for n in (10, 20, 30, 50, 75)]
             if draft.selected_type in LIFECYCLE_LABELS:
                 actions.append(("مقدار دلخواه", "custom"))
         elif draft.step == "hysteresis":
-            prompt = HYSTERESIS_PROMPT
+            prompt = hysteresis_prompt(draft.selected_type)
         elif draft.step == "window":
             prompt, actions = (
                 WINDOW_PROMPT,
@@ -207,9 +208,9 @@ class AdminCommands:
                 )
                 and not draft.legacy_volume
             ):
-                actions.append(("تنظیم فاصلهٔ بازگشت", "hysteresis"))
+                actions.append(("شرط آماده‌شدن دوباره", "hysteresis"))
         elif draft.step == "duration":
-            prompt = "حداقل چند ثانیه پس از جمع شدن تأییدشده، تشکیل دوباره بررسی شود؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید. پیش‌فرض ۰ است."
+            prompt = "صف باید دست‌کم چند ثانیه جمع شده بماند تا تشکیل دوبارهٔ آن هشدار بدهد؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید؛ پیش‌فرض ۰ است.\nمثلاً با مقدار ۶۰، اگر صف زودتر از یک دقیقه دوباره تشکیل شود، برای آن تشکیل هشدار نمی‌گیرید؛ گذشتن یک دقیقه هم آن را بعداً فعال نمی‌کند."
         elif draft.step == "builder":
             detail = (
                 tree_text(parse_tree(draft.tree()))
@@ -217,6 +218,8 @@ class AdminCommands:
                 else "هنوز شرطی ثبت نشده است."
             )
             prompt = f"هشدار {destination}\n{destination}: {self.channels.status(ctx.actor)['title']}\nنماد: {draft.instrument.symbol if draft.instrument else ''}\n{detail}\n{LIVE_NOTICE}"
+            if any(c["type"] in LIFECYCLE_LABELS for c in draft.conditions):
+                prompt += "\nدر حالت «همهٔ شرط‌ها»، شرط‌ها باید در همان داده برقرار باشند، نه یکی پس از دیگری. مثلاً تشکیل صف و جمع شدن همان صف نمی‌توانند هم‌زمان برقرار باشند."
             for i in range(len(draft.conditions)):
                 actions.extend(
                     [
@@ -348,9 +351,9 @@ class AdminCommands:
         peak = peaks[0][f"{side}_volume"] if peaks else 0
         message = (
             title
-            + f"\nآخرین وضعیت تأییدشده: {labels.get(state['status'], 'نامشخص')}\nمشاهدهٔ فعلی: {'معتبر و تازه' if fresh else 'در دسترس نیست یا هنوز تأیید نشده'}"
+            + f"\nآخرین وضعیت تأییدشده: {labels.get(state['status'], 'نامشخص')}\nدادهٔ فعلی: {'معتبر و تازه' if fresh else 'در دسترس نیست یا هنوز تأیید نشده؛ وضعیت بالا لزوماً وضعیت فعلی صف نیست'}"
         )
-        message += f"\nآخرین حجم تأییدشده: {fa(state['last_volume']) if state['last_volume'] is not None else 'موجود نیست'} سهم\nبیشترین حجم مشاهده‌شده: {fa(peak) if peak else 'موجود نیست'} سهم\nدفعات تشکیل دوباره: {fa(state['cycles'])}\nآخرین تشکیل: {tehran_time(state['last_formed_at'])}\nآخرین جمع شدن: {tehran_time(state['last_disappeared_at'])}\nآخرین مشاهده: {tehran_time(state['last_source_at'])}\nشروع پوشش مشاهده: {tehran_time(state['first_observed_at'])}"
+        message += f"\nآخرین حجم تأییدشده: {fa(state['last_volume']) if state['last_volume'] is not None else 'موجود نیست'} سهم\nبیشترین حجم مشاهده‌شده: {fa(peak) if peak else 'موجود نیست'} سهم\nدفعات تشکیل دوباره: {fa(state['cycles'])}\nآخرین تشکیل: {tehran_time(state['last_formed_at'])}\nآخرین جمع شدن: {tehran_time(state['last_disappeared_at'])}\nآخرین مشاهده: {tehran_time(state['last_source_at'])}\nشروع ثبت داده در این جلسه: {tehran_time(state['first_observed_at'])}"
         events = [
             e
             for e in self.lifecycle.history(ins_code, state["session_id"])
@@ -370,7 +373,7 @@ class AdminCommands:
             or "رویدادی ثبت نشده است."
         )
         message += "\nزمان آخرین حجم تأییدشده: " + tehran_time(state["last_volume_at"])
-        message += "\nپوشش از ابتدای جلسه تضمین نمی‌شود. این مشاهدهٔ رفتار صف است، نه توصیهٔ معامله."
+        message += "\nممکن است همهٔ داده‌های امروز را نداشته باشیم؛ این عدد لزوماً بیشترین حجم کل روز نیست. این مشاهدهٔ رفتار صف است، نه توصیهٔ معامله."
         await ctx.reply(message, buttons, edit=True)
 
     async def list(self, ctx: Context, page: int = 0) -> None:
@@ -1087,37 +1090,38 @@ class AdminCommands:
         draft.token = secrets.token_hex(4)
         p = parse_policy(draft.settings)
         summary = (
-            f"تنظیمات پیشرفتهٔ هشدار\nاهمیت پایه: {SEVERITY_LABELS[p.severity]}\n"
-            + "مرزهای اهمیت: "
+            f"تنظیمات پیشرفتهٔ هشدار\nاهمیت پیش‌فرض: {SEVERITY_LABELS[p.severity]}\n"
+            + "افزایش اهمیت با افت بیشتر صف: "
             + (
                 "؛ ".join(
                     f"{SEVERITY_LABELS[t.severity]} از {fa(t.minimum_drop_percent)}٪"
                     for t in p.thresholds
                 )
-                or "بدون مرز"
+                or "تنظیم نشده"
             )
-            + f"\nحذف تکرار: تا بازیابی کامل؛ مستقل برای هر هشدار\nتشدید: {'روشن' if p.escalation_enabled else 'خاموش'}"
-            + f"\nافزایش لازم برای تشدید: {fa(p.additional_drop_percent)} واحد درصد\nفاصلهٔ تشدید: {fa(p.minimum_interval_seconds)} ثانیه"
-            + f"\nفاصلهٔ اعلان‌ها: {fa(draft.cooldown)} ثانیه\nثبت نتیجه: {'روشن' if p.outcome_tracking else 'خاموش'}"
-            + "\nدرصدها توصیهٔ معامله نیستند. تشدید فقط برای شرط کاهش صف با خط مبنای ثابت است."
+            + "\nهشدار تکرار نمی‌شود تا شرط بازگشت صف برقرار شود و زمان انتظار تمام شود."
+            + f"\nهشدار مجدد با افت بیشتر: {'روشن' if p.escalation_enabled else 'خاموش'}"
+            + f"\nافت بیشتر لازم: {fa(p.additional_drop_percent)} واحد درصد\nحداقل فاصلهٔ این پیام‌ها: {fa(p.minimum_interval_seconds)} ثانیه"
+            + f"\nحداقل فاصلهٔ همهٔ پیام‌های این هشدار: {fa(draft.cooldown)} ثانیه\nثبت وضعیت صف پس از ۵، ۱۵ و ۳۰ دقیقه: {'روشن' if p.outcome_tracking else 'خاموش'}"
+            + "\nهشدار مجدد با افت بیشتر فقط برای شرط‌های کاهش صف است؛ هر بار با همان حجم مبنای هشدار اول مقایسه می‌شود. این تنظیمات توصیهٔ معامله نیستند."
         )
         prompts = dict(
-            thresholds="دو درصد صعودی برای «مهم» و «بحرانی» با فاصله بنویسید؛ مثلاً ۵۰ ۷۵. برای حذف مرزها فقط ۰ بفرستید.",
-            additional_drop_percent="حداقل افزایش کاهش صف را به واحد درصد بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰.",
-            minimum_interval_seconds="حداقل فاصلهٔ تشدید را به ثانیه بنویسید؛ ۱ تا ۸۶۴۰۰.",
-            cooldown="فاصلهٔ اعلان‌ها را به ثانیه بنویسید؛ ۰ تا ۸۶۴۰۰.",
+            thresholds="از چه درصد افتی، اهمیت هشدار بیشتر شود؟ دو عدد با یک فاصله بنویسید؛ مثلاً ۵۰ ۷۵ یعنی افت ۵۰٪ یا بیشتر «مهم» و افت ۷۵٪ یا بیشتر «بحرانی» است. عدد دوم باید بزرگ‌تر باشد. برای حذف این تنظیم فقط ۰ بفرستید.",
+            additional_drop_percent="افت صف چقدر بیشتر شود تا پیام دیگری بفرستیم؟ عددی بزرگ‌تر از ۰ تا ۱۰۰ بنویسید. مثلاً ۲۵ یعنی افت ۳۰٪ باید به ۵۵٪ برسد؛ هر دو نسبت به همان حجم مبنای هشدار اول حساب می‌شوند.",
+            minimum_interval_seconds="بین پیام‌های افت بیشتر دست‌کم چند ثانیه فاصله باشد؟ عددی از ۱ تا ۸۶۴۰۰ بنویسید؛ مثلاً ۳۰۰ یعنی ۵ دقیقه. صرف گذشت زمان باعث ارسال پیام نمی‌شود؛ افت بیشتر هم لازم است.",
+            cooldown="بین پیام‌های این هشدار دست‌کم چند ثانیه فاصله باشد؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید؛ مثلاً ۳۰۰ یعنی ۵ دقیقه. گذشت زمان به‌تنهایی هشدار را تکرار نمی‌کند.",
         )
         actions = [
             (label, "severity" + severity)
             for severity, label in SEVERITY_LABELS.items()
         ]
         actions += [
-            ("مرزهای اهمیت", "thresholds"),
-            ("تغییر وضعیت تشدید", "escalation"),
-            ("حداقل افزایش کاهش", "additional_drop_percent"),
-            ("فاصلهٔ تشدید", "minimum_interval_seconds"),
-            ("فاصلهٔ اعلان‌ها", "cooldown"),
-            ("تغییر وضعیت ثبت نتیجه", "outcomes"),
+            ("درصد افت برای هشدار مهم و بحرانی", "thresholds"),
+            ("روشن/خاموش کردن پیام افت بیشتر", "escalation"),
+            ("مقدار افت بیشتر برای پیام بعدی", "additional_drop_percent"),
+            ("فاصلهٔ پیام‌های افت بیشتر", "minimum_interval_seconds"),
+            ("حداقل فاصلهٔ پیام‌ها", "cooldown"),
+            ("روشن/خاموش کردن ثبت وضعیت بعدی صف", "outcomes"),
             ("تأیید و ذخیرهٔ تنظیمات بالا", "save"),
         ]
         if draft.field:

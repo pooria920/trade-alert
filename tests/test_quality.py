@@ -539,7 +539,7 @@ class QualityTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("زمان داده", message)
         self.assertIn("زمان اعلان", message)
         self.assertIn("ارسال با تأخیر", message)
-        self.assertIn("تشدید همان رخداد", message)
+        self.assertIn("این پیام ادامهٔ هشدار قبلی است", message)
         self.assertIn(stock_url("123"), message)
         self.assertIn("میلیون", quantity(12_500_000))
         for invalid in (123, "../123", "123?x", "0", "01"):

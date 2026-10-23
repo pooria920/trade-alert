@@ -12,7 +12,6 @@ from .admin import AdminCommands
 from .alerts import AlertService
 from .bot_text import (
     HELP,
-    HYSTERESIS_PROMPT,
     LABELS,
     LIFECYCLE_LABELS,
     LIVE_NOTICE,
@@ -23,6 +22,8 @@ from .bot_text import (
     fa,
     first_step,
     history_text,
+    hysteresis_prompt,
+    lifecycle_prompt,
     minimum_prompt,
     monitoring_text,
     numeric,
@@ -830,7 +831,7 @@ class TelegramBot:
             prompt = TYPE_PROMPT
             actions = type_buttons(flow.family, channel=False)
             if flow.family in ("life", "formed", "weakened", "gone", "reformed"):
-                prompt = f"هشدارهای رفتار صف\nچه اتفاقی را بررسی کنیم؟\nتأیید تغییر پس از {fa(self.lifecycle.options.confirmation_snapshots)} مشاهدهٔ تازهٔ پیاپی؛ وقفهٔ داده رویداد بازار نیست."
+                prompt = lifecycle_prompt(self.lifecycle.options.confirmation_snapshots)
         elif flow.step == "window":
             prompt, actions = (
                 WINDOW_PROMPT,
@@ -846,7 +847,7 @@ class TelegramBot:
             if flow.kind in LIFECYCLE_LABELS:
                 actions.append(("مقدار دلخواه", "custom"))
         elif flow.step == "hysteresis":
-            prompt = HYSTERESIS_PROMPT
+            prompt = hysteresis_prompt(flow.kind)
         elif flow.step == "minimum":
             prompt = minimum_prompt(flow.kind)
             if flow.kind in LIFECYCLE_LABELS:
@@ -855,7 +856,7 @@ class TelegramBot:
                     for v in (1_000_000, 5_000_000, 10_000_000)
                 ] + [("مقدار دلخواه", "custom")]
         elif flow.step == "duration":
-            prompt = "حداقل چند ثانیه پس از جمع شدن تأییدشده، تشکیل دوباره بررسی شود؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید. پیش‌فرض ۰ است."
+            prompt = "صف باید دست‌کم چند ثانیه جمع شده بماند تا تشکیل دوبارهٔ آن هشدار بدهد؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید؛ پیش‌فرض ۰ است.\nمثلاً با مقدار ۶۰، اگر صف زودتر از یک دقیقه دوباره تشکیل شود، برای آن تشکیل هشدار نمی‌گیرید؛ گذشتن یک دقیقه هم آن را بعداً فعال نمی‌کند."
         elif flow.step == "confirm":
             symbol = self.users.find_symbol(ctx.actor, flow.ins_code)
             if not symbol:
@@ -872,7 +873,7 @@ class TelegramBot:
                 )
                 and not flow.legacy_volume
             ):
-                actions.append(("تنظیم فاصلهٔ بازگشت", "hysteresis"))
+                actions.append(("شرط آماده‌شدن دوباره", "hysteresis"))
         current = {
             "threshold": flow.percent,
             "window": flow.window,
