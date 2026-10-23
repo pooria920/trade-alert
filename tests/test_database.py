@@ -98,12 +98,18 @@ class DatabaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             py_path = folder / "python.db"
+            original = folder / "original-migrations"
+            shutil.copytree(MIGRATIONS, original)
+            journal_path = original / "meta/_journal.json"
+            journal = json.loads(journal_path.read_text())
+            journal["entries"] = journal["entries"][:5]
+            journal_path.write_text(json.dumps(journal))
             ts = json.loads(
                 (Path(__file__).parent / "fixtures/reference/database.json").read_text(
                     encoding="utf-8"
                 )
             )
-            with open_database(py_path) as db:
+            with open_database(py_path, migrations=original) as db:
                 db.row_factory = sqlite3.Row
                 migrations = [
                     dict(r)
@@ -118,7 +124,7 @@ class DatabaseTests(unittest.TestCase):
                     )
                 ]
                 self.assertEqual(migrations[:5], ts["migrations"])
-                self.assertEqual(len(migrations), 6)
+                self.assertEqual(len(migrations), 5)
 
                 # SQLite preserves insignificant formatting in CREATE statements.
                 def normalized(rows):
@@ -144,14 +150,14 @@ class DatabaseTests(unittest.TestCase):
                 self.assertEqual(
                     db.execute(
                         "SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at"
-                    ).fetchall(),
+                    ).fetchall()[:5],
                     [(r["hash"], r["created_at"]) for r in migrations],
                 )
                 self.assertEqual(
                     db.execute("SELECT count(*) FROM __drizzle_migrations").fetchone()[
                         0
                     ],
-                    6,
+                    9,
                 )
                 db.execute("INSERT INTO symbols VALUES ('123', 'TEST', 1)")
             with open_database(py_path) as db:
@@ -215,7 +221,7 @@ class DatabaseTests(unittest.TestCase):
                     db.execute("SELECT count(*) FROM __drizzle_migrations").fetchone()[
                         0
                     ],
-                    6,
+                    9,
                 )
 
     def test_process_death_releases_lock_without_deleting_file(self):

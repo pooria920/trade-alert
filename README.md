@@ -9,6 +9,22 @@ There is no web server or exposed port.
 contract, so current live data cannot trigger alerts. Synthetic offline tests
 verify the engine and delivery. See [TSETMC observations](docs/TSETMC.md).
 
+Phase 8 adds inclusive buy/sell queue-volume thresholds, drops from the highest
+observed session volume, and 1/5/15-minute historical comparisons. Private and
+shared-destination wizards support the strategies; channel AND/OR rules reuse them.
+Crossing readiness, session peaks and frozen recovery survive restart. Existing
+definitions and Phase 7 quality/outcomes remain compatible. See
+[configuration, Persian examples and limitations](docs/QUEUE-STRATEGIES.md) and the
+[manual Phase 8 upgrade](DEPLOYMENT.md#manual-phase-8-upgrade).
+
+Phase 9 tracks confirmed queue formation, weakening, disappearance and reformation
+once per instrument/side. It adds Persian lifecycle rule choices and admin-only
+private `/lifecycle` summaries. Transitions are source-update pulses in composites;
+gaps, halts, closures and first observations cannot manufacture transitions.
+Shared confirmation settings and lifecycle history retention are in `.env.example`.
+See [lifecycle semantics and examples](docs/LIFECYCLE.md) and the
+[manual Phase 9 upgrade](DEPLOYMENT.md#manual-phase-9-upgrade).
+
 ## Deploy
 
 Follow the [Persian VPS guide](DEPLOYMENT.fa.md) for a fresh install with an
@@ -60,15 +76,15 @@ list/proxy availability from Iran is not guaranteed. Tests use synthetic HTTP,
 DNS, socket and MTProto replies without contacting real proxies.
 
 Commands: `/start`, `/help`, `/add`, `/list`, `/queue`, `/remove`, `/status`,
-`/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin`.
+`/alert`, `/alerts`, `/history`, `/cancel`, and admin-only `/admin` and `/stats`.
 Private preferences and ownership remain separate from channel rules.
 
 Basic groups and supergroups can also be the single configured shared destination
 in `TELEGRAM_CHANNEL_ID`. Make the bot an administrator. Configured authorized
-admins must first `/start` privately; they can then use `/admin`, `/alert`, `/alerts`,
-`/status`, `/cancel`, `/start` and `/help` in that group. Draft text must reply to
-the current bot prompt. Personal commands/data and delivery-error details remain
-private; other group members cannot operate the bot. See [group setup](DEPLOYMENT.fa.md).
+admins must first `/start` privately and manage rules with `/admin` in private.
+All group/supergroup commands, callbacks and draft text are rejected before
+registration or handlers. The configured group is a delivery destination only.
+See [group setup](DEPLOYMENT.fa.md).
 
 In private `/admin`, configured admins can compose a manual text message for the
 shared destination, preview it and confirm sending. Text is limited to 1,500
@@ -79,7 +95,8 @@ instrument and appended only to shared alerts at delivery, never private alerts.
 Both editors expire after ten minutes/restart and support preview/cancel.
 The additive `0005_channel_symbol_notes.sql` migration preserves existing data.
 
-Original migrations and journal live unchanged under `migrations/`. Startup and
+Original migration SQL and journal entries are preserved under `migrations/`;
+new migrations append entries. Startup and
 manual migration share an OS-backed instance lock. The image runs as `node`
 (UID/GID 1000) for existing-volume compatibility; it contains Python, not Node.
 SQLite lives at `/app/data/stock-alert.db` in the existing named volume.
@@ -100,3 +117,35 @@ The local-only `python -m trade_alert.operations` helper supports backup, deploy
 restore and health. Deploy requires explicit confirmation and an existing Python
 image; follow the VPS guide for the first installation.
 See [migration history](MIGRATION.fa.md) and [behavior coverage](ACCEPTANCE.fa.md).
+
+## Phase 7 alert quality
+
+Existing rules keep normal severity, one message per recovered/rearmed occurrence,
+escalation off and outcome tracking off. Admins can open **advanced settings**
+from shared-rule details or their own private-rule details. Choose base severity,
+optional drop thresholds, escalation interval/additional drop, cooldown and outcome
+tracking; confirm the displayed summary to save. Drafts expire after ten minutes
+or restart and reject stale edit revisions. Ordinary creation stays unchanged.
+
+Escalation uses the original occurrence's frozen per-leaf baseline, respects rule
+cooldown and its own interval, and requires the configured additional percentage
+points since the previous message. Composite rules must remain overall TRUE;
+UNKNOWN cannot rearm or escalate. Severity is a configurable notification priority,
+not a market-validated risk measure or trading recommendation. Messages use Persian
+numbers, large-number labels, Tehran source/announcement times and delayed-data
+notices. Telegram parse mode is disabled, so names/notes are literal text.
+
+Opted-in events schedule independent 5/15/30-minute queue observations from source
+time, using existing accepted snapshots and polling cadence. The first same-session
+snapshot in `[target, target + tolerance]` is eligible; prices are unavailable because
+the pipeline has queue prices, not verified traded prices. No price return is
+fabricated. Pending symbols stay in the shared monitor after watchlist/rule removal.
+Outcomes expire when the session/window ends without evidence; out-of-session targets
+are immediately insufficient. Restart can recover a timely persisted observation.
+Outcome/suppression retention reuses bounded, yielding cleanup and leaves alert
+history/configuration intact. Private `/history` and admin shared history paginate;
+`/stats` reports actual 30-day channel aggregates and explicit missing-price samples.
+
+See [Phase 7 semantics and limitations](docs/ALERT-QUALITY.md),
+[additive migration](docs/MIGRATION.md#phase-7), and the
+[manual upgrade procedure](DEPLOYMENT.md). No production deployment is automated.

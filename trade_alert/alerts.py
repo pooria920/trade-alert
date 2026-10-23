@@ -3,12 +3,13 @@
 import builtins
 import json
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 from uuid import uuid4
 
 from .database import rows, transaction
 from .definitions import definition_json, parse_definition, parse_tree
+from .quality import parse_policy
 from .users import UserService, now_ms
 from .validation import integer
 
@@ -30,10 +31,12 @@ class AlertService:
         default_cooldown: int = 300,
         history_limit: int = 10,
         now: Callable[[], int] = now_ms,
+        admins: Sequence[str] = (),
     ) -> None:
         self.db, self.users, self.now = db, users, now
         self.default_cooldown = integer(default_cooldown, 0, 86_400)
         self.history_limit = integer(history_limit, 1, 10)
+        self.admins = admins
 
     def list(self, actor: str) -> list[dict[str, Any]]:
         result = []
@@ -70,6 +73,9 @@ class AlertService:
         value: object,
         enabled: bool | None = None,
         cooldown: int | None = None,
+        *,
+        quality: object = None,
+        revision: int | None = None,
     ) -> bool:
         self.users.authorize(actor)
         definition = definition_json(parse_tree(value, channel=False))
@@ -77,16 +83,28 @@ class AlertService:
             raise ValueError("Expected enabled boolean")
         if cooldown is not None:
             integer(cooldown, 0, 86_400)
+        settings = None
+        if quality is not None:
+            if actor not in self.admins or self.users.preferences(actor) is None:
+                raise PermissionError("Advanced settings require a current admin")
+            settings = json.dumps(parse_policy(quality).to_json())
+        if revision is not None:
+            integer(revision, 1)
         with transaction(self.db):
             rule = self.get(actor, rule_id)
-            if rule is None or not self.users.find_symbol(actor, rule["ins_code"]):
+            if (
+                rule is None
+                or not self.users.find_symbol(actor, rule["ins_code"])
+                or (revision is not None and rule["revision"] != revision)
+            ):
                 return False
             self.db.execute(
-                "UPDATE alert_rules SET definition=?, revision=revision+1, enabled=?, cooldown_seconds=?, created_at=? WHERE id=? AND owner_id=? AND channel_id IS NULL",
+                "UPDATE alert_rules SET definition=?, revision=revision+1, enabled=?, cooldown_seconds=?, quality_config=?, created_at=? WHERE id=? AND owner_id=? AND channel_id IS NULL",
                 (
                     json.dumps(definition),
                     rule["enabled"] if enabled is None else enabled,
                     rule["cooldown_seconds"] if cooldown is None else cooldown,
+                    rule["quality_config"] if settings is None else settings,
                     self.now(),
                     rule_id,
                     actor,
@@ -108,10 +126,18 @@ class AlertService:
     def remove(self, actor: str, rule_id: str) -> bool:
         return self.users.remove_rule(actor, rule_id)
 
-    def history(self, actor: str) -> builtins.list[dict[str, Any]]:
+    def history(self, actor: str, page: int = 0) -> builtins.list[dict[str, Any]]:
         self.users.authorize(actor)
-        return rows(
+        page = integer(page, 0, 1_000_000)
+        events = rows(
             self.db,
-            "SELECT e.* FROM alert_events e JOIN alert_rules r ON r.id=e.rule_id WHERE r.owner_id=? AND r.channel_id IS NULL ORDER BY e.created_at DESC, e.id DESC LIMIT ?",
-            (actor, self.history_limit),
+            "SELECT e.*, r.ins_code FROM alert_events e JOIN alert_rules r ON r.id=e.rule_id WHERE r.owner_id=? AND r.channel_id IS NULL ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?",
+            (actor, self.history_limit, page * self.history_limit),
         )
+        for event in events:
+            event["outcomes"] = rows(
+                self.db,
+                "SELECT * FROM alert_outcomes WHERE event_id=? ORDER BY window_minutes",
+                (event["id"],),
+            )
+        return events

@@ -67,7 +67,7 @@ class TelethonTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ended.is_set())
         self.assertFalse(any(kind == "send" for kind, _ in self.client.calls))
 
-    async def test_group_callback_without_cached_chat_type_is_verified_before_enqueue(
+    async def test_group_callback_without_cached_chat_type_is_ignored(
         self,
     ):
         self.api.admins = frozenset(["1"])
@@ -85,15 +85,8 @@ class TelethonTests(unittest.IsolatedAsyncioTestCase):
             item.get_sender = AsyncMock(return_value=user(1, bot=False))
             self.assertIsNone(item.is_group)
             await self.api._callback(item)
-            self.assertEqual(self.api.updates.qsize(), 0 if broadcast else 1)
-            if not broadcast:
-                update = self.api.updates.get_nowait()
-                self.assertEqual(
-                    update["callback_query"]["message"]["chat"],
-                    dict(id=int(CHANNEL), type="supergroup"),
-                )
-            else:
-                item.get_sender.assert_not_awaited()
+            self.assertEqual(self.api.updates.qsize(), 0)
+            item.get_sender.assert_not_awaited()
 
     async def test_group_peer_resolution_rejects_mismatch_missing_and_reconfiguration(
         self,
@@ -213,29 +206,17 @@ class TelethonTests(unittest.IsolatedAsyncioTestCase):
                 chat.left = True
                 self.assertFalse((await api.verify_channel(destination))["canPost"])
 
-    async def test_group_events_require_configured_chat_and_explicit_admin_before_lookup(
-        self,
-    ):
+    async def test_all_group_events_are_rejected_before_sender_lookup(self):
         self.api.admins = frozenset(["1"])
-        for actor, chat in ((2, int(CHANNEL)), (1, -999), (9, int(CHANNEL))):
-            item = event(actor, chat=chat, private=False)
-            item.is_group = True
-            await self.api._message(item)
-            await self.api._callback(item)
-            item.get_sender.assert_not_awaited()
-        for callback in (False, True):
-            item = event(1, chat=int(CHANNEL), private=False)
-            item.is_group = True
-            item.message.reply_to_msg_id = 17
-            await (self.api._callback(item) if callback else self.api._message(item))
-        batch = await self.batch()
-        self.assertEqual(
-            batch[0]["message"]["chat"], dict(id=int(CHANNEL), type="supergroup")
-        )
-        self.assertEqual(batch[0]["message"]["reply_to_message"]["message_id"], 17)
-        self.assertEqual(
-            batch[1]["callback_query"]["message"]["chat"]["id"], int(CHANNEL)
-        )
+        for group_type in (True, False, None):
+            for actor, chat in ((1, int(CHANNEL)), (2, int(CHANNEL)), (1, -999)):
+                item = event(actor, chat=chat, private=False)
+                item.is_group = group_type
+                await self.api._message(item)
+                await self.api._callback(item)
+                item.get_sender.assert_not_awaited()
+        self.assertFalse(self.client.calls)
+        self.assertEqual(await self.batch(), [])
 
     async def test_migrated_or_wrong_basic_group_and_banned_supergroup_fail_closed(
         self,

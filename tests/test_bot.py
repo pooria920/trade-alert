@@ -55,6 +55,349 @@ def callback(actor, data, *, chat=None, kind="private", update_id=1):
 
 
 class BotTests(unittest.IsolatedAsyncioTestCase):
+    async def test_lifecycle_private_wizard_presets_duration_and_edit(self):
+        await self.watch()
+        cases = [
+            ("تشکیل صف جدید", "تشکیل صف خرید", "BUY_QUEUE_FORMED"),
+            ("ضعیف شدن صف", "ضعیف شدن صف فروش", "SELL_QUEUE_WEAKENED"),
+            ("جمع شدن صف", "جمع شدن صف خرید", "BUY_QUEUE_CONFIRMED_DISAPPEARED"),
+            ("تشکیل دوباره صف", "تشکیل دوباره صف فروش", "SELL_QUEUE_REFORMED"),
+        ]
+        for category, label, kind in cases:
+            with self.subTest(kind=kind):
+                await self.send("/alert")
+                await self.press(ITEM.symbol)
+                await self.press("هشدارهای رفتار صف")
+                await self.press(category)
+                await self.press("بازگشت")
+                await self.press(category)
+                old = self.button(label)
+                await self.press(label)
+                await self.click(old)
+                if kind.endswith("WEAKENED"):
+                    await self.press("مقدار دلخواه")
+                    await self.send("۳۰")
+                await self.press("۵ میلیون")
+                if kind.endswith("REFORMED"):
+                    await self.press("تنظیم فاصله تا تشکیل دوباره")
+                    await self.send("-۱")
+                    self.assertIn("نامعتبر", self.texts()[-1])
+                    await self.send("۴۵")
+                save = self.button("تأیید و ذخیره")
+                await self.click(save)
+                await self.click(save)
+                rule = next(
+                    r for r in self.alerts.list("1") if r["definition"]["type"] == kind
+                )
+                original = rule["definition"]
+                await self.click(f"ar:view:{rule['id']}")
+                self.assertNotIn(rule["id"], self.texts()[-1])
+                await self.click(f"ar:edit:{rule['id']}")
+                await self.press("نگه‌داشتن نوع فعلی")
+                if kind.endswith("WEAKENED"):
+                    await self.press("نگه‌داشتن مقدار فعلی")
+                await self.press("نگه‌داشتن مقدار فعلی")
+                await self.press("تأیید و ذخیره")
+                self.assertEqual(
+                    self.alerts.get("1", rule["id"])["definition"], original
+                )
+        self.assertEqual(len(self.alerts.list("1")), 4)
+
+    async def test_lifecycle_channel_builder_keeps_new_and_old_conditions(self):
+        await self.new_channel_draft()
+        for category, label in (
+            ("تشکیل صف جدید", "تشکیل صف فروش"),
+            ("ضعیف شدن صف", "ضعیف شدن صف خرید"),
+            ("جمع شدن صف", "جمع شدن صف فروش"),
+            ("تشکیل دوباره صف", "تشکیل دوباره صف خرید"),
+        ):
+            await self.press("افزودن شرط")
+            await self.press("هشدارهای رفتار صف")
+            await self.press(category)
+            await self.press(label)
+            if category == "ضعیف شدن صف":
+                await self.press("۳۰٪")
+            if category == "تشکیل دوباره صف":
+                await self.press("تنظیم فاصله تا تشکیل دوباره")
+                await self.send("۶۰")
+            await self.press("۱ میلیون")
+        save = self.button("تأیید و ذخیره")
+        await self.click(save)
+        await self.click(save)
+        rules = self.channels.list("1")
+        self.assertEqual(len(rules), 1)
+        leaves = rules[0]["definition"]["conditions"]
+        self.assertEqual(len(leaves), 5)
+        self.assertEqual(leaves[0]["type"], "BUY_QUEUE_DISAPPEARED")
+        self.assertEqual(leaves[-1]["config"]["minimumDisappearanceSeconds"], 60)
+
+    async def test_lifecycle_summary_private_admin_scope_freshness_and_group_rejection(
+        self,
+    ):
+        from trade_alert.engine import AlertEngine
+        from trade_alert.evaluators import QueueSnapshot
+        from trade_alert.snapshots import SnapshotRepository
+
+        await self.watch()
+        await self.send("/start", 3)
+        self.users.add_symbol(
+            "3", dict(insCode="456", symbol="OTHER_PRIVATE", name="Private")
+        )
+        repository = SnapshotRepository(self.db)
+        engine = AlertEngine(
+            self.db,
+            repository,
+            self.users,
+            now=lambda: self.clock,
+            lifecycle=self.bot.lifecycle,
+        )
+        for queue in ("none", "none", "buy", "buy"):
+            value = QueueSnapshot(
+                ITEM.ins_code,
+                ITEM.symbol,
+                self.clock,
+                queue,
+                0 if queue == "none" else 1000,
+                None if queue == "none" else 110,
+                0 if queue == "none" else 1,
+            )
+            repository.save(value, self.clock, "A")
+            engine.on_snapshot(value, "A")
+            self.clock += 10_000
+        self.bot.admin.is_market_open = lambda: True
+        self.bot.admin.session_at = lambda timestamp: "A"
+        await self.send("/lifecycle")
+        self.assertNotIn("OTHER_PRIVATE", self.texts()[-1])
+        await self.press(ITEM.symbol)
+        self.assertIn("معتبر و تازه", self.texts()[-1])
+        self.assertIn("تشکیل صف", self.texts()[-1])
+        self.assertIn("پوشش از ابتدای جلسه تضمین نمی‌شود", self.texts()[-1])
+        await self.press("صف فروش")
+        self.assertIn("در دسترس نیست", self.texts()[-1])
+        await self.click("ad:life:buy:456")
+        self.assertIn("دسترسی", self.texts()[-1])
+        self.bot.lifecycle.unavailable(ITEM.ins_code, "trading-state")
+        await self.click(f"ad:life:buy:{ITEM.ins_code}")
+        self.assertIn("صف فعال", self.texts()[-1])
+        self.assertIn("در دسترس نیست", self.texts()[-1])
+        await self.send("/lifecycle", 3)
+        self.assertIn("دسترسی", self.texts()[-1])
+        self.calls.clear()
+        await self.bot.handle_update(
+            message(1, "/lifecycle", kind="supergroup", chat=int(CHANNEL))
+        )
+        await self.bot.handle_update(
+            callback(
+                1, f"ad:life:buy:{ITEM.ins_code}", kind="supergroup", chat=int(CHANNEL)
+            )
+        )
+        self.assertFalse(self.calls)
+        self.admins.remove("1")
+        await self.click(f"ad:life:buy:{ITEM.ins_code}")
+        self.assertFalse(self.texts())
+
+    async def test_phase8_private_strategies_presets_editing_and_duplicate_save(self):
+        await self.watch()
+        cases = [
+            (
+                "حجم صف به عدد مشخصی برسد",
+                "حجم صف خرید کمتر یا مساوی مقدار مشخص",
+                "BUY_QUEUE_VOLUME_BELOW",
+            ),
+            (
+                "حجم صف به عدد مشخصی برسد",
+                "حجم صف فروش بیشتر یا مساوی مقدار مشخص",
+                "SELL_QUEUE_VOLUME_ABOVE",
+            ),
+            (
+                "صف نسبت به بیشترین حجم کاهش یابد",
+                "کاهش صف خرید نسبت به بیشترین حجم مشاهده‌شده",
+                "BUY_QUEUE_PEAK_DROP_PERCENT",
+            ),
+            (
+                "صف در مدت کوتاه سریع کاهش یابد",
+                "کاهش صف فروش",
+                "SELL_QUEUE_DROP_PERCENT",
+            ),
+        ]
+        for family, label, kind in cases:
+            with self.subTest(kind=kind):
+                await self.send("/alert")
+                await self.press(ITEM.symbol)
+                stale = self.button(family)
+                await self.press(family)
+                await self.press(label)
+                await self.click(stale)
+                if kind.endswith("DROP_PERCENT"):
+                    if not kind.endswith("PEAK_DROP_PERCENT"):
+                        await self.press("۱۵ دقیقه")
+                    await self.press("۳۰٪")
+                    await self.press("نگه‌داشتن مقدار فعلی")
+                else:
+                    await self.send("۰")
+                    self.assertIn("نامعتبر", self.texts()[-1])
+                    await self.send("۲٬۰۰۰٬۰۰۰")
+                if not kind.endswith("DROP_PERCENT") or kind.endswith(
+                    "PEAK_DROP_PERCENT"
+                ):
+                    await self.press("تنظیم فاصلهٔ بازگشت")
+                    await self.send("۱۰۱")
+                    self.assertIn("نامعتبر", self.texts()[-1])
+                    await self.send("۱۰")
+                save = self.button("تأیید و ذخیره")
+                await self.click(save)
+                count = len(self.alerts.list("1"))
+                await self.click(save)
+                self.assertEqual(len(self.alerts.list("1")), count)
+                rule = next(
+                    r for r in self.alerts.list("1") if r["definition"]["type"] == kind
+                )
+                previous = rule["definition"]
+                await self.click(f"ar:edit:{rule['id']}")
+                await self.press("نگه‌داشتن نوع فعلی")
+                if kind.endswith("DROP_PERCENT"):
+                    if not kind.endswith("PEAK_DROP_PERCENT"):
+                        await self.press("نگه‌داشتن مقدار فعلی")
+                    await self.press("نگه‌داشتن مقدار فعلی")
+                await self.press("نگه‌داشتن مقدار فعلی")
+                await self.press("تأیید و ذخیره")
+                self.assertEqual(
+                    self.alerts.get("1", rule["id"])["definition"], previous
+                )
+
+    async def test_phase8_channel_builder_all_strategies_and_back(self):
+        await self.new_channel_draft()
+        await self.press("افزودن شرط")
+        await self.press("حجم صف به عدد مشخصی برسد")
+        await self.press("بازگشت")
+        await self.press("حجم صف به عدد مشخصی برسد")
+        await self.press("حجم صف فروش بیشتر یا مساوی مقدار مشخص")
+        await self.press("تنظیم فاصلهٔ بازگشت")
+        await self.send("۱۰")
+        await self.send("۲۰۰۰۰۰۰")
+        await self.press("افزودن شرط")
+        await self.press("صف نسبت به بیشترین حجم کاهش یابد")
+        await self.press("کاهش صف فروش نسبت به بیشترین حجم مشاهده‌شده")
+        await self.press("۵۰٪")
+        await self.press("نگه‌داشتن مقدار فعلی")
+        await self.press("افزودن شرط")
+        await self.press("صف در مدت کوتاه سریع کاهش یابد")
+        await self.press("کاهش صف فروش")
+        await self.press("۱۵ دقیقه")
+        await self.send("۳۰")
+        await self.press("نگه‌داشتن مقدار فعلی")
+        save = self.button("تأیید و ذخیره")
+        await self.click(save)
+        await self.click(save)
+        rules = self.channels.list("1")
+        self.assertEqual(len(rules), 1)
+        leaves = rules[0]["definition"]["conditions"]
+        self.assertEqual(
+            leaves[1]["config"], dict(thresholdVolume=2000000, hysteresisPercent=10)
+        )
+        self.assertEqual(leaves[2]["config"]["thresholdPercent"], 50)
+        self.assertEqual(leaves[3]["config"]["windowMinutes"], 15)
+
+    async def test_quality_settings_tokens_confirmation_and_private_admin_scope(self):
+        await self.watch()
+        self.alerts.admins = self.admins
+        rule = self.alerts.create("1", ITEM.ins_code, DROP)
+        await self.click(f"ad:qualityp:{rule}")
+        old = self.button("تغییر وضعیت ثبت نتیجه")
+        await self.press("مهم")
+        await self.click(old)  # A previous step's token is no longer usable.
+        self.assertFalse(self.bot.admin.settings["1"].settings["outcome_tracking"])
+        await self.send("/help")
+        await self.click(f"qf:{self.bot.admin.settings['1'].token}:thresholds")
+        await self.send("۷۵ ۵۰")
+        self.assertIn("نامعتبر", self.texts()[-1])
+        await self.send("۵۰ ۷۵")
+        await self.press("تغییر وضعیت ثبت نتیجه")
+        await self.press("فاصلهٔ اعلان‌ها")
+        await self.send("۱۲۰")
+        save = self.button("تأیید و ذخیرهٔ تنظیمات بالا")
+        self.assertIsNone(self.alerts.get("1", rule)["quality_config"])
+        await self.click(save)
+        current = self.alerts.get("1", rule)
+        settings = json.loads(current["quality_config"])
+        self.assertEqual(settings["severity"], "important")
+        self.assertTrue(settings["outcome_tracking"])
+        self.assertEqual(current["cooldown_seconds"], 120)
+        await self.click(save)
+        self.assertEqual(self.alerts.get("1", rule)["revision"], current["revision"])
+        await self.watch(3)
+        other = self.alerts.create("3", ITEM.ins_code, DROP)
+        await self.click(f"ad:qualityp:{other}", 3)
+        self.assertNotIn("3", self.bot.admin.settings)
+        await self.click(f"ad:qualityp:{rule}", 2)
+        self.assertNotIn("2", self.bot.admin.settings)
+
+    async def test_channel_quality_settings_preserve_revision_and_expire(self):
+        await self.send("/admin")
+        item = dict(insCode=ITEM.ins_code, symbol=ITEM.symbol, name=ITEM.name)
+        rule = await self.channels.create("1", item, GROUP)
+        await self.click(f"ad:qualityc:{rule}")
+        await self.press("تغییر وضعیت تشدید")
+        await self.press("حداقل افزایش کاهش")
+        await self.send("۳۰")
+        await self.press("فاصلهٔ تشدید")
+        await self.send("۶۰")
+        save = self.button("تأیید و ذخیرهٔ تنظیمات بالا")
+        # Another admin changes the rule while this draft is open.
+        await self.send("/start", 2)
+        await self.channels.update("2", rule, GROUP, revision=1)
+        await self.click(save)
+        self.assertIn("تغییر کرده", self.texts()[-1])
+        self.assertIsNone(self.channels.get("1", rule)["quality_config"])
+        await self.click(f"ad:qualityc:{rule}")
+        self.clock += 600_001
+        await self.press("تأیید و ذخیرهٔ تنظیمات بالا")
+        self.assertIn("منقضی", self.texts()[-1])
+
+    async def test_quality_save_rechecks_cancellation_after_permission_await(self):
+        await self.send("/admin")
+        item = dict(insCode=ITEM.ins_code, symbol=ITEM.symbol, name=ITEM.name)
+        rule = await self.channels.create("1", item, DROP)
+        await self.click(f"ad:qualityc:{rule}")
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def verify(destination):
+            entered.set()
+            await release.wait()
+            return dict(channelId=destination, title="Test", canPost=True)
+
+        self.channels.verify = verify
+        task = asyncio.create_task(self.press("تأیید و ذخیرهٔ تنظیمات بالا"))
+        await entered.wait()
+        await self.send("/cancel")
+        release.set()
+        await task
+        self.assertEqual(self.channels.get("1", rule)["revision"], 1)
+        self.assertIsNone(self.channels.get("1", rule)["quality_config"])
+
+    async def test_stats_channel_history_admin_only_and_private_history_pagination(
+        self,
+    ):
+        await self.send("/stats", 3)
+        self.assertIn("دسترسی", self.texts()[-1])
+        await self.send("/stats")
+        self.assertIn("تعداد هشدارها: ۰", self.texts()[-1])
+        self.assertIn("دادهٔ کافی موجود نیست", self.texts()[-1])
+        await self.watch()
+        rule = self.alerts.create("1", ITEM.ins_code, DROP)
+        for i in range(11):
+            self.db.execute(
+                "INSERT INTO alert_events (id, rule_id, message, created_at) VALUES (?, ?, ?, ?)",
+                (str(i), rule, f"old-{i}", NOW + i),
+            )
+        await self.send("/history")
+        self.assertIn("history:1", self.button("بعدی"))
+        await self.press("بعدی")
+        self.assertEqual(self.texts()[-1], "old-0")
+        await self.click("ad:history:0", 3)
+        self.assertEqual(self.calls[-1][0], "answerCallbackQuery")
+        self.assertIn("دسترسی", self.calls[-1][1]["text"])
+
     async def test_admin_status_distinguishes_destination_permission_and_network_failures(
         self,
     ):
@@ -196,24 +539,25 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.press("تأیید و ذخیره", actor=2)
         self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
 
-    async def test_group_note_requires_reply_and_cannot_post_manual_messages(self):
-        await self.watch()
-        self.enable_group_replies()
-        await self.group_send("/alert")
-        await self.group_press("انتخاب این گروه")
-        await self.group_send("خودرو")
-        await self.group_press(ITEM.symbol)
-        await self.group_press("ویرایش یادداشت نماد")
-        await self.group_send("نادیده", reply=False)
-        self.assertFalse(self.bot.admin.messages[f"{CHANNEL}:1"].preview)
-        await self.group_send("یادداشت گروه")
-        confirm = self.button("تأیید و ذخیره")
-        await self.group_click(confirm, actor=2)
-        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "")
-        await self.group_click(confirm)
-        self.assertEqual(self.channels.symbol_note(ITEM.ins_code), "یادداشت گروه")
-        await self.group_click("ad:post")
-        self.assertNotIn(f"{CHANNEL}:1", self.bot.admin.messages)
+    async def test_group_rules_are_created_and_managed_entirely_in_private(self):
+        for kind in ("group", "supergroup"):
+            self.chat_type = kind
+            confirm = await self.new_channel_draft()
+            await self.click(confirm)
+            rule = self.channels.list("1")[0]
+            self.assertEqual(rule["channel_id"], CHANNEL)
+            self.assertFalse(self.alerts.list("1"))
+            await self.click("ad:view:" + rule["id"])
+            await self.press("حذف")
+            await self.press("تأیید حذف")
+            self.assertFalse(self.channels.list("1"))
+        self.assertTrue(
+            all(
+                str(payload["chat_id"]) == "1"
+                for method, payload in self.calls
+                if method in ("sendMessage", "editMessageText")
+            )
+        )
 
     async def test_help_examples_are_separate_and_work_in_the_private_wizard(self):
         await self.send("/help")
@@ -242,154 +586,56 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rule["definition"]["config"]["thresholdPercent"], 30)
         self.assertEqual(rule["definition"]["config"]["minimumBaselineVolume"], 100000)
 
-    async def group_send(self, content, actor=1, *, reply=True, chat=CHANNEL):
-        self.sequence += 1
-        update = message(
-            actor, content, chat=int(chat), kind="supergroup", update_id=self.sequence
-        )
-        draft = self.bot.admin.drafts.get(f"{chat}:{actor}")
-        if reply and draft and draft.message_id:
-            update["message"]["reply_to_message"] = dict(message_id=draft.message_id)
-        await self.bot.handle_update(update)
-
-    async def group_click(self, data, actor=1, *, chat=CHANNEL):
-        self.sequence += 1
-        update = callback(
-            actor, data, chat=int(chat), kind="supergroup", update_id=self.sequence
-        )
-        update["callback_query"]["message"]["message_id"] = self.group_message_id
-        await self.bot.handle_update(update)
-
-    async def group_press(self, label, actor=1):
-        await self.group_click(self.button(label), actor)
-
-    def enable_group_replies(self):
-        self.chat_type = "supergroup"
-        self.group_message_id = 100
-
-        async def hook(method, payload):
-            if method in ("sendMessage", "editMessageText"):
-                if method == "sendMessage":
-                    self.group_message_id += 1
-                else:
-                    self.group_message_id = payload["message_id"]
-                return httpx.Response(
-                    200,
-                    json=dict(ok=True, result=dict(message_id=self.group_message_id)),
-                )
-
-        self.hook = hook
-
-    async def test_group_commands_build_manage_and_delete_only_group_rules(self):
-        await self.watch()
-        private = self.alerts.create("1", ITEM.ins_code, DROP)
-        self.enable_group_replies()
-        await self.group_send("/admin@test_bot")
-        await self.group_press("ساخت هشدار جدید")
-        await self.group_press("انتخاب این گروه")
-        self.search.reset_mock()
-        await self.group_send("unrelated admin conversation", reply=False)
-        self.search.assert_not_awaited()
-        await self.group_send("خودرو")
-        await self.group_press(ITEM.symbol)
-        await self.group_press("از بین رفتن صف خرید")
-        await self.group_send("۰")
-        saved = self.button("تأیید و ذخیره")
-        await self.group_click(saved)
-        await self.group_click(saved)
-        group_rules = self.channels.list("1")
-        self.assertEqual(len(group_rules), 1)
-        self.assertEqual(group_rules[0]["channel_id"], CHANNEL)
-        self.assertEqual(len(self.alerts.list("1")), 1)
-        await self.group_send("/alerts")
-        self.assertNotIn(private, str(self.calls[-1]))
-        await self.group_click("ad:view:" + group_rules[0]["id"])
-        await self.group_press("حذف")
-        await self.group_press("تأیید حذف")
-        self.assertFalse(self.channels.list("1"))
-        self.assertIsNotNone(self.alerts.get("1", private))
-
-    async def test_group_never_registers_users_or_accepts_other_groups_nonadmins(self):
-        self.enable_group_replies()
-        await self.group_send("/admin")
-        self.assertFalse(self.calls)
-        self.assertEqual(rows(self.db, "SELECT * FROM users"), [])
-        await self.send("/start")
-        await self.send("/start", 3)
-        self.calls.clear()
-        for actor, chat in ((1, "-999"), (2, CHANNEL), (3, CHANNEL), (9, CHANNEL)):
-            await self.group_send("/admin", actor, chat=chat)
-            await self.group_click("ad:new", actor, chat=chat)
-        self.assertFalse(self.calls)
-        self.assertEqual(len(rows(self.db, "SELECT * FROM users")), 2)
-        await self.group_send("/admin@another_bot")
-        self.assertFalse(self.calls)
-        await self.group_send("/admin")
-        self.assertEqual(str(self.calls[-1][1]["chat_id"]), CHANNEL)
-        self.admins.remove("1")
-        self.calls.clear()
-        await self.group_click("ad:new")
-        self.assertFalse(self.calls)
-
-    async def test_group_replies_stop_after_bot_demotion_or_admin_revocation_during_check(
-        self,
-    ):
-        await self.send("/start")
-        self.enable_group_replies()
-        self.member_status = "member"
-        self.calls.clear()
-        await self.group_send("/admin")
-        self.assertFalse(any(method == "sendMessage" for method, _ in self.calls))
-        self.member_status = "administrator"
-        original = self.hook
-
-        async def revoke(method, payload):
-            if method == "getChatMember":
-                self.admins.remove("1")
-            return await original(method, payload)
-
-        self.hook = revoke
-        self.calls.clear()
-        await self.group_send("/admin")
-        self.assertFalse(any(method == "sendMessage" for method, _ in self.calls))
-
-    async def test_group_private_buttons_preferences_and_drafts_are_separate(self):
-        await self.watch()
-        await self.send("/admin")
-        await self.press("ساخت هشدار جدید")
-        private_draft = self.bot.admin.drafts["1"]
-        private_token = private_draft.token
-        self.enable_group_replies()
-        await self.group_send("/alert")
-        group_draft = self.bot.admin.drafts[f"{CHANNEL}:1"]
-        self.assertIsNot(group_draft, private_draft)
-        await self.group_click(f"af:{private_token}:channel")
-        self.assertEqual(private_draft.step, "channel")
-        self.assertEqual(group_draft.step, "channel")
-        await self.send("/start", 2)
-        before = sum(
-            method in ("sendMessage", "editMessageText") for method, _ in self.calls
-        )
-        await self.group_click(f"af:{group_draft.token}:channel", actor=2)
-        self.assertEqual(
-            sum(
-                method in ("sendMessage", "editMessageText") for method, _ in self.calls
-            ),
-            before,
-        )
-        self.assertEqual(group_draft.step, "channel")
-        await self.group_click("notifications:off")
-        self.assertTrue(self.users.preferences("1")["notifications_enabled"])
-        for command in ("/list", "/history", "/queue خودرو", "/remove خودرو"):
-            await self.group_send(command)
-            self.assertIn("خصوصی", self.texts()[-1])
-            self.assertNotIn(ITEM.symbol, self.texts()[-1])
-        await self.group_send("/cancel")
-        self.assertIn("1", self.bot.admin.drafts)
-        self.assertNotIn(f"{CHANNEL}:1", self.bot.admin.drafts)
-        await self.group_click("ad:status")
-        self.assertIn("خصوصی", self.texts()[-1])
-        self.assertNotIn("آخرین خطای", self.texts()[-1])
+    async def test_group_interactions_are_ignored_before_registration_or_handlers(self):
+        for registered in (False, True):
+            if registered:
+                await self.send("/start")
+                await self.send("/start", 3)
+                await self.new_channel_draft()
+            before = rows(self.db, "SELECT * FROM users")
+            drafts = dict(self.bot.admin.drafts)
+            token = drafts["1"].token if registered else "expired"
+            self.calls.clear()
+            self.search.reset_mock()
+            for kind in ("group", "supergroup", "channel"):
+                for actor, chat in (
+                    (1, CHANNEL),
+                    (2, CHANNEL),
+                    (3, CHANNEL),
+                    (9, CHANNEL),
+                    (1, "-999"),
+                ):
+                    for content in (
+                        "/admin",
+                        "/admin@test_bot",
+                        "/start",
+                        "/help",
+                        "/alert",
+                        "/alerts",
+                        "/status",
+                        "/cancel",
+                        "خودرو",
+                    ):
+                        await self.bot.handle_update(
+                            message(actor, content, chat=int(chat), kind=kind)
+                        )
+                    for data in (
+                        "ad:new",
+                        "ad:post",
+                        f"ad:note:{ITEM.ins_code}",
+                        "ad:status",
+                        f"af:{token}:channel",
+                        "notifications:off",
+                        "nav:alert",
+                    ):
+                        await self.bot.handle_update(
+                            callback(actor, data, chat=int(chat), kind=kind)
+                        )
+            self.assertFalse(self.calls)
+            self.search.assert_not_awaited()
+            self.assertEqual(rows(self.db, "SELECT * FROM users"), before)
+            self.assertEqual(self.bot.admin.drafts, drafts)
+            self.assertFalse(self.channels.list("1") if registered else [])
 
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
@@ -616,27 +862,6 @@ class BotTests(unittest.IsolatedAsyncioTestCase):
         await self.click("nav:resume")
         self.assertNotIn("1", self.bot.admin.drafts)
         self.assertIn("منقضی", self.texts()[-1])
-
-    async def test_group_help_and_status_preserve_reply_scoped_draft(self):
-        await self.private_draft()
-        private = self.bot.flows["1"]
-        self.search.reset_mock()
-        self.enable_group_replies()
-        await self.group_send("/alert")
-        self.assertIs(self.bot.flows["1"], private)
-        self.assertNotIn("کنار گذاشته", self.texts()[-1])
-        await self.group_press("انتخاب این گروه")
-        scope = f"{CHANNEL}:1"
-        draft = self.bot.admin.drafts[scope]
-        for command in ("/help", "/status"):
-            await self.group_send(command)
-            self.assertIs(self.bot.admin.drafts[scope], draft)
-        await self.group_send("خودرو", reply=False)
-        self.search.assert_not_awaited()
-        await self.group_send("خودرو")
-        self.search.assert_awaited_once()
-        await self.group_click("nav:alert")
-        self.assertIs(self.bot.flows["1"], private)
 
     async def test_switching_private_and_shared_editors_discards_previous_draft(self):
         await self.private_draft()

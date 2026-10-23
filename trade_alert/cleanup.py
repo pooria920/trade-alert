@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from collections.abc import Callable
 
 from .snapshots import SnapshotRepository
 from .validation import integer
@@ -14,6 +15,7 @@ class SnapshotCleanup:
         retention_ms: int,
         interval_ms: int,
         logger: logging.Logger | None = None,
+        extra_cleanup: Callable[[], int] | None = None,
     ) -> None:
         self.repository = repository
         self.retention_ms = integer(retention_ms)
@@ -21,6 +23,8 @@ class SnapshotCleanup:
         self.logger = logger or logging.getLogger(__name__)
         self.next_run = 0
         self.task: asyncio.Task[None] | None = None
+        self.extra_cleanup = extra_cleanup
+        self.lifecycle_cleanup: Callable[[], int] | None = None
 
     def run_if_due(self, now: int, stop: asyncio.Event) -> None:
         now = integer(now)
@@ -48,6 +52,16 @@ class SnapshotCleanup:
                 self.logger.info(
                     "Expired snapshots removed", extra={"removed": removed}
                 )
+            while not stop.is_set():
+                if self.repository.delete_expired_peaks(cutoff) < 1000:
+                    break
+                await asyncio.sleep(0)
+            for cleanup in (self.extra_cleanup, self.lifecycle_cleanup):
+                while not stop.is_set() and cleanup is not None:
+                    count = cleanup()
+                    if count < 1000:
+                        break
+                    await asyncio.sleep(0)
         except Exception:
             self.logger.error("Snapshot cleanup failed")
 

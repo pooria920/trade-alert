@@ -9,11 +9,13 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import uuid4
 
-from .bot_text import PRIVATE_TYPES, history_text
+from .bot_text import PRIVATE_TYPES, history_text, tehran_time
 from .channels import ChannelService
 from .composite import parse_evidence
 from .database import rows, transaction
-from .definitions import parse_definition
+from .definitions import Condition, parse_definition, parse_tree
+from .evaluators import PeakConfig, ThresholdConfig
+from .quality import SEVERITIES, stored_policy
 from .telegram import TelegramError
 from .users import UserService, now_ms
 from .validation import choice, integer, loads, number, obj, text
@@ -41,6 +43,8 @@ def parse_payload(raw: str | None) -> dict[str, Any]:
     p = obj(loads(raw))
     text(p["symbol"], 80, trim=False, minimum=0)
     integer(p["timestamp"])
+    if "severity" in p:
+        choice(p["severity"], SEVERITIES)
     if p["type"] == "COMPOSITE":
         if p["operator"] is not None:
             choice(p["operator"], ("AND", "OR"))
@@ -53,11 +57,26 @@ def parse_payload(raw: str | None) -> dict[str, Any]:
         number(p["actualPercent"], 0, 100)
         if p["windowMinutes"] is not None:
             number(p["windowMinutes"], -float("inf"))
+        if p["type"].endswith(("VOLUME_BELOW", "VOLUME_ABOVE", "PEAK_DROP_PERCENT")):
+            definition = parse_tree(p["definition"])
+            if (
+                not isinstance(definition, Condition)
+                or definition.type != p["type"]
+                or not isinstance(definition.config, (PeakConfig, ThresholdConfig))
+            ):
+                raise ValueError("Invalid strategy evidence")
     return p
 
 
 def format_notification(payload: dict[str, Any], now: int, max_age_ms: int) -> str:
-    message = history_text(dict(payload=json.dumps(payload)))
+    message = history_text(
+        dict(
+            payload=json.dumps(payload),
+            severity=payload.get("severity", "normal"),
+            ins_code=payload.get("insCode"),
+        )
+    )
+    message += "\nزمان اعلان: " + tehran_time(now)
     if now - payload["timestamp"] > max_age_ms:
         message += "\nارسال با تأخیر؛ این هشدار مربوط به زمان دادهٔ بالا است."
     return message
@@ -127,7 +146,7 @@ class NotificationDispatcher:
                 return None
             due = rows(
                 self.db,
-                "SELECT o.*, e.rule_id, e.payload, e.rule_revision, r.channel_id, r.ins_code FROM notification_outbox o JOIN alert_events e ON e.id=o.event_id JOIN alert_rules r ON r.id=e.rule_id WHERE (o.status='PENDING' AND o.next_attempt_at<=?) OR (o.status='SENDING' AND (o.lease_until IS NULL OR o.lease_until<=?)) ORDER BY o.next_attempt_at, o.event_id LIMIT 1",
+                "SELECT o.*, e.rule_id, e.payload, e.rule_revision, e.severity, r.channel_id, r.ins_code FROM notification_outbox o JOIN alert_events e ON e.id=o.event_id JOIN alert_rules r ON r.id=e.rule_id WHERE (o.status='PENDING' AND o.next_attempt_at<=?) OR (o.status='SENDING' AND (o.lease_until IS NULL OR o.lease_until<=?)) ORDER BY o.next_attempt_at, o.event_id LIMIT 1",
                 (now, now),
             )
             if not due:
@@ -175,6 +194,10 @@ class NotificationDispatcher:
         if not current:
             return None
         rule = current[0]
+        try:
+            stored_policy(rule["quality_config"])
+        except ValueError, TypeError, KeyError, RecursionError, OverflowError:
+            return None
         if (
             rule["owner_id"] is None
             or not rule["enabled"]
@@ -243,6 +266,8 @@ class NotificationDispatcher:
             return
         try:
             payload = parse_payload(item["payload"])
+            payload["severity"] = choice(item["severity"], SEVERITIES)
+            payload["insCode"] = item["ins_code"]
             message = format_notification(
                 payload, self.now(), self.options.market_max_age_ms
             )

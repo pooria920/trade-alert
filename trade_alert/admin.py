@@ -7,24 +7,36 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
+from .alerts import AlertService
 from .bot_text import (
+    ADMIN_TYPES,
+    HYSTERESIS_PROMPT,
     LABELS,
+    LIFECYCLE_LABELS,
     LIVE_NOTICE,
     PERCENT_PROMPT,
     PERMISSION_NOTICES,
     TYPE_PROMPT,
     WINDOW_PROMPT,
     fa,
+    first_step,
+    history_text,
     minimum_prompt,
     numeric,
     numeric_error,
+    statistics_text,
     tehran_time,
     tree_text,
+    type_buttons,
+    wizard_config,
 )
 from .channels import ChannelService
+from .database import rows
 from .definitions import definition_json, parse_tree
+from .lifecycle import LifecycleTracker
 from .market import Instrument
 from .market_service import MarketService
+from .quality import SEVERITIES, SEVERITY_LABELS, parse_policy, stored_policy
 from .telegram import Buttons, Context
 from .validation import integer, text
 
@@ -48,6 +60,10 @@ class ChannelDraft:
     revision: int | None = None
     saving: bool = False
     message_id: int | None = None
+    hysteresis: float = 5
+    legacy_volume: bool = False
+    family: str = ""
+    disappearance_seconds: int = 0
 
     def tree(self) -> dict[str, Any]:
         return definition_json(
@@ -68,19 +84,46 @@ class MessageDraft:
     message_id: int | None = None
 
 
+@dataclass(slots=True)
+class QualityDraft:
+    expires: int
+    channel_id: str
+    private: bool
+    rule: dict[str, Any]
+    settings: dict[str, Any]
+    cooldown: int
+    token: str = ""
+    field: str = ""
+    saving: bool = False
+
+
 class AdminCommands:
     def __init__(
-        self, channels: ChannelService, market: MarketService, now: Callable[[], int]
+        self,
+        channels: ChannelService,
+        market: MarketService,
+        now: Callable[[], int],
+        alerts: AlertService | None = None,
+        *,
+        lifecycle: LifecycleTracker | None = None,
+        is_market_open: Callable[[], bool] = lambda: False,
+        session_at: Callable[[int], str | None] = lambda timestamp: None,
     ) -> None:
         self.channels, self.market, self.now = channels, market, now
         # ponytail: one ten-minute draft per admin/chat (private + one group), lost on restart.
         self.drafts: dict[str, ChannelDraft] = {}
         self.messages: dict[str, MessageDraft] = {}
+        self.settings: dict[str, QualityDraft] = {}
+        self.alerts = alerts
+        self.lifecycle = lifecycle or LifecycleTracker(channels.db)
+        self.is_market_open = is_market_open
+        self.session_at = session_at
 
     def discard(self, scope: str) -> bool:
         rule = self.drafts.pop(scope, None)
         message = self.messages.pop(scope, None)
-        return rule is not None or message is not None
+        quality = self.settings.pop(scope, None)
+        return rule is not None or message is not None or quality is not None
 
     def _live(self, scope: str, draft: ChannelDraft) -> bool:
         return (
@@ -93,12 +136,16 @@ class AdminCommands:
         self.channels.authorize(ctx.actor)
         self.drafts.pop(ctx.scope, None)
         self.messages.pop(ctx.scope, None)
+        self.settings.pop(ctx.scope, None)
         await ctx.reply(
             ("مدیریت هشدارهای گروه" if ctx.group_id else "مدیریت هشدارهای مقصد مشترک")
             + f"\nمقصد: {self.channels.status(ctx.actor)['title']}\n{LIVE_NOTICE}",
             [
                 ("ساخت هشدار جدید", "ad:new"),
                 ("مشاهده هشدارها", "ad:list:0"),
+                ("تاریخچه و نتیجهٔ هشدارها", "ad:history:0"),
+                ("آمار ۳۰ روز اخیر", "ad:stats"),
+                ("رفتار مشاهده‌شدهٔ صف", "ad:life:page:0"),
                 ("وضعیت گروه" if ctx.group_id else "وضعیت مقصد مشترک", "ad:status"),
             ]
             + ([] if ctx.group_id else [("ارسال پیام به گروه یا کانال", "ad:post")]),
@@ -126,16 +173,43 @@ class AdminCommands:
                 TYPE_PROMPT
                 + "\n«حداقل حجم صف» یعنی حجم سفارش‌های صف به تعداد سهم تعیین‌شده برسد؛ نه حجم معاملات."
             )
-            actions = [(LABELS[t], f"type{i}") for i, t in enumerate(LABELS)]
+            actions = type_buttons(draft.family, channel=True)
+            if draft.family in ("life", "formed", "weakened", "gone", "reformed"):
+                prompt = f"هشدارهای رفتار صف\nچه اتفاقی را بررسی کنیم؟\nتأیید تغییر پس از {fa(self.lifecycle.options.confirmation_snapshots)} مشاهدهٔ تازهٔ پیاپی؛ وقفهٔ داده رویداد بازار نیست."
         elif draft.step == "percent":
             prompt = PERCENT_PROMPT
+            actions = [(fa(n) + "٪", f"percent{n}") for n in (10, 20, 30, 50, 75)]
+            if draft.selected_type in LIFECYCLE_LABELS:
+                actions.append(("مقدار دلخواه", "custom"))
+        elif draft.step == "hysteresis":
+            prompt = HYSTERESIS_PROMPT
         elif draft.step == "window":
             prompt, actions = (
                 WINDOW_PROMPT,
-                [("۱ دقیقه", "window1"), ("۵ دقیقه", "window5")],
+                [
+                    ("۱ دقیقه", "window1"),
+                    ("۵ دقیقه", "window5"),
+                    ("۱۵ دقیقه", "window15"),
+                ],
             )
         elif draft.step == "minimum":
             prompt = minimum_prompt(draft.selected_type)
+            if draft.selected_type in LIFECYCLE_LABELS:
+                actions = [
+                    (fa(v // 1_000_000) + " میلیون", f"volume{v}")
+                    for v in (1_000_000, 5_000_000, 10_000_000)
+                ] + [("مقدار دلخواه", "custom")]
+            if draft.selected_type.endswith("REFORMED"):
+                actions.append(("تنظیم فاصله تا تشکیل دوباره", "duration"))
+            if (
+                draft.selected_type.endswith(
+                    ("VOLUME_BELOW", "VOLUME_ABOVE", "PEAK_DROP_PERCENT")
+                )
+                and not draft.legacy_volume
+            ):
+                actions.append(("تنظیم فاصلهٔ بازگشت", "hysteresis"))
+        elif draft.step == "duration":
+            prompt = "حداقل چند ثانیه پس از جمع شدن تأییدشده، تشکیل دوباره بررسی شود؟ عددی از ۰ تا ۸۶۴۰۰ بنویسید. پیش‌فرض ۰ است."
         elif draft.step == "builder":
             detail = (
                 tree_text(parse_tree(draft.tree()))
@@ -191,6 +265,113 @@ class AdminCommands:
             [(label, f"af:{draft.token}:{action}") for label, action in actions],
             edit=True,
         )
+
+    def _lifecycle_symbols(self, actor: str) -> dict[str, str]:
+        self.channels.authorize(actor)
+        shared = {i.ins_code: i.symbol for i in self.channels.monitored_symbols()}
+        shared.update(
+            {
+                r["ins_code"]: r["symbol"]
+                for r in self.channels.users.list_symbols(actor)
+            }
+        )
+        return shared
+
+    async def lifecycle_menu(self, ctx: Context, page: int = 0) -> None:
+        symbols = sorted(
+            self._lifecycle_symbols(ctx.actor).items(), key=lambda item: item[1]
+        )
+        page = max(0, min(page, max(0, (len(symbols) - 1) // 10)))
+        buttons = [
+            (symbol, f"ad:life:buy:{code}")
+            for code, symbol in symbols[page * 10 : page * 10 + 10]
+        ]
+        if page:
+            buttons.append(("قبلی", f"ad:life:page:{page - 1}"))
+        if (page + 1) * 10 < len(symbols):
+            buttons.append(("بعدی", f"ad:life:page:{page + 1}"))
+        buttons.append(("بازگشت", "ad:menu"))
+        await ctx.reply(
+            "رفتار مشاهده‌شدهٔ صف؛ نماد شخصی خودتان یا مقصد مشترک را انتخاب کنید:"
+            if symbols
+            else "نمادی در فهرست شخصی شما یا هشدارهای فعال مقصد مشترک نیست.",
+            buttons,
+            edit=True,
+        )
+
+    async def lifecycle_detail(self, ctx: Context, ins_code: str, side: str) -> None:
+        symbols = self._lifecycle_symbols(ctx.actor)
+        if ins_code not in symbols or side not in ("buy", "sell"):
+            await ctx.reply("این نماد در محدودهٔ دسترسی فعلی نیست.", edit=True)
+            return
+        found = rows(
+            self.channels.db,
+            "SELECT * FROM queue_lifecycle_states WHERE ins_code=? AND side=?",
+            (ins_code, side),
+        )
+        buttons = [
+            ("صف خرید", f"ad:life:buy:{ins_code}"),
+            ("صف فروش", f"ad:life:sell:{ins_code}"),
+            ("بازگشت", "ad:life:page:0"),
+        ]
+        title = f"رفتار صف {'خرید' if side == 'buy' else 'فروش'} {symbols[ins_code]}"
+        if not found:
+            await ctx.reply(
+                title + "\nمشاهدهٔ تأییدشده‌ای ثبت نشده است.\n" + LIVE_NOTICE,
+                buttons,
+                edit=True,
+            )
+            return
+        state = found[0]
+        fresh = (
+            self.is_market_open()
+            and self.session_at(self.now()) == state["session_id"]
+            and state["observation_valid"]
+            and state["continuous"]
+            and not state["pending_count"]
+            and 0
+            <= self.now() - state["last_source_at"]
+            <= min(self.lifecycle.options.max_gap_ms, self.market.detector.max_age_ms)
+        )
+        labels = {
+            "UNKNOWN": "هنوز تأیید نشده",
+            "NO_QUEUE": "بدون صف",
+            "ACTIVE": "صف فعال",
+            "WEAKENED": "صف ضعیف‌شده",
+            "DISAPPEARED": "جمع شدن صف تأیید شده",
+        }
+        peaks = rows(
+            self.channels.db,
+            "SELECT * FROM queue_session_peaks WHERE ins_code=? AND session_id=?",
+            (ins_code, state["session_id"]),
+        )
+        peak = peaks[0][f"{side}_volume"] if peaks else 0
+        message = (
+            title
+            + f"\nآخرین وضعیت تأییدشده: {labels.get(state['status'], 'نامشخص')}\nمشاهدهٔ فعلی: {'معتبر و تازه' if fresh else 'در دسترس نیست یا هنوز تأیید نشده'}"
+        )
+        message += f"\nآخرین حجم تأییدشده: {fa(state['last_volume']) if state['last_volume'] is not None else 'موجود نیست'} سهم\nبیشترین حجم مشاهده‌شده: {fa(peak) if peak else 'موجود نیست'} سهم\nدفعات تشکیل دوباره: {fa(state['cycles'])}\nآخرین تشکیل: {tehran_time(state['last_formed_at'])}\nآخرین جمع شدن: {tehran_time(state['last_disappeared_at'])}\nآخرین مشاهده: {tehran_time(state['last_source_at'])}\nشروع پوشش مشاهده: {tehran_time(state['first_observed_at'])}"
+        events = [
+            e
+            for e in self.lifecycle.history(ins_code, state["session_id"])
+            if e["side"] == side
+        ][:5]
+        event_labels = {
+            "QUEUE_FORMED": "تشکیل صف",
+            "QUEUE_WEAKENED": "ضعیف شدن صف",
+            "QUEUE_DISAPPEARED": "جمع شدن صف",
+            "QUEUE_REFORMED": "تشکیل دوباره صف",
+        }
+        message += "\nرویدادهای اخیر همین جلسه:\n" + (
+            "\n".join(
+                f"{event_labels[e['event_type']]}: {tehran_time(e['timestamp'])}"
+                for e in events
+            )
+            or "رویدادی ثبت نشده است."
+        )
+        message += "\nزمان آخرین حجم تأییدشده: " + tehran_time(state["last_volume_at"])
+        message += "\nپوشش از ابتدای جلسه تضمین نمی‌شود. این مشاهدهٔ رفتار صف است، نه توصیهٔ معامله."
+        await ctx.reply(message, buttons, edit=True)
 
     async def list(self, ctx: Context, page: int = 0) -> None:
         rules = self.channels.list(ctx.actor)
@@ -374,6 +555,10 @@ class AdminCommands:
             await ctx.answer("دسترسی ندارید.")
             return
         self.channels.authorize(ctx.actor)
+        if ctx.data.startswith("qf:"):
+            await ctx.answer()
+            await self._quality_callback(ctx)
+            return
         if ctx.data.startswith("ad:write:"):
             await self._message_callback(ctx)
             return
@@ -385,13 +570,61 @@ class AdminCommands:
                 await self._draft_callback(ctx, match[1], match[2])
             return
         action = ctx.data[3:]
+        if action.startswith("life:"):
+            match = re.fullmatch(r"life:(buy|sell|page):([0-9]+)", action)
+            if match:
+                if match[1] == "page":
+                    await self.lifecycle_menu(ctx, integer(int(match[2]), 0, 1_000_000))
+                else:
+                    await self.lifecycle_detail(ctx, match[2], match[1])
+            return
         if action == "menu":
             await self.menu(ctx)
         elif action == "status":
             await self.status(ctx)
         elif action == "new":
             await self.new(ctx)
+        elif action == "stats":
+            await ctx.reply(
+                statistics_text(await self.channels.statistics(ctx.actor)),
+                [("بازگشت", "ad:menu")],
+                edit=True,
+            )
+        elif match := re.fullmatch(r"history:([0-9]{1,7})", action):
+            page = int(match[1])
+            events = self.channels.history(ctx.actor, page)
+            for event in events:
+                await ctx.reply(history_text(event))
+            buttons = [("بازگشت", "ad:menu")]
+            if page:
+                buttons.append(("قبلی", f"ad:history:{page - 1}"))
+            if len(events) == 10:
+                buttons.append(("بعدی", f"ad:history:{page + 1}"))
+            await ctx.reply(
+                "تاریخچهٔ مقصد مشترک" if events else "رخداد دیگری ثبت نشده است.", buttons
+            )
+        elif match := re.fullmatch(r"quality([pc]):([a-f0-9-]{36})", action):
+            private = match[1] == "p"
+            rule = (
+                self.alerts.get(ctx.actor, match[2])
+                if private and self.alerts
+                else self.channels.get(ctx.actor, match[2])
+                if not private
+                else None
+            )
+            if rule:
+                self.discard(ctx.scope)
+                self.settings[ctx.scope] = QualityDraft(
+                    self.now() + 600_000,
+                    self.channels.channel_id,
+                    private,
+                    rule,
+                    dict(stored_policy(rule["quality_config"]).to_json()),
+                    rule["cooldown_seconds"],
+                )
+                await self._show_quality(ctx)
         elif action == "post" and not ctx.group_id:
+            self.settings.pop(ctx.scope, None)
             self.drafts.pop(ctx.scope, None)
             self.messages[ctx.scope] = MessageDraft(
                 self.now() + 600_000, self.channels.channel_id
@@ -412,6 +645,7 @@ class AdminCommands:
 
     async def new(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
+        self.settings.pop(ctx.scope, None)
         self.messages.pop(ctx.scope, None)
         draft = ChannelDraft(self.now() + 600_000, self.channels.channel_id)
         self.drafts[ctx.scope] = draft
@@ -444,6 +678,7 @@ class AdminCommands:
             else:
                 await self.list(ctx)
         elif action == "edit":
+            self.settings.pop(ctx.scope, None)
             definition = rule["definition"]
             conditions = (
                 definition["conditions"]
@@ -474,6 +709,7 @@ class AdminCommands:
                 f"نماد: {rule['symbol']}\nوضعیت: {'روشن' if rule['enabled'] else 'خاموش'}\n{tree_text(parse_tree(rule['definition']))}",
                 [
                     ("ویرایش", f"ad:edit:{rule_id}"),
+                    ("تنظیمات پیشرفته", f"ad:qualityc:{rule_id}"),
                     (
                         "غیرفعال کردن" if rule["enabled"] else "فعال کردن",
                         f"ad:{'off' if rule['enabled'] else 'on'}:{rule_id}",
@@ -508,7 +744,24 @@ class AdminCommands:
         if action == "note" and draft.instrument:
             await self.compose_note(ctx, draft.instrument)
             return
-        if action == "back":
+        if action == "back" and draft.step == "type" and draft.family:
+            draft.family = (
+                "life"
+                if draft.family in ("formed", "weakened", "gone", "reformed")
+                else ""
+            )
+        elif draft.step == "type" and action in (
+            "familylife",
+            "familyformed",
+            "familyweakened",
+            "familygone",
+            "familyreformed",
+            "familyvolume",
+            "familypeak",
+            "familyrapid",
+        ):
+            draft.family = action[6:]
+        elif action == "back":
             if draft.step == "channel":
                 await self.menu(ctx)
                 return
@@ -516,12 +769,16 @@ class AdminCommands:
                 "search": "channel",
                 "results": "search",
                 "type": "builder" if draft.conditions else "search",
-                "percent": "window",
+                "percent": "type"
+                if draft.selected_type.endswith(("PEAK_DROP_PERCENT", "WEAKENED"))
+                else "window",
                 "window": "type",
                 "minimum": "percent"
-                if draft.selected_type.endswith("DROP_PERCENT")
+                if draft.selected_type.endswith(("DROP_PERCENT", "WEAKENED"))
                 else "type",
                 "builder": "search",
+                "hysteresis": "minimum",
+                "duration": "minimum",
             }[draft.step]
         elif draft.step == "channel" and action == "channel":
             draft.step = "search"
@@ -541,18 +798,56 @@ class AdminCommands:
                 item,
                 "builder" if draft.conditions else "type",
             )
-        elif draft.step == "type" and re.fullmatch(r"type[0-5]", action):
-            draft.selected_type = tuple(LABELS)[int(action[4:])]
+        elif (
+            draft.step == "type"
+            and re.fullmatch(r"type[0-9]+", action)
+            and int(action[4:]) < len(ADMIN_TYPES)
+        ):
+            draft.selected_type = ADMIN_TYPES[int(action[4:])]
             draft.percent, draft.window, draft.minimum = None, None, None
-            draft.step = (
-                "window" if draft.selected_type.endswith("DROP_PERCENT") else "minimum"
+            draft.hysteresis, draft.legacy_volume = 5, int(action[4:]) in (4, 5)
+            draft.disappearance_seconds = 0
+            if draft.selected_type in LIFECYCLE_LABELS:
+                draft.minimum = 0
+            draft.step = first_step(draft.selected_type, "percent")
+        elif draft.step == "window" and action in ("window1", "window5", "window15"):
+            draft.window, draft.step = int(action[6:]), "percent"
+        elif draft.step == "percent" and action in (
+            "percent10",
+            "percent20",
+            "percent30",
+            "percent50",
+            "percent75",
+        ):
+            draft.percent, draft.step = float(action[7:]), "minimum"
+            draft.minimum = 0
+        elif (
+            draft.step == "minimum"
+            and action == "hysteresis"
+            and not draft.legacy_volume
+        ):
+            draft.step = "hysteresis"
+        elif (
+            draft.step == "minimum"
+            and action == "duration"
+            and draft.selected_type.endswith("REFORMED")
+        ):
+            draft.step = "duration"
+        elif draft.step == "minimum" and action in (
+            "volume1000000",
+            "volume5000000",
+            "volume10000000",
+        ):
+            await self.message(
+                replace(
+                    ctx, message_text=action[6:], reply_to_message_id=draft.message_id
+                )
             )
-        elif draft.step == "window" and action in ("window1", "window5"):
-            draft.window, draft.step = int(action[-1]), "percent"
+            return
+        elif draft.step in ("percent", "minimum") and action == "custom":
+            pass
         elif action == "keep" and draft.step == "type" and draft.selected_type:
-            draft.step = (
-                "window" if draft.selected_type.endswith("DROP_PERCENT") else "minimum"
-            )
+            draft.step = first_step(draft.selected_type, "percent")
         elif action == "keep" and draft.step == "window" and draft.window is not None:
             draft.step = "percent"
         elif action == "keep" and draft.step in ("percent", "minimum"):
@@ -570,13 +865,16 @@ class AdminCommands:
         elif draft.step == "builder" and action == "add" and len(draft.conditions) < 8:
             draft.edit_index, draft.step = None, "type"
             draft.selected_type = ""
+            draft.family = ""
             draft.percent, draft.window, draft.minimum = None, None, None
+            draft.hysteresis, draft.legacy_volume = 5, False
         elif draft.step == "builder" and re.fullmatch(r"(?:edit|remove)[0-7]", action):
             index = int(action[-1])
             if index >= len(draft.conditions):
                 return
             if action.startswith("edit"):
                 draft.edit_index, draft.step = index, "type"
+                draft.family = ""
                 condition = draft.conditions[index]
                 draft.selected_type = condition["type"]
                 config = condition["config"]
@@ -586,7 +884,18 @@ class AdminCommands:
                 )
                 draft.minimum = config.get(
                     "minimumBaselineVolume",
-                    config.get("minimumPreviousVolume", config.get("minimumVolume")),
+                    config.get(
+                        "minimumPreviousVolume",
+                        config.get(
+                            "minimumPeakVolume",
+                            config.get("thresholdVolume", config.get("minimumVolume")),
+                        ),
+                    ),
+                )
+                draft.hysteresis = config.get("hysteresisPercent", 5)
+                draft.legacy_volume = "minimumVolume" in config
+                draft.disappearance_seconds = config.get(
+                    "minimumDisappearanceSeconds", 0
                 )
             else:
                 draft.conditions.pop(index)
@@ -657,6 +966,9 @@ class AdminCommands:
 
     async def message(self, ctx: Context) -> None:
         self.channels.authorize(ctx.actor)
+        if ctx.scope in self.settings:
+            await self._quality_message(ctx)
+            return
         outgoing = self.messages.get(ctx.scope)
         if outgoing:
             if (
@@ -720,20 +1032,27 @@ class AdminCommands:
                 if not 0 < value <= 100 or round(value, 6) != value:
                     raise ValueError("Invalid percentage")
                 draft.percent, draft.step = value, "minimum"
-            elif draft.step == "minimum":
-                minimum = integer(
-                    value, 1 if draft.selected_type.endswith("VOLUME_ABOVE") else 0
+                if draft.minimum is None:
+                    draft.minimum = 0
+            elif draft.step == "hysteresis":
+                if not 0 <= value <= 100 or round(value, 6) != value:
+                    raise ValueError("Invalid hysteresis")
+                draft.hysteresis, draft.step = value, "minimum"
+            elif draft.step == "duration":
+                draft.disappearance_seconds, draft.step = (
+                    integer(value, 0, 86_400),
+                    "minimum",
                 )
-                config = (
-                    dict(
-                        thresholdPercent=draft.percent,
-                        windowMinutes=draft.window,
-                        minimumBaselineVolume=minimum,
-                    )
-                    if draft.selected_type.endswith("DROP_PERCENT")
-                    else dict(minimumVolume=minimum)
-                    if draft.selected_type.endswith("VOLUME_ABOVE")
-                    else dict(minimumPreviousVolume=minimum)
+            elif draft.step == "minimum":
+                minimum = integer(value, 1 if "VOLUME_" in draft.selected_type else 0)
+                config = wizard_config(
+                    draft.selected_type,
+                    draft.percent,
+                    draft.window,
+                    minimum,
+                    draft.hysteresis,
+                    draft.legacy_volume,
+                    draft.disappearance_seconds,
                 )
                 condition = definition_json(
                     parse_tree(dict(type=draft.selected_type, config=config))
@@ -750,3 +1069,182 @@ class AdminCommands:
             await self.show(ctx, draft, numeric_error(draft.step, draft.selected_type))
             return
         await self.show(ctx, draft)
+
+    def _quality_live(self, ctx: Context, draft: QualityDraft) -> bool:
+        self.channels.authorize(ctx.actor)
+        return (
+            self.settings.get(ctx.scope) is draft
+            and self.now() <= draft.expires
+            and draft.channel_id == self.channels.channel_id
+        )
+
+    async def _show_quality(self, ctx: Context, notice: str = "") -> None:
+        draft = self.settings[ctx.scope]
+        if not self._quality_live(ctx, draft):
+            self.settings.pop(ctx.scope, None)
+            await ctx.reply("پیش‌نویس منقضی شد. دوباره هشدار را انتخاب کنید.")
+            return
+        draft.token = secrets.token_hex(4)
+        p = parse_policy(draft.settings)
+        summary = (
+            f"تنظیمات پیشرفتهٔ هشدار\nاهمیت پایه: {SEVERITY_LABELS[p.severity]}\n"
+            + "مرزهای اهمیت: "
+            + (
+                "؛ ".join(
+                    f"{SEVERITY_LABELS[t.severity]} از {fa(t.minimum_drop_percent)}٪"
+                    for t in p.thresholds
+                )
+                or "بدون مرز"
+            )
+            + f"\nحذف تکرار: تا بازیابی کامل؛ مستقل برای هر هشدار\nتشدید: {'روشن' if p.escalation_enabled else 'خاموش'}"
+            + f"\nافزایش لازم برای تشدید: {fa(p.additional_drop_percent)} واحد درصد\nفاصلهٔ تشدید: {fa(p.minimum_interval_seconds)} ثانیه"
+            + f"\nفاصلهٔ اعلان‌ها: {fa(draft.cooldown)} ثانیه\nثبت نتیجه: {'روشن' if p.outcome_tracking else 'خاموش'}"
+            + "\nدرصدها توصیهٔ معامله نیستند. تشدید فقط برای شرط کاهش صف با خط مبنای ثابت است."
+        )
+        prompts = dict(
+            thresholds="دو درصد صعودی برای «مهم» و «بحرانی» با فاصله بنویسید؛ مثلاً ۵۰ ۷۵. برای حذف مرزها فقط ۰ بفرستید.",
+            additional_drop_percent="حداقل افزایش کاهش صف را به واحد درصد بنویسید؛ بزرگ‌تر از صفر تا ۱۰۰.",
+            minimum_interval_seconds="حداقل فاصلهٔ تشدید را به ثانیه بنویسید؛ ۱ تا ۸۶۴۰۰.",
+            cooldown="فاصلهٔ اعلان‌ها را به ثانیه بنویسید؛ ۰ تا ۸۶۴۰۰.",
+        )
+        actions = [
+            (label, "severity" + severity)
+            for severity, label in SEVERITY_LABELS.items()
+        ]
+        actions += [
+            ("مرزهای اهمیت", "thresholds"),
+            ("تغییر وضعیت تشدید", "escalation"),
+            ("حداقل افزایش کاهش", "additional_drop_percent"),
+            ("فاصلهٔ تشدید", "minimum_interval_seconds"),
+            ("فاصلهٔ اعلان‌ها", "cooldown"),
+            ("تغییر وضعیت ثبت نتیجه", "outcomes"),
+            ("تأیید و ذخیرهٔ تنظیمات بالا", "save"),
+        ]
+        if draft.field:
+            summary += "\n\n" + prompts[draft.field]
+            actions = [("بازگشت", "back")]
+        actions.append(("لغو", "cancel"))
+        await ctx.reply(
+            (notice + "\n" if notice else "") + summary,
+            [(label, f"qf:{draft.token}:{action}") for label, action in actions],
+            edit=True,
+        )
+
+    async def _quality_callback(self, ctx: Context) -> None:
+        match = re.fullmatch(r"qf:([a-f0-9]{8}):([a-z_]+)", ctx.data)
+        draft = self.settings.get(ctx.scope)
+        if (
+            not match
+            or not draft
+            or not self._quality_live(ctx, draft)
+            or match[1] != draft.token
+        ):
+            await ctx.reply("این انتخاب منقضی یا تغییر کرده است.")
+            return
+        action = match[2]
+        if draft.saving:
+            return
+        if action == "cancel":
+            self.settings.pop(ctx.scope, None)
+            await ctx.reply("لغو شد؛ تنظیمات ذخیره نشد.")
+            return
+        if action == "save" and not draft.field:
+            # Consume before permission awaits; duplicate clicks cannot save twice.
+            draft.token = ""
+            draft.saving = True
+
+            def guard() -> bool:
+                return self._quality_live(ctx, draft)
+
+            try:
+                if draft.private and self.alerts:
+                    changed = self.alerts.update(
+                        ctx.actor,
+                        draft.rule["id"],
+                        draft.rule["definition"],
+                        quality=draft.settings,
+                        cooldown=draft.cooldown,
+                        revision=draft.rule["revision"],
+                    )
+                else:
+                    changed = await self.channels.update(
+                        ctx.actor,
+                        draft.rule["id"],
+                        draft.rule["definition"],
+                        revision=draft.rule["revision"],
+                        quality=draft.settings,
+                        cooldown=draft.cooldown,
+                        guard=guard,
+                    )
+            except Exception:
+                draft.saving = False
+                if self._quality_live(ctx, draft):
+                    await self._show_quality(
+                        ctx, "ذخیره یا بررسی دسترسی ناموفق بود؛ دوباره تلاش کنید."
+                    )
+                return
+            self.settings.pop(ctx.scope, None)
+            await ctx.reply(
+                "تنظیمات ذخیره شد."
+                if changed
+                else "هشدار تغییر کرده یا حذف شده است؛ دوباره انتخاب کنید."
+            )
+            return
+        if draft.field and action != "back":
+            return
+        if action.startswith("severity") and action[8:] in SEVERITIES:
+            draft.settings["severity"] = action[8:]
+        elif action == "escalation":
+            draft.settings["escalation_enabled"] = not draft.settings[
+                "escalation_enabled"
+            ]
+        elif action == "outcomes":
+            draft.settings["outcome_tracking"] = not draft.settings["outcome_tracking"]
+        elif action in (
+            "thresholds",
+            "additional_drop_percent",
+            "minimum_interval_seconds",
+            "cooldown",
+        ):
+            draft.field = action
+        elif action == "back":
+            draft.field = ""
+        await self._show_quality(ctx)
+
+    async def _quality_message(self, ctx: Context) -> None:
+        draft = self.settings[ctx.scope]
+        if draft.saving:
+            return
+        if not self._quality_live(ctx, draft):
+            self.settings.pop(ctx.scope, None)
+            await ctx.reply("پیش‌نویس منقضی شد.")
+            return
+        if not draft.field:
+            await self._show_quality(ctx, "برای تغییر مقدار، دکمهٔ آن را بزنید.")
+            return
+        settings = dict(draft.settings)
+        try:
+            if draft.field == "thresholds":
+                values = [numeric(v) for v in ctx.message_text.split()]
+                if values == [0]:
+                    settings["thresholds"] = []
+                elif len(values) == 2:
+                    settings["thresholds"] = [
+                        dict(severity=s, minimum_drop_percent=v)
+                        for s, v in zip(("important", "critical"), values, strict=True)
+                    ]
+                else:
+                    raise ValueError("Two thresholds required")
+            elif draft.field == "cooldown":
+                cooldown = integer(numeric(ctx.message_text), 0, 86_400)
+                draft.cooldown = cooldown
+            else:
+                settings[draft.field] = numeric(ctx.message_text)
+            draft.settings = dict(parse_policy(settings).to_json())
+            draft.field = ""
+        except ValueError, TypeError, OverflowError:
+            await self._show_quality(
+                ctx, "مقدار نامعتبر است؛ طبق راهنما دوباره بنویسید."
+            )
+            return
+        await self._show_quality(ctx)

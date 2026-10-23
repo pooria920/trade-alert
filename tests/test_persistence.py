@@ -503,6 +503,9 @@ class PersistenceTests(unittest.IsolatedAsyncioTestCase):
                         self.engine.on_snapshot(value, session)
                         states = self.states()
                         for state in states:
+                            # Compare the legacy state machine to its unchanged capture.
+                            state.pop("quality_data")
+                            state.pop("strategy_data")
                             if state["recovery_data"]:
                                 state["recovery_data"] = json.loads(
                                     state["recovery_data"]

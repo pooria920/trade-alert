@@ -3,7 +3,7 @@ from datetime import datetime
 
 from test_parity import oracle
 
-from trade_alert.config import NUMBERS, parse_env
+from trade_alert.config import LIFECYCLE_NUMBERS, NUMBERS, parse_env
 from trade_alert.schedule import MarketSchedule, parse_sessions
 
 REQUIRED = dict(
@@ -132,6 +132,14 @@ class ConfigTests(unittest.TestCase):
                     actual["values"].pop("TELEGRAM_API_HASH")
                     actual["values"].pop("TELEGRAM_MTPROXY_URL")
                     actual["values"].pop("TELEGRAM_PROXY_AUTO")
+                    # Phase 7 settings are covered separately; preserve the captured oracle.
+                    for field in (
+                        "ALERT_OUTCOME_WINDOWS_MINUTES",
+                        "ALERT_OUTCOME_TOLERANCE_SECONDS",
+                        "ALERT_OUTCOME_RETENTION_DAYS",
+                        *LIFECYCLE_NUMBERS,
+                    ):
+                        actual["values"].pop(field)
                 except ValueError:
                     actual = dict(valid=False)
                 self.assertEqual(actual, expected)

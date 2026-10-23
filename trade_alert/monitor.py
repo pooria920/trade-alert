@@ -75,10 +75,14 @@ class MarketMonitor:
         logger: logging.Logger | None = None,
         now: Callable[[], int] = now_ms,
         jitter: Callable[[], float] = random.random,
+        before_cycle: Callable[[], None] | None = None,
+        on_unavailable: Callable[[str, str], None] | None = None,
     ) -> None:
         self.watched, self.market, self.repository = watched, market, repository
         self.schedule, self.cleanup, self.options = schedule, cleanup, options
         self.on_snapshot, self.now, self.jitter = on_snapshot, now, jitter
+        self.before_cycle = before_cycle
+        self.on_unavailable = on_unavailable
         self.logger = logger or logging.getLogger(__name__)
         self.status = MonitorStatus()
         self.symbols: dict[str, SymbolStatus] = {}
@@ -152,6 +156,8 @@ class MarketMonitor:
         self.cycle_done.clear()
         self.status.last_progress_at = self.now()
         try:
+            if self.before_cycle is not None:
+                self.before_cycle()
             instruments = list({i.ins_code: i for i in self.watched()}.values())
             active = {i.ins_code for i in instruments}
             self.symbols = {
@@ -166,6 +172,12 @@ class MarketMonitor:
                 )
             self.status.is_market_open = opened
             if not opened or self.now() < self.status.rate_limited_until:
+                if self.on_unavailable is not None:
+                    for instrument in instruments:
+                        self.on_unavailable(
+                            instrument.ins_code,
+                            "closed" if not opened else "unavailable",
+                        )
                 return
             self.status.last_polling_cycle = self.now()
             queue = iter(instruments)
@@ -264,6 +276,8 @@ class MarketMonitor:
                         failures += 1
                         state.consecutive_errors += 1
                         changed = reason != state.reason
+                        if self.on_unavailable is not None:
+                            self.on_unavailable(instrument.ins_code, reason)
                         state.reason = reason
                         backoff = min(
                             300_000,

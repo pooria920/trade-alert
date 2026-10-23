@@ -18,9 +18,11 @@ from .database import open_database
 from .delivery import DeliveryOptions, NotificationDispatcher
 from .engine import AlertEngine
 from .health import HEALTH_FILE, database_probe, runtime_health, write_heartbeat
+from .lifecycle import LifecycleOptions, LifecycleTracker
 from .logger import create_logger
 from .market_service import MarketService
 from .monitor import MarketMonitor, MonitorOptions
+from .outcomes import AlertOutcomeTracker
 from .schedule import MarketSchedule, parse_sessions
 from .snapshots import SnapshotRepository
 from .telegram import TelegramAPI
@@ -109,6 +111,18 @@ async def run_application(
                 env["ALERT_DEFAULT_COOLDOWN_SECONDS"],
                 env["ALERT_HISTORY_LIMIT"],
                 now,
+                env["TELEGRAM_ADMIN_USER_IDS"],
+            )
+            lifecycle = LifecycleTracker(
+                db,
+                LifecycleOptions(
+                    env["LIFECYCLE_CONFIRMATION_SNAPSHOTS"],
+                    env["LIFECYCLE_MAX_GAP_SECONDS"] * 1000,
+                    env["LIFECYCLE_WEAKENING_PERCENT"],
+                    env["LIFECYCLE_ESCALATION_STEP_PERCENT"],
+                    env["LIFECYCLE_MINIMUM_BASELINE_VOLUME"],
+                    env["LIFECYCLE_EVENT_RETENTION_DAYS"],
+                ),
             )
             engine = AlertEngine(
                 db,
@@ -118,9 +132,33 @@ async def run_application(
                 now,
                 channels,
                 logger,
+                lifecycle=lifecycle,
             )
+            outcomes = AlertOutcomeTracker(
+                db,
+                repository,
+                schedule,
+                lambda row: (
+                    row["owner_id"] in users.allowed
+                    if row["channel_id"] is None
+                    else channels.eligible(row)
+                ),
+                env["ALERT_OUTCOME_WINDOWS_MINUTES"],
+                env["ALERT_OUTCOME_TOLERANCE_SECONDS"] * 1000,
+                env["ALERT_OUTCOME_RETENTION_DAYS"],
+                now,
+                logger,
+                env["MARKET_DATA_MAX_AGE_MS"],
+            )
+            engine.outcomes = outcomes
+            cleanup.extra_cleanup = lambda: outcomes.delete_expired(now())
+            cleanup.lifecycle_cleanup = lambda: lifecycle.delete_expired(now())
             monitor = MarketMonitor(
-                lambda: [*users.monitored_symbols(), *channels.monitored_symbols()],
+                lambda: [
+                    *users.monitored_symbols(),
+                    *channels.monitored_symbols(),
+                    *outcomes.monitored_symbols(),
+                ],
                 market,
                 repository,
                 schedule,
@@ -134,6 +172,8 @@ async def run_application(
                 engine.on_snapshot,
                 logger=logger,
                 now=now,
+                before_cycle=outcomes.advance,
+                on_unavailable=lifecycle.unavailable,
             )
 
             async def send(target: str, message: str) -> object:
@@ -171,6 +211,8 @@ async def run_application(
                 channels,
                 now=now,
                 logger=logger,
+                lifecycle=lifecycle,
+                session_at=schedule.session_id,
             )
             resources.push_async_callback(bot.stop)
             initialized = False

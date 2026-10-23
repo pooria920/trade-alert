@@ -138,7 +138,7 @@ class TelegramAPI:
         await self._receive(event, callback=True)
 
     async def _receive(self, event: Any, *, callback: bool) -> None:
-        """Reject unknown peers and non-admin group actors before sender lookup."""
+        """Accept only authorized matching private chats before sender lookup."""
         task = asyncio.current_task()
         assert task is not None
         self.active.add(task)
@@ -146,16 +146,11 @@ class TelegramAPI:
             self._cancelled()
             actor = integer(event.sender_id, 1, 2**52 - 1)
             private = event.is_private is True
-            group_type = getattr(event, "is_group", False)
-            group = (
-                (group_type is True or group_type is None)
-                and str(actor) in self.admins
-                and str(event.chat_id) == self.channel
-            )
             if (
                 str(actor) not in self.allowed
                 or type(event.chat_id) is not int
-                or not ((private and event.chat_id == actor) or (not private and group))
+                or not private
+                or event.chat_id != actor
             ):
                 return
             if callback:
@@ -171,14 +166,6 @@ class TelegramAPI:
                 content = text(event.raw_text or "", 4096, trim=False, minimum=0)
                 message_id = integer(event.message.id, 1)
             async with asyncio.timeout(10) as deadline:
-                if not private and group_type is None:
-                    # Callback updates may omit the chat entity entirely. Resolve
-                    # only the exact configured peer after the actor/scope guard.
-                    chat = await self._chat(self.channel)
-                    if self._chat_type(chat) not in ("group", "supergroup") or str(
-                        utils.get_peer_id(chat)
-                    ) != str(event.chat_id):
-                        return
                 sender = await event.get_sender()
             self._cancelled()
             if deadline.expired():
@@ -189,11 +176,7 @@ class TelegramAPI:
                 message_id=message_id,
                 chat=dict(
                     id=event.chat_id,
-                    type="private"
-                    if private
-                    else "group"
-                    if utils.resolve_id(event.chat_id)[1] is types.PeerChat
-                    else "supergroup",
+                    type="private",
                 ),
             )
             reply = (
