@@ -9,7 +9,7 @@ from .definitions import Group, RuleTree, VolumeConfig, parse_tree
 from .evaluators import DisappearedConfig, DropConfig, PeakConfig, ThresholdConfig
 from .lifecycle import LifecycleConfig
 from .market import TEHRAN
-from .quality import SEVERITY_LABELS
+from .quality import SEVERITY_LABELS, stored_policy
 from .validation import code, integer, loads, number, obj, text
 
 LABELS = {
@@ -389,6 +389,95 @@ def monitoring_text(status: dict[str, Any], now: int) -> str:
     )
 
 
+def rule_status_text(
+    rule: dict[str, Any],
+    now: int,
+    market_open: bool,
+    session_id: str | None,
+    max_age_ms: int,
+) -> str:
+    """Describe recorded evaluation, never infer a current queue from old history."""
+    lines = ["وضعیت بررسی قانون:"]
+    if not rule["enabled"]:
+        lines.append("قانون خاموش است.")
+    if rule.get("eligible") is False:
+        lines.append(
+            "قانون این مقصد فعلاً مجاز به اجرا نیست؛ مدیر فعلی باید آن را ویرایش و تأیید کند."
+        )
+    if rule.get("notifications_enabled") is False:
+        lines.append("دریافت اعلان‌های خصوصی شما خاموش است.")
+    try:
+        stored_policy(rule.get("quality_config"))
+    except ValueError, TypeError, KeyError:
+        lines.append("تنظیمات پیشرفته نامعتبر است؛ هشدار صادر نمی‌شود.")
+    if not market_open:
+        lines.append("اکنون خارج از جلسهٔ تنظیم‌شدهٔ بازار است.")
+    state = rule.get("evaluation")
+    if not state:
+        lines.append(
+            "هنوز ارزیابی ثبت نشده؛ منتظر دادهٔ معتبر و تازه و آماده‌سازی اولیه است."
+        )
+        return "\n".join(lines)
+    timestamp = state["last_evaluated_at"]
+    lines.append("زمان آخرین ارزیابی: " + tehran_time(timestamp))
+    if (
+        session_id is None
+        or session_id != state["session_id"]
+        or not 0 <= now - timestamp <= max_age_ms
+    ):
+        lines.append(
+            "دادهٔ معتبر و تازهٔ همین جلسه در دسترس نیست؛ نتیجهٔ قبلی وضعیت فعلی صف را نشان نمی‌دهد."
+        )
+    try:
+        detail = obj(loads(state["evaluation_detail"]))
+        phase = detail["phase"]
+        phases = {
+            "PRIMING": "آخرین داده صرف آماده‌سازی اولیه شد؛ در این مرحله هشداری صادر نمی‌شود.",
+            "RECOVERY": "منتظر تأیید بازگشت صف طبق تنظیمات قانون است؛ دادهٔ نامشخص باعث آماده‌شدن دوباره نمی‌شود.",
+            "COOLDOWN": "زمان انتظار بین هشدارها هنوز تمام نشده بود.",
+            "TRIGGERED": "شرط هشدار تأیید و رویداد برای ارسال ثبت شد؛ این به معنی تحویل پیام نیست.",
+            "EVALUATED": "نتیجهٔ شرط‌ها در آخرین ارزیابی:",
+            "REARMED": "شرط بازگشت تأیید شد؛ قانون برای بررسی دادهٔ بعدی آماده است.",
+        }
+        lines.append(phases[phase])
+        if phase != "PRIMING":
+            lines.append(
+                "نتیجهٔ کلی شرط‌ها: "
+                + {
+                    "TRUE": "برقرار بود",
+                    "FALSE": "برقرار نبود",
+                    "UNKNOWN": "شواهد کافی نبود",
+                }[detail["truth"]]
+            )
+            reasons = {
+                "TRIGGER": "برقرار بود",
+                "CLEAR": "برقرار نبود",
+                "OPPOSITE_SIDE": "صف مخالف دیده شد؛ برای این شرط شواهد کافی نیست",
+                "CROSSING_NOT_READY": "منتظر مشاهدهٔ شرط بازگشت برای آماده‌شدن عبور از حد است",
+                "CONFIRMATION_REQUIRED": "وضعیت پیوستهٔ صف هنوز تأیید نشده است",
+                "BASELINE_REQUIRED": "دادهٔ مبنای سازگار با حداقل حجم و بازهٔ لازم کافی نیست",
+            }
+
+            def visit(node: dict[str, Any], path: str = "") -> None:
+                if "children" in node:
+                    for i, child in enumerate(node["children"]):
+                        visit(obj(child), f"{path}{fa(i + 1)}.")
+                else:
+                    lines.append(
+                        f"{path} {LABELS[node['type']]}: {reasons[node['reason']]}"
+                    )
+
+            visit(detail)
+    except ValueError, TypeError, KeyError, RecursionError:
+        lines.append("توضیح آخرین ارزیابی موجود نیست؛ منتظر دادهٔ معتبر بعدی است.")
+    last = state["last_triggered_at"]
+    if last is not None:
+        remaining = max(0, (last + rule["cooldown_seconds"] * 1000 - now + 999) // 1000)
+        if remaining:
+            lines.append(f"زمان انتظار باقی‌مانده: {fa(remaining)} ثانیه")
+    return "\n".join(lines)
+
+
 def history_text(event: dict[str, Any]) -> str:
     try:
         payload = obj(loads(event["payload"]))
@@ -401,19 +490,19 @@ def history_text(event: dict[str, Any]) -> str:
             lines = [evidence_text(m, bool(payload.get("escalation"))) for m in matches]
             message = (
                 f"هشدار ترکیبی بورس\nنماد: {symbol}\n"
-                + "\nنتیجه: "
+                + f"زمان داده: {tehran_time(timestamp)} به وقت تهران\n"
+                + "\nعلت هشدار: "
                 + (
                     "همهٔ شرط‌های لازم برقرار هستند."
                     if payload["operator"] == "AND"
                     else "حداقل یکی از شرط‌ها برقرار است."
                 )
                 + "\nشرط‌های تأییدشده:\n"
-                + "\n\n".join(lines)
-                + f"\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
+                + "\n\n".join(f"{fa(i + 1)}. {line}" for i, line in enumerate(lines))
             )
             if any(isinstance(m.condition.config, LifecycleConfig) for m in matches):
                 if len(matches) == 1 and payload["operator"] is None:
-                    message = f"هشدار {LABELS[matches[0].condition.type]}\nنماد: {symbol}\n{lines[0]}\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
+                    message = f"هشدار {LABELS[matches[0].condition.type]}\nنماد: {symbol}\nعلت هشدار: تغییر رفتار صف تأیید شد.\n{lines[0]}\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
                 message += "\nاین مشاهدهٔ رفتار صف است، نه توصیهٔ معامله."
         else:
             kind = payload["type"]
@@ -442,6 +531,8 @@ def history_text(event: dict[str, Any]) -> str:
             elif kind.endswith(("VOLUME_BELOW", "VOLUME_ABOVE")):
                 condition = parse_tree(payload["definition"])
                 message = f"هشدار حجم صف\nنماد: {symbol}\n{tree_text(condition)}\nحجم قبلی: {quantity(previous)} سهم\nحجم فعلی: {quantity(current)} سهم\nحجم صف به حد تعیین‌شده رسید.\nزمان داده: {tehran_time(timestamp)} به وقت تهران"
+        if payload["type"] != "COMPOSITE" and "definition" in payload:
+            message += "\nعلت هشدار: " + tree_text(parse_tree(payload["definition"]))
         title, rest = message.split("\n", 1)
         message = (
             title
@@ -488,6 +579,7 @@ def evidence_text(evidence: Evidence, escalation: bool = False) -> str:
     c = evidence.condition.config
     if isinstance(c, LifecycleConfig):
         message = LABELS[evidence.condition.type]
+        message += "\nشرط تأییدشده: " + tree_text(evidence.condition)
         if evidence.condition.type.endswith("CONFIRMED_DISAPPEARED"):
             message += f"\nآخرین حجم معتبر صف: {quantity(evidence.previous_volume)} سهم\nزمان آخرین صف معتبر: {tehran_time((evidence.details or {}).get('previous_timestamp'))}\nوضعیت تأییدشدهٔ فعلی: بدون صف"
         elif evidence.condition.type.endswith("WEAKENED"):

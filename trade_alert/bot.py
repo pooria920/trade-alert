@@ -28,6 +28,7 @@ from .bot_text import (
     monitoring_text,
     numeric,
     numeric_error,
+    rule_status_text,
     tehran_time,
     tree_text,
     type_buttons,
@@ -102,6 +103,7 @@ class TelegramBot:
     ) -> None:
         self.api, self.users, self.market, self.alerts = api, users, market, alerts
         self.get_status, self.channels, self.now = get_status, channels, now
+        self.session_at = session_at
         self.logger = logger or logging.getLogger(__name__)
         self.lifecycle = lifecycle or LifecycleTracker(users.db)
         self.admin = (
@@ -788,6 +790,14 @@ class TelegramBot:
                     ""
                     if rule["definition"]["type"] in LIFECYCLE_LABELS
                     else f"\nشناسه: {rule_id}"
+                )
+                + "\n\n"
+                + rule_status_text(
+                    rule,
+                    self.now(),
+                    bool(self.get_status()["is_market_open"]),
+                    self.session_at(self.now()),
+                    self.market.detector.max_age_ms,
                 ),
                 [
                     (

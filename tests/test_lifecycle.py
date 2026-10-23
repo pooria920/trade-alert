@@ -493,9 +493,11 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
                             before[table],
                         )
                     else:
-                        self.assertEqual(
-                            rows(db, f'SELECT * FROM "{table}"'), before[table]
-                        )
+                        after = rows(db, f'SELECT * FROM "{table}"')
+                        if table == "alert_states":
+                            for row in after:
+                                self.assertIsNone(row.pop("evaluation_detail"))
+                        self.assertEqual(after, before[table])
                 self.assertEqual(
                     db.execute("PRAGMA integrity_check").fetchone()[0], "ok"
                 )

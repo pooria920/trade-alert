@@ -157,7 +157,7 @@ class DatabaseTests(unittest.TestCase):
                     db.execute("SELECT count(*) FROM __drizzle_migrations").fetchone()[
                         0
                     ],
-                    9,
+                    10,
                 )
                 db.execute("INSERT INTO symbols VALUES ('123', 'TEST', 1)")
             with open_database(py_path) as db:
@@ -221,7 +221,7 @@ class DatabaseTests(unittest.TestCase):
                     db.execute("SELECT count(*) FROM __drizzle_migrations").fetchone()[
                         0
                     ],
-                    9,
+                    10,
                 )
 
     def test_process_death_releases_lock_without_deleting_file(self):

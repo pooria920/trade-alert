@@ -419,6 +419,51 @@ def result_json(result: EvaluationResult) -> dict[str, Any]:
     )
 
 
+def evaluation_detail(
+    tree: RuleTree,
+    current: QueueSnapshot,
+    history: History,
+    peaks: dict[str, ObservedPeak],
+    ready: dict[str, bool],
+    lifecycle: LifecycleContext,
+) -> dict[str, Any]:
+    """Explain the accepted update using the same pure evaluators and cached history."""
+
+    def visit(node: RuleTree, path: str) -> dict[str, Any]:
+        if isinstance(node, Group):
+            children = [visit(c, f"{path}.{i}") for i, c in enumerate(node.conditions)]
+            return dict(
+                truth=combine(node.operator, [c["truth"] for c in children]),
+                operator=node.operator,
+                children=children,
+            )
+        result = leaf(node, current, history, peaks, lifecycle)
+        reason: str = result.status
+        side = "buy" if node.type.startswith("BUY_") else "sell"
+        if current.queue_type not in (side, "none"):
+            reason = "OPPOSITE_SIDE"
+        elif isinstance(node.config, ThresholdConfig) and not ready.get(path, False):
+            reason = "CROSSING_NOT_READY"
+        elif (
+            isinstance(node.config, LifecycleConfig)
+            and result.status == "INSUFFICIENT_DATA"
+        ):
+            reason = "CONFIRMATION_REQUIRED"
+        elif result.status == "INSUFFICIENT_DATA":
+            reason = "BASELINE_REQUIRED"
+        return dict(
+            type=node.type,
+            truth="TRUE"
+            if reason == "TRIGGER"
+            else "FALSE"
+            if reason == "CLEAR"
+            else "UNKNOWN",
+            reason=reason,
+        )
+
+    return visit(tree, "0")
+
+
 def evaluate_definition(
     tree: RuleTree,
     current: QueueSnapshot,
