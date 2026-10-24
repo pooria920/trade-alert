@@ -1,0 +1,266 @@
+[
+  {
+    "file": "search-khodro.json",
+    "url": "https://cdn.tsetmc.com/api/Instrument/GetInstrumentSearch/%D8%AE%D9%88%D8%AF%D8%B1%D9%88",
+    "started_utc": "2026-10-24T06:16:16.4055819+00:00",
+    "received_utc": "2026-10-24T06:16:16.5228051+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:08 GMT"
+    },
+    "sha256": "4bb4e94d19fe287700e3648121720f55946ae169a172a48b3db9e2ed54e22898"
+  },
+  {
+    "file": "search-foolad.json",
+    "url": "https://cdn.tsetmc.com/api/Instrument/GetInstrumentSearch/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+    "started_utc": "2026-10-24T06:16:16.5659559+00:00",
+    "received_utc": "2026-10-24T06:16:16.5856782+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:08 GMT"
+    },
+    "sha256": "01950f2aabf2cf1cd45a20bfa62c8bce22555ce7d77b7c0ed754a6b0e13017d0"
+  },
+  {
+    "file": "khodro-best-1.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/65883838195688438",
+    "started_utc": "2026-10-24T06:16:16.5999902+00:00",
+    "received_utc": "2026-10-24T06:16:16.6178302+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:08 GMT"
+    },
+    "sha256": "10bbd7dfdee808b2b6e32b3c6d31f4891303a65ce55e6ff545664083b9762d48"
+  },
+  {
+    "file": "khodro-closing-1.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+    "started_utc": "2026-10-24T06:16:16.6251864+00:00",
+    "received_utc": "2026-10-24T06:16:16.6826717+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:09 GMT"
+    },
+    "sha256": "1ce8eb8dbbb5cf4891e75782b26d0b9e18e66038d9aa9b9f5aa743d019b08ac3"
+  },
+  {
+    "file": "khodro-limits-1.json",
+    "url": "https://cdn.tsetmc.com/api/MarketData/GetStaticThreshold/65883838195688438/20261024",
+    "started_utc": "2026-10-24T06:16:16.6912768+00:00",
+    "received_utc": "2026-10-24T06:16:16.7046703+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:09 GMT"
+    },
+    "sha256": "3db7ecdab2f0e88e3cb183a1d49d2b7f2780f9e3c45068dad4f5404a6fcf2954"
+  },
+  {
+    "file": "foolad-best-1.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/46348559193224090",
+    "started_utc": "2026-10-24T06:16:16.7130317+00:00",
+    "received_utc": "2026-10-24T06:16:16.7291765+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:09 GMT"
+    },
+    "sha256": "1553834d2e4c7c702fb61d7aafb16ef897580c961d7a2f17fbb9ef4af91f8602"
+  },
+  {
+    "file": "foolad-closing-1.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/46348559193224090",
+    "started_utc": "2026-10-24T06:16:16.7368342+00:00",
+    "received_utc": "2026-10-24T06:16:16.7713683+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:09 GMT"
+    },
+    "sha256": "c4521a01d958eab6772c955eb5a5c84414502060247c8774612912f1a015142d"
+  },
+  {
+    "file": "foolad-limits-1.json",
+    "url": "https://cdn.tsetmc.com/api/MarketData/GetStaticThreshold/46348559193224090/20261024",
+    "started_utc": "2026-10-24T06:16:16.7832973+00:00",
+    "received_utc": "2026-10-24T06:16:16.8080583+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:09 GMT"
+    },
+    "sha256": "f2b915e4ebd8d894cd20031bb08bb46624694adb803ee4976adebccf4fa137d0"
+  },
+  {
+    "file": "khodro-best-2.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/65883838195688438",
+    "started_utc": "2026-10-24T06:16:26.8290481+00:00",
+    "received_utc": "2026-10-24T06:16:27.0562274+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:19 GMT"
+    },
+    "sha256": "ee90df7fc8041cc36093980784c70a4f6fa30a5cf2d5873664aee4ab3a53d526"
+  },
+  {
+    "file": "khodro-closing-2.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+    "started_utc": "2026-10-24T06:16:27.0669838+00:00",
+    "received_utc": "2026-10-24T06:16:27.1705731+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:19 GMT"
+    },
+    "sha256": "af512974c4e667f489494b401e326c2930e647ac451b2f1e0e8ebf42c0ca5b4e"
+  },
+  {
+    "file": "foolad-best-2.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/46348559193224090",
+    "started_utc": "2026-10-24T06:16:27.1794737+00:00",
+    "received_utc": "2026-10-24T06:16:27.1971838+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:19 GMT"
+    },
+    "sha256": "5941948227ad558988c4bb0a6ba6c1abff09f3e31ea4191153a3b9fd71a4c44e"
+  },
+  {
+    "file": "foolad-closing-2.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/46348559193224090",
+    "started_utc": "2026-10-24T06:16:27.2054182+00:00",
+    "received_utc": "2026-10-24T06:16:27.2240930+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:19 GMT"
+    },
+    "sha256": "cc682fdcbf082d5f9d2ece2668e4c9328b9a5af85954d9bf21040220b7b10cb8"
+  },
+  {
+    "file": "khodro-best-3.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/65883838195688438",
+    "started_utc": "2026-10-24T06:16:37.2438813+00:00",
+    "received_utc": "2026-10-24T06:16:37.2728878+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:29 GMT"
+    },
+    "sha256": "3f395b88834ddf8ab6ef10c9992f444723f994a5ddbb0df56bb94dcae9ccfa19"
+  },
+  {
+    "file": "khodro-closing-3.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+    "started_utc": "2026-10-24T06:16:37.2899737+00:00",
+    "received_utc": "2026-10-24T06:16:37.3079839+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:29 GMT"
+    },
+    "sha256": "f235caf3eab5d0a1d79ddf9fd93ff660a9109dd25620b959837d719ef0eec966"
+  },
+  {
+    "file": "foolad-best-3.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/46348559193224090",
+    "started_utc": "2026-10-24T06:16:37.3162798+00:00",
+    "received_utc": "2026-10-24T06:16:37.3316770+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:29 GMT"
+    },
+    "sha256": "af7b98de3f2fa82886d88e4f227dc578e362f7942de1bed7b578356e65939a27"
+  },
+  {
+    "file": "foolad-closing-3.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/46348559193224090",
+    "started_utc": "2026-10-24T06:16:37.3422948+00:00",
+    "received_utc": "2026-10-24T06:16:37.5658230+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:29 GMT"
+    },
+    "sha256": "d2b1271a27e24f4cd9855c7a4731780e43829b4534b8f45156b748b8db05d43a"
+  },
+  {
+    "file": "khodro-best-4.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/65883838195688438",
+    "started_utc": "2026-10-24T06:16:47.5798176+00:00",
+    "received_utc": "2026-10-24T06:16:47.5993741+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:39 GMT"
+    },
+    "sha256": "8492e61886fd26ec4c99b46c6d5da70202de42baf01128e4783dffa640da776e"
+  },
+  {
+    "file": "khodro-closing-4.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/65883838195688438",
+    "started_utc": "2026-10-24T06:16:47.6095991+00:00",
+    "received_utc": "2026-10-24T06:16:47.6256968+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:39 GMT"
+    },
+    "sha256": "23b292049793eb7ac9cce0fe054f6833d414c560ed452e22a8d5a8fcb0ce8f23"
+  },
+  {
+    "file": "khodro-limits-4.json",
+    "url": "https://cdn.tsetmc.com/api/MarketData/GetStaticThreshold/65883838195688438/20261024",
+    "started_utc": "2026-10-24T06:16:47.6354276+00:00",
+    "received_utc": "2026-10-24T06:16:48.1933227+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:40 GMT"
+    },
+    "sha256": "3db7ecdab2f0e88e3cb183a1d49d2b7f2780f9e3c45068dad4f5404a6fcf2954"
+  },
+  {
+    "file": "foolad-best-4.json",
+    "url": "https://cdn.tsetmc.com/api/BestLimits/46348559193224090",
+    "started_utc": "2026-10-24T06:16:48.1957977+00:00",
+    "received_utc": "2026-10-24T06:16:48.2118508+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:40 GMT"
+    },
+    "sha256": "7ca9ac29473bdb946433881cff46d504e05a81e95c3e754adb5d42236d5bb6cf"
+  },
+  {
+    "file": "foolad-closing-4.json",
+    "url": "https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/46348559193224090",
+    "started_utc": "2026-10-24T06:16:48.2212868+00:00",
+    "received_utc": "2026-10-24T06:16:48.2451509+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:40 GMT"
+    },
+    "sha256": "ab865ccb00fe18b22a49c94bb46c25113073623ce549e80613ac84e1992c1b69"
+  },
+  {
+    "file": "foolad-limits-4.json",
+    "url": "https://cdn.tsetmc.com/api/MarketData/GetStaticThreshold/46348559193224090/20261024",
+    "started_utc": "2026-10-24T06:16:48.2624142+00:00",
+    "received_utc": "2026-10-24T06:16:48.2883287+00:00",
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Sat, 24 Oct 2026 06:16:40 GMT"
+    },
+    "sha256": "f2b915e4ebd8d894cd20031bb08bb46624694adb803ee4976adebccf4fa137d0"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "capture_method": "Read-only extraction of rendered official instrument-page DOM using the local Chrome browser; observations are not synchronized with API captures and are not independent exchange evidence.",
+  "columns": ["bid_count", "bid_volume", "bid_price", "ask_price", "ask_volume", "ask_count"],
+  "observations": [
+    {
+      "observed_utc": "2026-10-24T06:17:32.896Z",
+      "url": "https://www.tsetmc.com/instInfo/65883838195688438",
+      "symbol": "خودرو",
+      "price_info_time_displayed": "09:47:08",
+      "state_displayed": "مجاز",
+      "permitted_lower_displayed": "659",
+      "permitted_upper_displayed": "699",
+      "rows": [
+        ["1", "50,000", "658", "659", "2,040,962,538", "1156"],
+        ["2", "29,964", "657", "660", "4,012,659", "9"],
+        ["1", "20,096", "656", "661", "3,524,486", "7"],
+        ["1", "11,002", "654", "662", "3,188,496", "6"],
+        ["1", "12,003", "650", "663", "1,661,053", "5"]
+      ]
+    },
+    {
+      "observed_utc": "2026-10-24T06:17:40.056Z",
+      "url": "https://www.tsetmc.com/instInfo/46348559193224090",
+      "symbol": "فولاد",
+      "price_info_time_displayed": "09:47:13",
+      "state_displayed": "مجاز",
+      "permitted_lower_displayed": "4,100",
+      "permitted_upper_displayed": "4,340",
+      "rows": [
+        ["1", "5,000", "4,000", "4,100", "977,433,167", "4216"],
+        ["2", "15,847", "3,990", "4,110", "5,304,196", "27"],
+        ["2", "50,169", "3,880", "4,120", "1,530,259", "25"],
+        ["3", "57,109", "3,660", "4,130", "6,072,703", "45"],
+        ["3", "25,397", "3,580", "4,140", "5,097,393", "48"]
+      ]
+    }
+  ]
+}
